@@ -7,8 +7,6 @@ import { Inter } from "next/font/google"
 import { ThemeProvider } from "@/components/theme-provider"
 import { AuthProvider } from "@/contexts/auth-context"
 import { Toaster } from "@/components/ui/toaster"
-import { AuthDebug } from "@/components/auth-debug"
-import { EnvDebug } from "@/components/env-debug"
 
 // Add this console log to check environment variables during server-side rendering
 console.log("Server-side Environment Variables Check:", {
@@ -31,11 +29,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en">
       <body className={inter.className}>
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
-          <AuthProvider>
-            {children}
-            <AuthDebug />
-            <EnvDebug />
-          </AuthProvider>
+          <AuthProvider>{children}</AuthProvider>
           <Toaster />
         </ThemeProvider>
       </body>
