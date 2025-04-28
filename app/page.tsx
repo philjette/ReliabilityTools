@@ -1,5 +1,5 @@
 import Image from "next/image"
-import { BarChart3, FileText, Upload, ArrowRight, CheckCircle } from "lucide-react"
+import { Activity, FileText, Upload, ArrowRight, CheckCircle } from "lucide-react"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { HeroButtons } from "@/components/hero-buttons"
@@ -16,7 +16,7 @@ export default function Home() {
             <div className="grid gap-6 lg:grid-cols-2 lg:gap-12 items-center">
               <div className="space-y-4">
                 <h1 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl">
-                  AI-Powered Reliability Engineering Tools
+                  AI-Powered Reliability Engineering
                 </h1>
                 <p className="max-w-[600px] text-muted-foreground md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
                   Generate comprehensive Failure Mode and Effects Analysis (FMEA) reports based on specific asset and
@@ -28,7 +28,7 @@ export default function Home() {
                 <div className="relative w-full max-w-[500px] aspect-video rounded-xl overflow-hidden border bg-background shadow-xl">
                   <Image
                     src="/images/dashboard-screenshot.png"
-                    alt="ReliabilityTools.ai Dashboard"
+                    alt="AssetX.pro Dashboard"
                     fill
                     className="object-cover"
                     priority
@@ -45,7 +45,7 @@ export default function Home() {
             <div className="flex flex-col items-center justify-center space-y-4 text-center mb-12">
               <div className="space-y-2">
                 <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl">
-                  Powerful Reliability Engineering Tools
+                  Powerful Asset Management Tools
                 </h2>
                 <p className="max-w-[900px] text-muted-foreground md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
                   See how our platform helps reliability engineers make better decisions
@@ -88,7 +88,7 @@ export default function Home() {
                 <div className="pt-4">
                   <Link href="/auth/signin">
                     <Button>
-                      Try FMEA Builder
+                      Try the FMEA Builder
                       <ArrowRight className="ml-2 h-4 w-4" />
                     </Button>
                   </Link>
@@ -161,7 +161,7 @@ export default function Home() {
                 </p>
               </div>
               <div className="flex flex-col items-center space-y-2 border rounded-lg p-6 shadow-sm bg-background">
-                <BarChart3 className="h-12 w-12 text-primary" />
+                <Activity className="h-12 w-12 text-primary" />
                 <h3 className="text-xl font-bold">Weibull Distribution Analysis</h3>
                 <p className="text-sm text-center text-muted-foreground">
                   Toggle between CDF, PDF, and Hazard Function visualizations for failure mode analysis

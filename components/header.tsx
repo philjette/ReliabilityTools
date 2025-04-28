@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import Link from "next/link"
-import { BarChart3, ChevronDown, Menu } from "lucide-react"
+import { Activity, ChevronDown, Menu } from "lucide-react"
 import { useAuth } from "@/contexts/auth-context"
 import { UserProfile } from "@/components/user-profile"
 import { SignInButton } from "@/components/sign-in-button"
@@ -33,8 +33,8 @@ export function Header({ activePath = "/" }: HeaderProps) {
     <header className="border-b">
       <div className="container flex h-16 items-center justify-between px-4 md:px-6">
         <Link href="/" className="flex items-center gap-2 font-bold text-xl">
-          <BarChart3 className="h-6 w-6" />
-          <span>ReliabilityTools.ai</span>
+          <Activity className="h-6 w-6 text-primary" />
+          <span>AssetX.pro</span>
         </Link>
 
         {/* Desktop Navigation */}
@@ -50,11 +50,7 @@ export function Header({ activePath = "/" }: HeaderProps) {
           {/* Solutions Dropdown Menu */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button
-                variant="link"
-                className="font-medium p-0 h-auto text-base" // Ensure consistent text size
-                style={{ fontFamily: "inherit" }} // Ensure consistent font family
-              >
+              <Button variant="link" className="font-medium p-0 h-auto text-base" style={{ fontFamily: "inherit" }}>
                 Solutions <ChevronDown className="h-4 w-4 ml-1" />
               </Button>
             </DropdownMenuTrigger>

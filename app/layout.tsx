@@ -19,8 +19,8 @@ console.log("Server-side Environment Variables Check:", {
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "ReliabilityTools.ai - AI-Enabled FMEA Generation & Weibull Analysis",
-  description: "Advanced reliability engineering tools for FMEA generation and Weibull distribution analysis",
+  title: "AssetX.pro - AI-Enabled FMEA Generation & Weibull Analysis",
+  description: "Advanced asset reliability management platform for FMEA generation and failure analysis",
     generator: 'v0.dev'
 }
 
