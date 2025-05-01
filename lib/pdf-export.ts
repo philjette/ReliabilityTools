@@ -260,16 +260,16 @@ export async function generateFmeaPdf(params: GeneratePdfParams): Promise<Uint8A
       doc.text("Preventative Maintenance Plan:", 15, startY)
       startY += 5
 
-      const maintenanceData = mode.maintenanceActions.map((action) => [
-        action.action,
-        action.frequency,
-        action.description,
-      ])
-
       autoTable(doc, {
         startY: startY,
-        head: [["Action", "Frequency", "Description"]],
-        body: maintenanceData,
+        head: [["Action", "Frequency", "Cost (USD)", "Annual Cost", "Description"]],
+        body: mode.maintenanceActions.map((action) => [
+          action.action,
+          action.frequency,
+          `$${action.estimatedCost?.toLocaleString() || "N/A"}`,
+          `$${action.annualCost?.toLocaleString() || "N/A"}/year`,
+          action.description,
+        ]),
         theme: "grid",
         headStyles: {
           fillColor: [52, 152, 219], // Blue header
@@ -281,13 +281,38 @@ export async function generateFmeaPdf(params: GeneratePdfParams): Promise<Uint8A
           cellPadding: 3,
         },
         columnStyles: {
-          0: { cellWidth: 50 },
-          1: { cellWidth: 40 },
+          0: { cellWidth: 45 },
+          1: { cellWidth: 30 },
+          2: { cellWidth: 25 },
+          3: { cellWidth: 25 },
         },
         margin: { left: 15, right: 15 },
       })
 
-      startY = (doc as any).lastAutoTable.finalY + 15
+      // Calculate total annual maintenance cost for this failure mode
+      if (mode.maintenanceActions && mode.maintenanceActions.length > 0) {
+        const totalAnnualCost = mode.maintenanceActions.reduce((sum, action) => sum + (action.annualCost || 0), 0)
+
+        startY = (doc as any).lastAutoTable.finalY + 5
+
+        autoTable(doc, {
+          startY: startY,
+          body: [["Total Annual Maintenance Cost", `$${totalAnnualCost.toLocaleString()} per year`]],
+          theme: "grid",
+          styles: {
+            fontSize: 10,
+            cellPadding: 3,
+            fontStyle: "bold",
+          },
+          columnStyles: {
+            0: { cellWidth: 100 },
+            1: { fontStyle: "bold", textColor: [41, 128, 185] },
+          },
+          margin: { left: 15, right: 15 },
+        })
+
+        startY = (doc as any).lastAutoTable.finalY + 10
+      }
     } else {
       startY += 10
     }

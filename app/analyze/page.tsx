@@ -7,8 +7,6 @@ import { AuthGuard } from "@/components/auth-guard"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Header } from "@/components/header"
-import { Footer } from "@/components/footer"
 import { WeibullParameters } from "@/components/weibull-parameters"
 import { WeibullChart } from "@/components/weibull-chart"
 import { AssetDataUpload } from "@/components/asset-data-upload"
@@ -33,7 +31,6 @@ export default function AnalyzeData() {
   return (
     <AuthGuard>
       <div className="flex flex-col min-h-screen">
-        <Header activePath="/analyze" />
         <main className="flex-1 py-8">
           <div className="container px-4 md:px-6">
             <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
@@ -152,7 +149,6 @@ export default function AnalyzeData() {
             </Tabs>
           </div>
         </main>
-        <Footer />
       </div>
     </AuthGuard>
   )

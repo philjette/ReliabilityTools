@@ -12,9 +12,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Textarea } from "@/components/ui/textarea"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
-import { Header } from "@/components/header"
-import { Footer } from "@/components/footer"
-import { WeibullChart } from "@/components/weibull-chart"
 import { SaveFMEADialog } from "@/components/save-fmea-dialog"
 import { SignInButton } from "@/components/sign-in-button"
 import { useAuth } from "@/contexts/auth-context"
@@ -28,6 +25,7 @@ import {
 } from "@/lib/electrical-assets"
 import { type FailureMode, generateFMEA } from "@/lib/actions"
 import { DownloadPdfButton } from "@/components/download-pdf-button"
+import { WeibullChart } from "@/components/weibull-chart"
 
 // Array of colors for failure mode curves
 const CURVE_COLORS = [
@@ -155,7 +153,6 @@ export default function GenerateFMEA() {
   return (
     <AuthGuard>
       <div className="flex flex-col min-h-screen">
-        <Header activePath="/generate" />
         <main className="flex-1 py-8">
           <div className="container px-4 md:px-6">
             <div className="grid gap-6 lg:grid-cols-2 lg:gap-12">
@@ -400,18 +397,38 @@ export default function GenerateFMEA() {
 
                                   {mode.maintenanceActions && mode.maintenanceActions.length > 0 && (
                                     <div className="space-y-3 mt-4 pt-4 border-t">
-                                      <h4 className="text-sm font-medium flex items-center">
-                                        <Calendar className="h-4 w-4 mr-2" />
-                                        Preventative Maintenance Plan:
+                                      <h4 className="text-sm font-medium flex items-center justify-between">
+                                        <span className="flex items-center">
+                                          <Calendar className="h-4 w-4 mr-2" />
+                                          Preventative Maintenance Plan:
+                                        </span>
+                                        <span className="text-primary font-bold text-xs">
+                                          Total Annual Cost: $
+                                          {mode.maintenanceActions
+                                            .reduce((sum, action) => sum + (action.annualCost || 0), 0)
+                                            .toLocaleString()}
+                                        </span>
                                       </h4>
                                       <div className="space-y-3">
                                         {mode.maintenanceActions.map((action, i) => (
                                           <div key={i} className="bg-muted/50 p-3 rounded-md">
                                             <div className="flex justify-between items-start">
                                               <h5 className="font-medium text-sm">{action.action}</h5>
-                                              <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full">
-                                                {action.frequency}
-                                              </span>
+                                              <div className="flex flex-wrap gap-1 justify-end">
+                                                <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full">
+                                                  {action.frequency}
+                                                </span>
+                                                {action.estimatedCost && (
+                                                  <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">
+                                                    ${action.estimatedCost.toLocaleString()}
+                                                  </span>
+                                                )}
+                                                {action.annualCost && (
+                                                  <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
+                                                    ${action.annualCost.toLocaleString()}/yr
+                                                  </span>
+                                                )}
+                                              </div>
                                             </div>
                                             <p className="text-xs text-muted-foreground mt-1">{action.description}</p>
                                           </div>
@@ -545,7 +562,6 @@ export default function GenerateFMEA() {
             </div>
           </div>
         </main>
-        <Footer />
       </div>
     </AuthGuard>
   )

@@ -39,7 +39,10 @@ export function Header({ activePath = "/" }: HeaderProps) {
 
         {/* Desktop Navigation */}
         <nav className="hidden md:flex gap-6">
-          <Link href="/" className={`font-medium ${isActive("/") ? "" : "text-muted-foreground"}`}>
+          <Link
+            href="/"
+            className={`${activePath === "/" ? "font-bold text-primary" : "text-foreground/80"} transition-colors hover:text-primary`}
+          >
             Home
           </Link>
 

@@ -5,8 +5,6 @@ import { cookies } from "next/headers"
 import { BarChart3, FileText, Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Header } from "@/components/header"
-import { Footer } from "@/components/footer"
 import { getUserFMEAs } from "@/lib/fmea-actions"
 
 export default async function Dashboard() {
@@ -24,7 +22,6 @@ export default async function Dashboard() {
 
   return (
     <div className="flex flex-col min-h-screen">
-      <Header activePath="/dashboard" />
       <main className="flex-1 py-8">
         <div className="container px-4 md:px-6">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
@@ -150,7 +147,6 @@ export default async function Dashboard() {
           </div>
         </div>
       </main>
-      <Footer />
     </div>
   )
 }

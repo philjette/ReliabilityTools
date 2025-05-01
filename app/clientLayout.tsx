@@ -1,31 +1,24 @@
 import type React from "react"
 import "./globals.css"
-import type { Metadata } from "next"
 import { Inter } from "next/font/google"
 import { ThemeProvider } from "@/components/theme-provider"
 import { Toaster } from "@/components/ui/toaster"
 import { AuthProvider } from "@/contexts/auth-context"
 import { AppProvider } from "@/contexts/AppContext"
-import { ClientHeader } from "@/components/client-header"
+import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
-
-// Add this console log to check environment variables during server-side rendering
-console.log("Server-side Environment Variables Check:", {
-  NEXT_PUBLIC_SUPABASE_URL: typeof process.env.NEXT_PUBLIC_SUPABASE_URL,
-  NEXT_PUBLIC_SUPABASE_ANON_KEY: typeof process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-  URL_VALUE: process.env.NEXT_PUBLIC_SUPABASE_URL ? "Has value" : "No value",
-  KEY_VALUE: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ? "Has value" : "No value",
-})
+import { usePathname } from "next/navigation"
 
 const inter = Inter({ subsets: ["latin"] })
 
-export const metadata: Metadata = {
-  title: "AssetX.pro - AI-Enabled FMEA Generation & Weibull Analysis",
-  description: "Advanced asset reliability management platform for FMEA generation and failure analysis",
-    generator: 'v0.dev'
+function ClientHeader() {
+  "use client"
+
+  const pathname = usePathname()
+  return <Header activePath={pathname} />
 }
 
-export default function RootLayout({
+export default function ClientRootLayout({
   children,
 }: {
   children: React.ReactNode
