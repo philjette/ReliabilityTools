@@ -5,8 +5,8 @@ import { useSearchParams, useRouter } from "next/navigation"
 import { AlertCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-// import { Header } from "@/components/header"
-// import { Footer } from "@/components/footer"
+import { Header } from "@/components/header"
+import { Footer } from "@/components/footer"
 
 export default function AuthErrorPage() {
   const searchParams = useSearchParams()
@@ -23,7 +23,7 @@ export default function AuthErrorPage() {
 
   return (
     <div className="flex flex-col min-h-screen">
-      {/* <Header /> */}
+      <Header />
       <main className="flex-1 py-8">
         <div className="container px-4 md:px-6 max-w-3xl mx-auto">
           <h1 className="text-3xl font-bold tracking-tighter mb-6">Authentication Error</h1>
@@ -56,7 +56,7 @@ export default function AuthErrorPage() {
           </div>
         </div>
       </main>
-      {/* <Footer /> */}
+      <Footer />
     </div>
   )
 }

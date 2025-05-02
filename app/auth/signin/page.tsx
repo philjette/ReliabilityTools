@@ -3,9 +3,10 @@
 import { useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
+import { Activity } from "lucide-react"
 import { useAuth } from "@/contexts/auth-context"
 import { SignInButton } from "@/components/sign-in-button"
-// import { Footer } from "@/components/footer" // Removed Footer import
+import { Footer } from "@/components/footer"
 
 export default function SignInPage() {
   const { user, isLoading } = useAuth()
@@ -20,15 +21,14 @@ export default function SignInPage() {
 
   return (
     <div className="flex flex-col min-h-screen">
-      {/* <header className="border-b">
+      <header className="border-b">
         <div className="container flex h-16 items-center justify-between px-4 md:px-6">
           <Link href="/" className="flex items-center gap-2 font-bold text-xl">
             <Activity className="h-6 w-6 text-primary" />
             <span>AssetX.pro</span>
           </Link>
         </div>
-      </header> */}{" "}
-      {/* Removed Header component */}
+      </header>
       <main className="flex-1 flex items-center justify-center">
         <div className="w-full max-w-md p-6">
           <div className="space-y-6 text-center">
@@ -53,7 +53,7 @@ export default function SignInPage() {
           </div>
         </div>
       </main>
-      {/* <Footer /> */} {/* Removed Footer component */}
+      <Footer />
     </div>
   )
 }

@@ -1,76 +1,55 @@
 "use client"
 
+import type { FMEA } from "@/types"
+import { useToast } from "@/components/ui/use-toast"
+import { useAppContext } from "@/context/AppContext"
 import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { Checkbox } from "@/components/ui/checkbox"
 import { useRouter } from "next/navigation"
-import { useAppContext } from "@/contexts/AppContext"
+import { BarChart, Check, X } from "lucide-react"
 
-interface FMEA {
-  id: string
-  name: string
-  asset_type: string
-  created_at: string
+interface CompareFMEAsButtonProps {
+  fmea: FMEA
 }
 
-export function CompareFMEAsButton({ fmeas }: { fmeas: FMEA[] }) {
-  const [open, setOpen] = useState(false)
+export function CompareFMEAsButton({ fmea }: CompareFMEAsButtonProps) {
+  const { selectedFMEAs, toggleFMEA } = useAppContext()
+  const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
-  const { selectedFMEAs, addFMEA, removeFMEA, clearSelectedFMEAs } = useAppContext()
+  const { toast } = useToast()
+
+  const handleToggleFMEA = async (fmeaId: string) => {
+    setIsLoading(true)
+    await toggleFMEA(fmeaId)
+    setIsLoading(false)
+  }
 
   const handleCompare = () => {
     if (selectedFMEAs.length < 2) {
-      alert("Please select at least 2 FMEAs to compare")
+      toast({
+        title: "Not enough FMEAs selected",
+        description: "Please select at least two FMEAs to compare.",
+      })
       return
     }
 
-    const queryString = selectedFMEAs.map((id) => `ids=${id}`).join("&")
-    router.push(`/dashboard/compare?${queryString}`)
-    setOpen(false)
+    router.push(`/compare`)
   }
 
-  const handleCheckboxChange = (id: string, checked: boolean) => {
-    if (checked) {
-      addFMEA(id)
-    } else {
-      removeFMEA(id)
-    }
-  }
+  const isSelected = selectedFMEAs.includes(fmea.id)
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button variant="outline">Compare FMEAs</Button>
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>Select FMEAs to Compare</DialogTitle>
-        </DialogHeader>
-        <div className="grid gap-4 py-4">
-          {fmeas.map((fmea) => (
-            <div key={fmea.id} className="flex items-center space-x-2">
-              <Checkbox
-                id={`fmea-${fmea.id}`}
-                checked={selectedFMEAs.includes(fmea.id)}
-                onCheckedChange={(checked) => handleCheckboxChange(fmea.id, checked === true)}
-              />
-              <label
-                htmlFor={`fmea-${fmea.id}`}
-                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-              >
-                {fmea.name} ({fmea.asset_type})
-              </label>
-            </div>
-          ))}
-        </div>
-        <div className="flex justify-between">
-          <Button variant="outline" onClick={() => clearSelectedFMEAs()}>
-            Clear Selection
-          </Button>
-          <Button onClick={handleCompare}>Compare Selected</Button>
-        </div>
-      </DialogContent>
-    </Dialog>
+    <button
+      className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:opacity-50 data-[state=open]:bg-secondary hover:bg-secondary/80 bg-muted text-muted-foreground h-9 px-4 py-2"
+      onClick={() => handleToggleFMEA(fmea.id)}
+      disabled={isLoading}
+    >
+      {selectedFMEAs.length >= 2 && !isSelected ? (
+        <X className="h-3 w-3 mr-2" />
+      ) : (
+        <BarChart className="h-4 w-4 mr-2" />
+      )}
+      {selectedFMEAs.includes(fmea.id) ? "Remove" : "Compare"}
+      {selectedFMEAs.includes(fmea.id) && <Check className="h-3 w-3" />}
+    </button>
   )
 }

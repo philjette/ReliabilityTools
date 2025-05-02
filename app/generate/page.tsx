@@ -12,6 +12,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Textarea } from "@/components/ui/textarea"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
+import { Header } from "@/components/header"
+import { Footer } from "@/components/footer"
+import { WeibullChart } from "@/components/weibull-chart"
 import { SaveFMEADialog } from "@/components/save-fmea-dialog"
 import { SignInButton } from "@/components/sign-in-button"
 import { useAuth } from "@/contexts/auth-context"
@@ -25,7 +28,6 @@ import {
 } from "@/lib/electrical-assets"
 import { type FailureMode, generateFMEA } from "@/lib/actions"
 import { DownloadPdfButton } from "@/components/download-pdf-button"
-import { WeibullChart } from "@/components/weibull-chart"
 
 // Array of colors for failure mode curves
 const CURVE_COLORS = [
@@ -153,6 +155,7 @@ export default function GenerateFMEA() {
   return (
     <AuthGuard>
       <div className="flex flex-col min-h-screen">
+        <Header activePath="/generate" />
         <main className="flex-1 py-8">
           <div className="container px-4 md:px-6">
             <div className="grid gap-6 lg:grid-cols-2 lg:gap-12">
@@ -562,6 +565,7 @@ export default function GenerateFMEA() {
             </div>
           </div>
         </main>
+        <Footer />
       </div>
     </AuthGuard>
   )

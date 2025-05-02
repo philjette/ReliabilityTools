@@ -3,13 +3,13 @@ import Link from "next/link"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-// import { Header } from "@/components/header"
-// import { Footer } from "@/components/footer"
+import { Header } from "@/components/header"
+import { Footer } from "@/components/footer"
 
 export default function About() {
   return (
     <div className="flex flex-col min-h-screen">
-      {/* <Header activePath="/about" /> */}
+      <Header activePath="/about" />
       <main className="flex-1 py-8">
         <div className="container px-4 md:px-6">
           <div className="max-w-3xl mx-auto space-y-8">
@@ -108,7 +108,7 @@ export default function About() {
           </div>
         </div>
       </main>
-      {/* <Footer /> */}
+      <Footer />
     </div>
   )
 }
