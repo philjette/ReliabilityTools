@@ -3,13 +3,10 @@
 import { generateText } from "ai"
 import { openai } from "@ai-sdk/openai"
 
-// Find the interface MaintenanceAction in the file and update it to include cost estimation
 export interface MaintenanceAction {
   action: string
   frequency: string
   description: string
-  estimatedCost: number // Add this field for cost estimation
-  annualCost: number // Add this field for annual cost calculation
 }
 
 export interface FailureMode {
@@ -65,19 +62,15 @@ export async function generateFMEA(
       6. Potential causes
       7. Effects on the system
       8. Recommended actions
-      9. Preventative maintenance actions with recommended frequencies based on the asset criticality and estimated cost per action
-      10. Annual maintenance cost estimation based on frequency and individual action costs
-      11. Weibull distribution parameters (shape and scale) that would be appropriate for this failure mode
+      9. Preventative maintenance actions with recommended frequencies based on the asset criticality
+      10. Weibull distribution parameters (shape and scale) that would be appropriate for this failure mode
       
-      The maintenance frequencies and costs should be appropriate for the asset criticality:
-      - High criticality assets should have more frequent and thorough maintenance with priority on reliability over cost
-      - Medium criticality assets should have moderate maintenance frequencies with balanced cost-reliability considerations
-      - Low criticality assets can have less frequent maintenance with cost optimization considerations
+      The maintenance frequencies should be appropriate for the asset criticality:
+      - High criticality assets should have more frequent and thorough maintenance
+      - Medium criticality assets should have moderate maintenance frequencies
+      - Low criticality assets can have less frequent maintenance
       
-      For maintenance costs:
-      - Consider labor costs, material costs, equipment costs, and downtime costs
-      - Provide a realistic cost range in USD for each maintenance action
-      - Calculate annual costs based on the frequency (e.g., monthly = 12 times per year)
+      Provide at least 5 failure modes specific to this asset type and operating conditions.
       
       IMPORTANT: Your response must be a valid JSON object with no markdown formatting, no code blocks, and no backticks. 
       The response should be a raw JSON object that can be directly parsed with JSON.parse().
@@ -98,16 +91,12 @@ export async function generateFMEA(
               {
                 "action": "Maintenance Action 1",
                 "frequency": "Every 6 months",
-                "description": "Details about the maintenance action",
-                "estimatedCost": 1200,
-                "annualCost": 2400
+                "description": "Details about the maintenance action"
               },
               {
                 "action": "Maintenance Action 2",
                 "frequency": "Annually",
-                "description": "Details about the maintenance action",
-                "estimatedCost": 3500,
-                "annualCost": 3500
+                "description": "Details about the maintenance action"
               }
             ]
           }
@@ -163,7 +152,7 @@ function cleanJsonResponse(text: string): string {
   // Remove markdown code block formatting if present
   let cleaned = text.trim()
 
-  // Remove markdown code blocks with \`\`\`json and \`\`\` if present
+  // Remove markdown code blocks with ```json and ``` if present
   const jsonBlockRegex = /```json\s*([\s\S]*?)\s*```/
   const match = cleaned.match(jsonBlockRegex)
   if (match && match[1]) {
@@ -228,22 +217,16 @@ function getFallbackFMEA(assetType: string, assetCriticality: string): FMEAResul
               action: "Oil Sample Analysis",
               frequency: getFrequency(6),
               description: "Test oil for dissolved gas, moisture content, and dielectric strength",
-              estimatedCost: assetCriticality === "high" ? 1500 : assetCriticality === "medium" ? 1200 : 1000,
-              annualCost: assetCriticality === "high" ? 3000 : assetCriticality === "medium" ? 2400 : 1000,
             },
             {
               action: "Thermographic Inspection",
               frequency: getFrequency(12),
               description: "Inspect for hotspots indicating potential insulation issues",
-              estimatedCost: assetCriticality === "high" ? 800 : assetCriticality === "medium" ? 600 : 500,
-              annualCost: assetCriticality === "high" ? 800 : assetCriticality === "medium" ? 600 : 500,
             },
             {
               action: "Winding Resistance Test",
               frequency: getFrequency(24),
               description: "Measure winding resistance to detect insulation degradation",
-              estimatedCost: assetCriticality === "high" ? 2000 : assetCriticality === "medium" ? 1500 : 1200,
-              annualCost: assetCriticality === "high" ? 2000 : assetCriticality === "medium" ? 1500 : 1200,
             },
           ],
         },
@@ -261,22 +244,16 @@ function getFallbackFMEA(assetType: string, assetCriticality: string): FMEAResul
               action: "Visual Inspection",
               frequency: getFrequency(3),
               description: "Check for cracks, contamination, and oil leaks",
-              estimatedCost: assetCriticality === "high" ? 300 : assetCriticality === "medium" ? 200 : 150,
-              annualCost: assetCriticality === "high" ? 1200 : assetCriticality === "medium" ? 800 : 600,
             },
             {
               action: "Power Factor Testing",
               frequency: getFrequency(12),
               description: "Measure power factor to detect internal degradation",
-              estimatedCost: assetCriticality === "high" ? 1800 : assetCriticality === "medium" ? 1500 : 1200,
-              annualCost: assetCriticality === "high" ? 1800 : assetCriticality === "medium" ? 1500 : 1200,
             },
             {
               action: "Bushing Cleaning",
               frequency: getFrequency(12),
               description: "Clean external surfaces to remove contamination",
-              estimatedCost: assetCriticality === "high" ? 500 : assetCriticality === "medium" ? 400 : 300,
-              annualCost: assetCriticality === "high" ? 500 : assetCriticality === "medium" ? 400 : 300,
             },
           ],
         },
@@ -308,22 +285,16 @@ function getFallbackFMEA(assetType: string, assetCriticality: string): FMEAResul
               action: "Mechanism Lubrication",
               frequency: getFrequency(12),
               description: "Apply lubricant to moving parts according to manufacturer specifications",
-              estimatedCost: assetCriticality === "high" ? 400 : assetCriticality === "medium" ? 300 : 250,
-              annualCost: assetCriticality === "high" ? 400 : assetCriticality === "medium" ? 300 : 250,
             },
             {
               action: "Timing Test",
               frequency: getFrequency(24),
               description: "Measure opening and closing times to detect mechanism issues",
-              estimatedCost: assetCriticality === "high" ? 1200 : assetCriticality === "medium" ? 1000 : 800,
-              annualCost: assetCriticality === "high" ? 1200 : assetCriticality === "medium" ? 1000 : 800,
             },
             {
               action: "Trip-Close Operation Test",
               frequency: getFrequency(6),
               description: "Perform trip and close operations to verify proper functioning",
-              estimatedCost: assetCriticality === "high" ? 600 : assetCriticality === "medium" ? 500 : 400,
-              annualCost: assetCriticality === "high" ? 1200 : assetCriticality === "medium" ? 1000 : 800,
             },
           ],
         },
@@ -342,22 +313,16 @@ function getFallbackFMEA(assetType: string, assetCriticality: string): FMEAResul
               action: "Contact Resistance Measurement",
               frequency: getFrequency(12),
               description: "Measure resistance across closed contacts to detect erosion",
-              estimatedCost: assetCriticality === "high" ? 900 : assetCriticality === "medium" ? 750 : 600,
-              annualCost: assetCriticality === "high" ? 900 : assetCriticality === "medium" ? 750 : 600,
             },
             {
               action: "Visual Inspection",
               frequency: getFrequency(24),
               description: "Inspect contacts for erosion and alignment (requires breaker disassembly)",
-              estimatedCost: assetCriticality === "high" ? 1500 : assetCriticality === "medium" ? 1200 : 1000,
-              annualCost: assetCriticality === "high" ? 1500 : assetCriticality === "medium" ? 1200 : 1000,
             },
             {
               action: "Thermographic Inspection",
               frequency: getFrequency(6),
               description: "Detect hotspots indicating high resistance connections",
-              estimatedCost: assetCriticality === "high" ? 700 : assetCriticality === "medium" ? 600 : 500,
-              annualCost: assetCriticality === "high" ? 1400 : assetCriticality === "medium" ? 1200 : 1000,
             },
           ],
         },
@@ -390,15 +355,11 @@ function getFallbackFMEA(assetType: string, assetCriticality: string): FMEAResul
               action: "Routine Inspection",
               frequency: getFrequency(6),
               description: "General visual inspection of the asset",
-              estimatedCost: 200,
-              annualCost: 400,
             },
             {
               action: "Functional Testing",
               frequency: getFrequency(12),
               description: "Test the functionality of the asset",
-              estimatedCost: 500,
-              annualCost: 500,
             },
           ],
         },
@@ -416,15 +377,11 @@ function getFallbackFMEA(assetType: string, assetCriticality: string): FMEAResul
               action: "Preventive Maintenance",
               frequency: getFrequency(12),
               description: "Perform standard preventive maintenance",
-              estimatedCost: 800,
-              annualCost: 800,
             },
             {
               action: "Component Replacement",
               frequency: getFrequency(36),
               description: "Replace wear-prone components",
-              estimatedCost: 1500,
-              annualCost: 1500,
             },
           ],
         },

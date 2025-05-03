@@ -400,38 +400,18 @@ export default function GenerateFMEA() {
 
                                   {mode.maintenanceActions && mode.maintenanceActions.length > 0 && (
                                     <div className="space-y-3 mt-4 pt-4 border-t">
-                                      <h4 className="text-sm font-medium flex items-center justify-between">
-                                        <span className="flex items-center">
-                                          <Calendar className="h-4 w-4 mr-2" />
-                                          Preventative Maintenance Plan:
-                                        </span>
-                                        <span className="text-primary font-bold text-xs">
-                                          Total Annual Cost: $
-                                          {mode.maintenanceActions
-                                            .reduce((sum, action) => sum + (action.annualCost || 0), 0)
-                                            .toLocaleString()}
-                                        </span>
+                                      <h4 className="text-sm font-medium flex items-center">
+                                        <Calendar className="h-4 w-4 mr-2" />
+                                        Preventative Maintenance Plan:
                                       </h4>
                                       <div className="space-y-3">
                                         {mode.maintenanceActions.map((action, i) => (
                                           <div key={i} className="bg-muted/50 p-3 rounded-md">
                                             <div className="flex justify-between items-start">
                                               <h5 className="font-medium text-sm">{action.action}</h5>
-                                              <div className="flex flex-wrap gap-1 justify-end">
-                                                <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full">
-                                                  {action.frequency}
-                                                </span>
-                                                {action.estimatedCost && (
-                                                  <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">
-                                                    ${action.estimatedCost.toLocaleString()}
-                                                  </span>
-                                                )}
-                                                {action.annualCost && (
-                                                  <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
-                                                    ${action.annualCost.toLocaleString()}/yr
-                                                  </span>
-                                                )}
-                                              </div>
+                                              <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full">
+                                                {action.frequency}
+                                              </span>
                                             </div>
                                             <p className="text-xs text-muted-foreground mt-1">{action.description}</p>
                                           </div>

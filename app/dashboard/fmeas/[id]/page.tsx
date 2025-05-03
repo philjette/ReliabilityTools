@@ -193,35 +193,15 @@ export default async function FMEADetails({ params }: { params: { id: string } }
 
                             {mode.maintenanceActions && mode.maintenanceActions.length > 0 && (
                               <div className="space-y-3 mt-4 pt-4 border-t">
-                                <h4 className="text-sm font-medium flex items-center justify-between">
-                                  <span>Preventative Maintenance Plan:</span>
-                                  <span className="text-primary font-bold">
-                                    Total Annual Cost: $
-                                    {mode.maintenanceActions
-                                      .reduce((sum: number, action: any) => sum + (action.annualCost || 0), 0)
-                                      .toLocaleString()}
-                                  </span>
-                                </h4>
+                                <h4 className="text-sm font-medium">Preventative Maintenance Plan:</h4>
                                 <div className="space-y-3">
                                   {mode.maintenanceActions.map((action: any, i: number) => (
                                     <div key={i} className="bg-muted/50 p-3 rounded-md">
                                       <div className="flex justify-between items-start">
                                         <h5 className="font-medium text-sm">{action.action}</h5>
-                                        <div className="flex gap-2">
-                                          <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full">
-                                            {action.frequency}
-                                          </span>
-                                          {action.estimatedCost && (
-                                            <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">
-                                              ${action.estimatedCost.toLocaleString()}
-                                            </span>
-                                          )}
-                                          {action.annualCost && (
-                                            <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
-                                              ${action.annualCost.toLocaleString()}/year
-                                            </span>
-                                          )}
-                                        </div>
+                                        <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full">
+                                          {action.frequency}
+                                        </span>
                                       </div>
                                       <p className="text-xs text-muted-foreground mt-1">{action.description}</p>
                                     </div>
@@ -278,89 +258,6 @@ export default async function FMEADetails({ params }: { params: { id: string } }
                     />
                   </TabsContent>
                 </Tabs>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Maintenance Cost Analysis</CardTitle>
-                <CardDescription>Annual maintenance cost breakdown by failure mode</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-6">
-                  <div className="flex flex-col md:flex-row justify-between items-start gap-6">
-                    <div className="w-full md:w-1/2">
-                      <h3 className="text-lg font-medium mb-4">Overall Cost Summary</h3>
-                      <div className="border rounded-lg p-4 space-y-3">
-                        <div className="flex justify-between items-center">
-                          <span className="font-medium">Total Annual Maintenance Cost:</span>
-                          <span className="text-xl font-bold text-primary">
-                            $
-                            {fmea.failure_modes
-                              .reduce((total, mode) => {
-                                return (
-                                  total +
-                                    mode.maintenanceActions?.reduce(
-                                      (sum, action) => sum + (action.annualCost || 0),
-                                      0,
-                                    ) || 0
-                                )
-                              }, 0)
-                              .toLocaleString()}
-                          </span>
-                        </div>
-                        <div className="flex justify-between items-center">
-                          <span className="font-medium">Number of Maintenance Actions:</span>
-                          <span className="font-semibold">
-                            {fmea.failure_modes.reduce(
-                              (total, mode) => total + (mode.maintenanceActions?.length || 0),
-                              0,
-                            )}
-                          </span>
-                        </div>
-                        <div className="flex justify-between items-center">
-                          <span className="font-medium">Asset Criticality:</span>
-                          <span className="font-semibold">{fmea.asset_criticality}</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="w-full md:w-1/2">
-                      <h3 className="text-lg font-medium mb-4">Cost Breakdown by Failure Mode</h3>
-                      <div className="space-y-3">
-                        {fmea.failure_modes.map((mode) => {
-                          const modeCost =
-                            mode.maintenanceActions?.reduce((sum, action) => sum + (action.annualCost || 0), 0) || 0
-
-                          // Calculate percentage of total cost
-                          const totalCost = fmea.failure_modes.reduce((total, m) => {
-                            return (
-                              total +
-                                m.maintenanceActions?.reduce((sum, action) => sum + (action.annualCost || 0), 0) || 0
-                            )
-                          }, 0)
-
-                          const percentage = totalCost > 0 ? (modeCost / totalCost) * 100 : 0
-
-                          return (
-                            <div key={mode.name} className="space-y-1">
-                              <div className="flex justify-between items-center">
-                                <span className="text-sm font-medium">{mode.name}</span>
-                                <span className="text-sm font-bold">${modeCost.toLocaleString()}</span>
-                              </div>
-                              <div className="w-full bg-muted rounded-full h-2">
-                                <div className="h-2 rounded-full bg-primary" style={{ width: `${percentage}%` }}></div>
-                              </div>
-                              <div className="text-xs text-right text-muted-foreground">
-                                {percentage.toFixed(1)}% of total cost
-                              </div>
-                            </div>
-                          )
-                        })}
-                      </div>
-                    </div>
-                  </div>
-                </div>
               </CardContent>
             </Card>
           </div>
