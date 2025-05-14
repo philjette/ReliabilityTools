@@ -17,8 +17,8 @@ interface WeibullParametersProps {
 }
 
 export function WeibullParameters({ shape, scale, onShapeChange, onScaleChange }: WeibullParametersProps) {
-  // Convert scale from hours to years for display
-  const scaleInYears = scale / HOURS_IN_YEAR
+  // Convert scale from hours to years for display and round to integer
+  const scaleInYears = Math.round(scale / HOURS_IN_YEAR)
 
   const handleShapeInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = Number.parseFloat(e.target.value)
@@ -28,8 +28,8 @@ export function WeibullParameters({ shape, scale, onShapeChange, onScaleChange }
   }
 
   const handleScaleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = Number.parseFloat(e.target.value)
-    if (!isNaN(value) && value > 0) {
+    const value = Number.parseInt(e.target.value, 10)
+    if (!isNaN(value) && value >= 0 && value <= 200) {
       // Convert years to hours when updating
       onScaleChange(value * HOURS_IN_YEAR)
     }
@@ -69,22 +69,23 @@ export function WeibullParameters({ shape, scale, onShapeChange, onScaleChange }
       <div className="space-y-2">
         <div className="flex justify-between">
           <Label htmlFor="scale-parameter">Scale Parameter (η)</Label>
-          <span className="text-sm text-muted-foreground">{scaleInYears.toFixed(2)} years</span>
+          <span className="text-sm text-muted-foreground">{scaleInYears} years</span>
         </div>
         <div className="flex gap-2">
           <Slider
             id="scale-parameter"
-            min={0.1}
-            max={5}
-            step={0.1}
+            min={1}
+            max={200}
+            step={1}
             value={[scaleInYears]}
             onValueChange={handleScaleSliderChange}
           />
           <Input
             type="number"
-            min={0.1}
-            step={0.1}
-            value={scaleInYears.toFixed(2)}
+            min={0}
+            max={200}
+            step={1}
+            value={scaleInYears}
             onChange={handleScaleInputChange}
             className="w-20"
           />
