@@ -6,6 +6,9 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Slider } from "@/components/ui/slider"
 
+// Hours in a year for conversion
+const HOURS_IN_YEAR = 8760
+
 interface WeibullParametersProps {
   shape: number
   scale: number
@@ -14,6 +17,9 @@ interface WeibullParametersProps {
 }
 
 export function WeibullParameters({ shape, scale, onShapeChange, onScaleChange }: WeibullParametersProps) {
+  // Convert scale from hours to years for display
+  const scaleInYears = scale / HOURS_IN_YEAR
+
   const handleShapeInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = Number.parseFloat(e.target.value)
     if (!isNaN(value) && value > 0) {
@@ -24,8 +30,14 @@ export function WeibullParameters({ shape, scale, onShapeChange, onScaleChange }
   const handleScaleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = Number.parseFloat(e.target.value)
     if (!isNaN(value) && value > 0) {
-      onScaleChange(value)
+      // Convert years to hours when updating
+      onScaleChange(value * HOURS_IN_YEAR)
     }
+  }
+
+  const handleScaleSliderChange = (values: number[]) => {
+    // Convert years to hours when updating
+    onScaleChange(values[0] * HOURS_IN_YEAR)
   }
 
   return (
@@ -57,18 +69,25 @@ export function WeibullParameters({ shape, scale, onShapeChange, onScaleChange }
       <div className="space-y-2">
         <div className="flex justify-between">
           <Label htmlFor="scale-parameter">Scale Parameter (η)</Label>
-          <span className="text-sm text-muted-foreground">{scale.toFixed(0)} hours</span>
+          <span className="text-sm text-muted-foreground">{scaleInYears.toFixed(2)} years</span>
         </div>
         <div className="flex gap-2">
           <Slider
             id="scale-parameter"
-            min={1000}
-            max={10000}
-            step={100}
-            value={[scale]}
-            onValueChange={(values) => onScaleChange(values[0])}
+            min={0.1}
+            max={5}
+            step={0.1}
+            value={[scaleInYears]}
+            onValueChange={handleScaleSliderChange}
           />
-          <Input type="number" min={100} step={100} value={scale} onChange={handleScaleInputChange} className="w-20" />
+          <Input
+            type="number"
+            min={0.1}
+            step={0.1}
+            value={scaleInYears.toFixed(2)}
+            onChange={handleScaleInputChange}
+            className="w-20"
+          />
         </div>
         <p className="text-xs text-muted-foreground">Characteristic life (63.2% of units will fail by this time)</p>
       </div>
