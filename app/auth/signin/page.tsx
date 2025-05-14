@@ -3,7 +3,7 @@
 import { useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
-import { BarChart3 } from "lucide-react"
+import { Activity } from "lucide-react"
 import { useAuth } from "@/contexts/auth-context"
 import { SignInButton } from "@/components/sign-in-button"
 import { Footer } from "@/components/footer"
@@ -24,8 +24,8 @@ export default function SignInPage() {
       <header className="border-b">
         <div className="container flex h-16 items-center justify-between px-4 md:px-6">
           <Link href="/" className="flex items-center gap-2 font-bold text-xl">
-            <BarChart3 className="h-6 w-6" />
-            <span>ReliabilityTools.ai</span>
+            <Activity className="h-6 w-6 text-primary" />
+            <span>AssetX.pro</span>
           </Link>
         </div>
       </header>

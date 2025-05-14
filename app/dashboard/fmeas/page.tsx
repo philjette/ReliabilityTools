@@ -9,6 +9,7 @@ import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { getUserFMEAs } from "@/lib/fmea-actions"
 import { DeleteFMEAButton } from "@/components/delete-fmea-button"
+import { CompareFMEAsButton } from "@/components/compare-fmeas-button"
 
 export default async function FMEAsList() {
   const supabase = createServerComponentClient({ cookies })
@@ -33,7 +34,8 @@ export default async function FMEAsList() {
               <h1 className="text-3xl font-bold tracking-tighter">My FMEAs</h1>
               <p className="text-muted-foreground mt-2">Manage your saved FMEA reports</p>
             </div>
-            <div className="mt-4 md:mt-0">
+            <div className="mt-4 md:mt-0 flex space-x-2">
+              <CompareFMEAsButton fmeas={fmeas} variant="outline" />
               <Button asChild>
                 <Link href="/generate">
                   <Plus className="mr-2 h-4 w-4" />

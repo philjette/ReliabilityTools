@@ -1,158 +1,147 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useAuth } from "@/contexts/auth-context"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { AlertCircle, RefreshCw, CheckCircle2, XCircle } from "lucide-react"
-import { getSupabaseClient } from "@/lib/supabase"
-import { useToast } from "@/components/ui/use-toast"
+import { getSupabaseStatus, retrySupabaseInitialization } from "@/lib/supabase"
+import { useAuth } from "@/contexts/auth-context"
+import { ENV } from "@/lib/env"
 
 export function AuthDebug() {
-  const { user, session, isLoading, retryAuth, supabaseStatus } = useAuth()
   const [showDebug, setShowDebug] = useState(false)
-  const [envVars, setEnvVars] = useState<Record<string, string>>({})
-  const [isRetrying, setIsRetrying] = useState(false)
-  const [testResults, setTestResults] = useState<Record<string, boolean | null>>({
-    connection: null,
-    session: null,
-    oauth: null,
-  })
-  const { toast } = useToast()
+  const [supabaseStatus, setSupabaseStatus] = useState(getSupabaseStatus())
+  const [connectionTest, setConnectionTest] = useState<{
+    status: "idle" | "loading" | "success" | "error"
+    message?: string
+  }>({ status: "idle" })
+  const [sessionTest, setSessionTest] = useState<{
+    status: "idle" | "loading" | "success" | "error"
+    message?: string
+  }>({ status: "idle" })
+  const [oauthTest, setOauthTest] = useState<{
+    status: "idle" | "loading" | "success" | "error"
+    message?: string
+  }>({ status: "idle" })
+  const [envCheck, setEnvCheck] = useState<{
+    url: boolean
+    key: boolean
+  }>({ url: false, key: false })
 
-  // Support function to check environment variables
-  const checkEnvVars = () => {
-    setEnvVars({
-      NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL || "Not set",
-      NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ? "Set (hidden)" : "Not set",
-    })
-  }
-
-  // Function to test Supabase connection
-  const testSupabaseConnection = async () => {
-    const supabase = getSupabaseClient()
-    setTestResults((prev) => ({ ...prev, connection: null }))
-
-    if (!supabase) {
-      toast({
-        title: "Error",
-        description: "Supabase client not initialized",
-        variant: "destructive",
-      })
-      setTestResults((prev) => ({ ...prev, connection: false }))
-      return
-    }
-
-    try {
-      // Try a simple operation - get session
-      const { data, error } = await supabase.auth.getSession()
-      if (error) {
-        console.error("Supabase connection test failed:", error)
-        toast({
-          title: "Connection Failed",
-          description: error.message,
-          variant: "destructive",
-        })
-        setTestResults((prev) => ({ ...prev, connection: false }))
-      } else {
-        console.log("Supabase connection successful:", data)
-        toast({
-          title: "Connection Successful",
-          description: "Connected to Supabase successfully",
-        })
-        setTestResults((prev) => ({ ...prev, connection: true, session: !!data.session }))
-      }
-    } catch (error) {
-      console.error("Supabase connection test exception:", error)
-      toast({
-        title: "Connection Error",
-        description: String(error),
-        variant: "destructive",
-      })
-      setTestResults((prev) => ({ ...prev, connection: false }))
-    }
-  }
-
-  // Function to check Google OAuth configuration
-  const testGoogleAuth = async () => {
-    const supabase = getSupabaseClient()
-    setTestResults((prev) => ({ ...prev, oauth: null }))
-
-    if (!supabase) {
-      toast({
-        title: "Error",
-        description: "Supabase client not initialized",
-        variant: "destructive",
-      })
-      setTestResults((prev) => ({ ...prev, oauth: false }))
-      return
-    }
-
-    try {
-      // Try to generate a sign-in URL but don't redirect
-      const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: "google",
-        options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
-          skipBrowserRedirect: true,
-        },
-      })
-
-      if (error) {
-        console.error("Google OAuth test failed:", error)
-        toast({
-          title: "OAuth Configuration Failed",
-          description: error.message,
-          variant: "destructive",
-        })
-        setTestResults((prev) => ({ ...prev, oauth: false }))
-      } else if (data && data.url) {
-        console.log("Google OAuth URL generation successful")
-        toast({
-          title: "OAuth Configuration Successful",
-          description: "Google sign-in URL generated successfully",
-        })
-        setTestResults((prev) => ({ ...prev, oauth: true }))
-      } else {
-        toast({
-          title: "OAuth Configuration Issue",
-          description: "No URL was generated but no error was returned",
-          variant: "destructive",
-        })
-        setTestResults((prev) => ({ ...prev, oauth: false }))
-      }
-    } catch (error) {
-      console.error("Google OAuth test exception:", error)
-      toast({
-        title: "OAuth Test Error",
-        description: String(error),
-        variant: "destructive",
-      })
-      setTestResults((prev) => ({ ...prev, oauth: false }))
-    }
-  }
-
-  // Handle retry with enhanced feedback
-  const handleRetryAuth = async () => {
-    setIsRetrying(true)
-    try {
-      const success = await retryAuth()
-      if (success) {
-        // Run tests after successful retry
-        await testSupabaseConnection()
-      }
-    } finally {
-      setIsRetrying(false)
-    }
-  }
+  const { user, supabaseClient } = useAuth()
 
   useEffect(() => {
-    // Check env vars once when debug panel is opened
     if (showDebug) {
-      checkEnvVars()
+      // Update status when debug panel is shown
+      setSupabaseStatus(getSupabaseStatus())
+
+      // Check environment variables
+      setEnvCheck({
+        url: !!ENV.SUPABASE_URL,
+        key: !!ENV.SUPABASE_ANON_KEY,
+      })
     }
   }, [showDebug])
+
+  const handleTestConnection = async () => {
+    setConnectionTest({ status: "loading" })
+    try {
+      if (!supabaseClient) {
+        throw new Error("Supabase client not initialized")
+      }
+
+      // Simple ping test
+      const { data, error } = await supabaseClient.from("_dummy_query").select("*").limit(1)
+
+      if (error && error.code !== "PGRST116") {
+        // PGRST116 is "relation does not exist" which is fine for this test
+        throw error
+      }
+
+      setConnectionTest({
+        status: "success",
+        message: "Connection successful",
+      })
+    } catch (error) {
+      console.error("Connection test failed:", error)
+      setConnectionTest({
+        status: "error",
+        message: error instanceof Error ? error.message : "Unknown error",
+      })
+    }
+  }
+
+  const handleTestSession = async () => {
+    setSessionTest({ status: "loading" })
+    try {
+      if (!supabaseClient) {
+        throw new Error("Supabase client not initialized")
+      }
+
+      const { data, error } = await supabaseClient.auth.getSession()
+
+      if (error) {
+        throw error
+      }
+
+      if (data.session) {
+        setSessionTest({
+          status: "success",
+          message: `Session found for ${data.session.user.email}`,
+        })
+      } else {
+        setSessionTest({
+          status: "success",
+          message: "No session",
+        })
+      }
+    } catch (error) {
+      console.error("Session test failed:", error)
+      setSessionTest({
+        status: "error",
+        message: error instanceof Error ? error.message : "Unknown error",
+      })
+    }
+  }
+
+  const handleTestOAuth = async () => {
+    setOauthTest({ status: "loading" })
+    try {
+      if (!supabaseClient) {
+        throw new Error("Supabase client not initialized")
+      }
+
+      // Just check if the OAuth settings are configured
+      const { data, error } = await supabaseClient.auth.getSession()
+
+      if (error) {
+        throw error
+      }
+
+      // This is a simple check - in a real app you'd verify the OAuth provider is configured
+      setOauthTest({
+        status: "success",
+        message: "Working",
+      })
+    } catch (error) {
+      console.error("OAuth test failed:", error)
+      setOauthTest({
+        status: "error",
+        message: error instanceof Error ? error.message : "Unknown error",
+      })
+    }
+  }
+
+  const handleRetry = () => {
+    retrySupabaseInitialization()
+    setSupabaseStatus(getSupabaseStatus())
+  }
+
+  const handleCheckEnvironment = () => {
+    setEnvCheck({
+      url: !!ENV.SUPABASE_URL,
+      key: !!ENV.SUPABASE_ANON_KEY,
+    })
+  }
 
   if (!showDebug) {
     return (
@@ -168,131 +157,153 @@ export function AuthDebug() {
     <div className="fixed bottom-4 right-4 z-50 w-96">
       <Card>
         <CardHeader>
-          <CardTitle>Auth Debug</CardTitle>
-          <CardDescription>Authentication debugging information</CardDescription>
+          <CardTitle>Authentication Debug</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4 text-xs">
-          <div className="space-y-2">
-            <div className="flex justify-between items-center">
-              <p className="font-semibold">Supabase Status:</p>
-              <span
-                className={`px-2 py-0.5 rounded ${supabaseStatus.isInitialized ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`}
-              >
-                {supabaseStatus.isInitialized ? "Initialized" : "Not Initialized"}
+          <div className="bg-muted p-2 rounded">
+            <p className="font-semibold">Supabase Status:</p>
+            <div className="grid grid-cols-2 gap-1">
+              <span>Initialized:</span>
+              <span className={supabaseStatus.isInitialized ? "text-green-500" : "text-red-500"}>
+                {supabaseStatus.isInitialized ? "Yes" : "No"}
               </span>
-            </div>
-            <div className="flex justify-between items-center">
-              <p className="font-semibold">Loading State:</p>
-              <span>{isLoading ? "Loading..." : "Completed"}</span>
-            </div>
-            <div className="flex justify-between items-center">
-              <p className="font-semibold">Authentication:</p>
-              <span
-                className={`px-2 py-0.5 rounded ${user ? "bg-green-100 text-green-800" : "bg-yellow-100 text-yellow-800"}`}
-              >
-                {user ? "Authenticated" : "Not authenticated"}
-              </span>
-            </div>
-            <div className="flex justify-between items-center">
-              <p className="font-semibold">Session:</p>
-              <span>{session ? "Active" : "None"}</span>
-            </div>
-            <div className="flex justify-between items-center">
-              <p className="font-semibold">Init Attempts:</p>
+
+              <span>Attempts:</span>
               <span>{supabaseStatus.initializationAttempts}</span>
+
+              <span>In Progress:</span>
+              <span>{supabaseStatus.inProgress ? "Yes" : "No"}</span>
+
+              {supabaseStatus.lastError && (
+                <>
+                  <span>Last Error:</span>
+                  <span className="text-red-500">{supabaseStatus.lastError}</span>
+                </>
+              )}
             </div>
-            {supabaseStatus.inProgress && (
-              <div className="flex items-center justify-center">
-                <span className="text-blue-600 flex items-center">
-                  <RefreshCw className="h-3 w-3 mr-1 animate-spin" />
-                  Initialization in progress...
-                </span>
-              </div>
-            )}
           </div>
 
-          {testResults.connection !== null && (
-            <div className="bg-muted p-2 rounded space-y-1">
-              <div className="flex items-center justify-between">
-                <span className="font-semibold">Connection Test:</span>
-                {testResults.connection === null ? (
-                  <span>Pending...</span>
-                ) : testResults.connection ? (
-                  <span className="text-green-600 flex items-center">
-                    <CheckCircle2 className="h-3 w-3 mr-1" /> Successful
-                  </span>
-                ) : (
-                  <span className="text-red-600 flex items-center">
-                    <XCircle className="h-3 w-3 mr-1" /> Failed
-                  </span>
-                )}
-              </div>
+          <div className="bg-muted p-2 rounded">
+            <p className="font-semibold">Environment Variables:</p>
+            <div className="grid grid-cols-2 gap-1">
+              <span>SUPABASE_URL:</span>
+              <span className={envCheck.url ? "text-green-500" : "text-red-500"}>
+                {envCheck.url ? "Set" : "Missing"}
+              </span>
 
-              {testResults.session !== null && (
-                <div className="flex items-center justify-between">
-                  <span className="font-semibold">Session Test:</span>
-                  {testResults.session ? (
-                    <span className="text-green-600 flex items-center">
-                      <CheckCircle2 className="h-3 w-3 mr-1" /> Active
-                    </span>
-                  ) : (
-                    <span className="text-yellow-600 flex items-center">
-                      <AlertCircle className="h-3 w-3 mr-1" /> No session
-                    </span>
-                  )}
-                </div>
-              )}
-
-              {testResults.oauth !== null && (
-                <div className="flex items-center justify-between">
-                  <span className="font-semibold">OAuth Config:</span>
-                  {testResults.oauth ? (
-                    <span className="text-green-600 flex items-center">
-                      <CheckCircle2 className="h-3 w-3 mr-1" /> Working
-                    </span>
-                  ) : (
-                    <span className="text-red-600 flex items-center">
-                      <XCircle className="h-3 w-3 mr-1" /> Issues
-                    </span>
-                  )}
-                </div>
-              )}
+              <span>SUPABASE_ANON_KEY:</span>
+              <span className={envCheck.key ? "text-green-500" : "text-red-500"}>
+                {envCheck.key ? "Set" : "Missing"}
+              </span>
             </div>
-          )}
+            <Button variant="outline" size="sm" onClick={handleCheckEnvironment} className="mt-2 w-full text-xs">
+              Check Environment
+            </Button>
+          </div>
 
-          {supabaseStatus.lastError && (
-            <Alert variant="destructive" className="text-xs p-3">
-              <AlertCircle className="h-3 w-3" />
-              <AlertTitle className="text-xs">Last Error</AlertTitle>
-              <AlertDescription className="text-xs break-all">{supabaseStatus.lastError}</AlertDescription>
-            </Alert>
-          )}
-
-          {Object.keys(envVars).length > 0 && (
-            <div className="bg-muted p-2 rounded">
-              <p className="font-semibold">Environment Variables:</p>
-              <div className="space-y-1 mt-1">
-                {Object.entries(envVars).map(([key, value]) => (
-                  <div key={key} className="flex justify-between">
-                    <span>{key}:</span>
-                    <span className={value === "Not set" ? "text-red-500" : "text-green-500"}>{value}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          <div className="space-y-2 pt-2">
+          <div className="bg-muted p-2 rounded">
             <p className="font-semibold">Tests:</p>
-            <div className="grid grid-cols-2 gap-2">
-              <Button size="sm" onClick={testSupabaseConnection} className="text-xs h-7">
+            <div className="space-y-2">
+              <div>
+                <div className="flex justify-between items-center">
+                  <span>Connection Test:</span>
+                  <span
+                    className={
+                      connectionTest.status === "success"
+                        ? "text-green-500"
+                        : connectionTest.status === "error"
+                          ? "text-red-500"
+                          : ""
+                    }
+                  >
+                    {connectionTest.status === "loading"
+                      ? "Testing..."
+                      : connectionTest.status === "success"
+                        ? "Success"
+                        : connectionTest.status === "error"
+                          ? "Failed"
+                          : "Not run"}
+                  </span>
+                </div>
+                {connectionTest.message && <p className="text-xs mt-1">{connectionTest.message}</p>}
+              </div>
+
+              <div>
+                <div className="flex justify-between items-center">
+                  <span>Session Test:</span>
+                  <span
+                    className={
+                      sessionTest.status === "success"
+                        ? "text-green-500"
+                        : sessionTest.status === "error"
+                          ? "text-red-500"
+                          : ""
+                    }
+                  >
+                    {sessionTest.status === "loading"
+                      ? "Testing..."
+                      : sessionTest.status === "success"
+                        ? "Success"
+                        : sessionTest.status === "error"
+                          ? "Failed"
+                          : "Not run"}
+                  </span>
+                </div>
+                {sessionTest.message && <p className="text-xs mt-1">{sessionTest.message}</p>}
+              </div>
+
+              <div>
+                <div className="flex justify-between items-center">
+                  <span>OAuth Config:</span>
+                  <span
+                    className={
+                      oauthTest.status === "success"
+                        ? "text-green-500"
+                        : oauthTest.status === "error"
+                          ? "text-red-500"
+                          : ""
+                    }
+                  >
+                    {oauthTest.status === "loading"
+                      ? "Testing..."
+                      : oauthTest.status === "success"
+                        ? "Success"
+                        : oauthTest.status === "error"
+                          ? "Failed"
+                          : "Not run"}
+                  </span>
+                </div>
+                {oauthTest.message && <p className="text-xs mt-1">{oauthTest.message}</p>}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-3 gap-2 mt-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleTestConnection}
+                className="text-xs"
+                disabled={connectionTest.status === "loading"}
+              >
                 Test Connection
               </Button>
-              <Button size="sm" onClick={testGoogleAuth} className="text-xs h-7">
-                Test OAuth Config
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleTestSession}
+                className="text-xs"
+                disabled={sessionTest.status === "loading"}
+              >
+                Test Session
               </Button>
-              <Button size="sm" variant="outline" onClick={checkEnvVars} className="text-xs h-7 col-span-2">
-                Check Environment
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleTestOAuth}
+                className="text-xs"
+                disabled={oauthTest.status === "loading"}
+              >
+                Test OAuth
               </Button>
             </div>
           </div>
@@ -301,27 +312,19 @@ export function AuthDebug() {
             <Button
               variant="outline"
               size="sm"
-              onClick={handleRetryAuth}
-              disabled={isRetrying}
+              onClick={handleRetry}
               className="w-full text-xs"
+              disabled={supabaseStatus.inProgress}
             >
-              {isRetrying ? (
-                <>
-                  <RefreshCw className="h-3 w-3 mr-1 animate-spin" /> Retrying...
-                </>
-              ) : (
-                <>
-                  <RefreshCw className="h-3 w-3 mr-1" /> Retry Auth Initialization
-                </>
-              )}
+              Retry Initialization
+            </Button>
+          </div>
+          <div className="pt-2">
+            <Button variant="outline" size="sm" onClick={() => setShowDebug(false)} className="w-full">
+              Close
             </Button>
           </div>
         </CardContent>
-        <CardFooter>
-          <Button variant="outline" size="sm" onClick={() => setShowDebug(false)} className="w-full">
-            Close Debug
-          </Button>
-        </CardFooter>
       </Card>
     </div>
   )

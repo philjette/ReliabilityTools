@@ -1,48 +1,29 @@
-import { BarChart3, FileText, Upload } from "lucide-react"
+import { Activity, FileText, Upload } from "lucide-react"
 import Link from "next/link"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Header } from "@/components/header"
+import { Footer } from "@/components/footer"
 
 export default function About() {
   return (
     <div className="flex flex-col min-h-screen">
-      <header className="border-b">
-        <div className="container flex h-16 items-center justify-between px-4 md:px-6">
-          <Link href="/" className="flex items-center gap-2 font-bold text-xl">
-            <BarChart3 className="h-6 w-6" />
-            <span>ReliabilityTools.ai</span>
-          </Link>
-          <nav className="hidden md:flex gap-6">
-            <Link href="/" className="font-medium text-muted-foreground">
-              Home
-            </Link>
-            <Link href="/generate" className="font-medium text-muted-foreground">
-              Generate FMEA
-            </Link>
-            <Link href="/analyze" className="font-medium text-muted-foreground">
-              Analyze Data
-            </Link>
-            <Link href="/about" className="font-medium">
-              About
-            </Link>
-          </nav>
-        </div>
-      </header>
+      <Header activePath="/about" />
       <main className="flex-1 py-8">
         <div className="container px-4 md:px-6">
           <div className="max-w-3xl mx-auto space-y-8">
             <div className="space-y-2">
-              <h1 className="text-3xl font-bold tracking-tighter sm:text-4xl">About ReliabilityTools.ai</h1>
+              <h1 className="text-3xl font-bold tracking-tighter sm:text-4xl">About AssetX.pro</h1>
               <p className="text-muted-foreground">
-                Advanced reliability engineering tools powered by artificial intelligence
+                Advanced asset reliability management powered by artificial intelligence
               </p>
             </div>
             <div className="space-y-4">
               <h2 className="text-2xl font-bold">Our Mission</h2>
               <p>
-                ReliabilityTools.ai was created to empower reliability engineers with advanced analytical tools that
-                leverage artificial intelligence to improve asset reliability and reduce downtime. Our platform combines
+                AssetX.pro was created to empower reliability engineers with advanced analytical tools that leverage
+                artificial intelligence to improve asset reliability and reduce downtime. Our platform combines
                 traditional reliability engineering methods with cutting-edge AI to provide deeper insights and more
                 accurate predictions.
               </p>
@@ -66,7 +47,7 @@ export default function About() {
                 </Card>
                 <Card>
                   <CardHeader>
-                    <BarChart3 className="h-8 w-8 text-primary mb-2" />
+                    <Activity className="h-8 w-8 text-primary mb-2" />
                     <CardTitle>Weibull Distribution Analysis</CardTitle>
                     <CardDescription>Visualize and analyze failure data with interactive charts</CardDescription>
                   </CardHeader>
@@ -121,31 +102,13 @@ export default function About() {
             </div>
             <div className="flex justify-center pt-4">
               <Link href="/generate">
-                <Button size="lg">Get Started with ReliabilityTools.ai</Button>
+                <Button size="lg">Get Started with AssetX.pro</Button>
               </Link>
             </div>
           </div>
         </div>
       </main>
-      <footer className="border-t py-6 md:py-8">
-        <div className="container flex flex-col items-center justify-center gap-4 px-4 md:px-6 md:flex-row">
-          <div className="flex items-center gap-2 text-sm">
-            <BarChart3 className="h-5 w-5" />
-            <span className="font-semibold">ReliabilityTools.ai</span>
-          </div>
-          <p className="text-center text-sm text-muted-foreground md:text-left">
-            &copy; {new Date().getFullYear()} ReliabilityTools.ai. All rights reserved.
-          </p>
-          <nav className="flex gap-4 sm:gap-6 md:ml-auto">
-            <Link href="#" className="text-sm font-medium hover:underline underline-offset-4">
-              Terms
-            </Link>
-            <Link href="#" className="text-sm font-medium hover:underline underline-offset-4">
-              Privacy
-            </Link>
-          </nav>
-        </div>
-      </footer>
+      <Footer />
     </div>
   )
 }
