@@ -1,11 +1,11 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { getSupabaseStatus, retrySupabaseInitialization } from "@/lib/supabase"
-import { useAuth } from "@/contexts/auth-context"
 import { ENV } from "@/lib/env"
+import { useAuth } from "@/contexts/auth-context"
 
 export function AuthDebug() {
   const [showDebug, setShowDebug] = useState(false)
@@ -27,7 +27,9 @@ export function AuthDebug() {
     key: boolean
   }>({ url: false, key: false })
 
-  const { user, supabaseClient } = useAuth()
+  // Use the auth context
+  const auth = useAuth()
+  const { user, supabaseClient } = auth
 
   useEffect(() => {
     if (showDebug) {
@@ -42,7 +44,7 @@ export function AuthDebug() {
     }
   }, [showDebug])
 
-  const handleTestConnection = async () => {
+  const handleTestConnection = useCallback(async () => {
     setConnectionTest({ status: "loading" })
     try {
       if (!supabaseClient) {
@@ -68,9 +70,9 @@ export function AuthDebug() {
         message: error instanceof Error ? error.message : "Unknown error",
       })
     }
-  }
+  }, [supabaseClient])
 
-  const handleTestSession = async () => {
+  const handleTestSession = useCallback(async () => {
     setSessionTest({ status: "loading" })
     try {
       if (!supabaseClient) {
@@ -101,9 +103,9 @@ export function AuthDebug() {
         message: error instanceof Error ? error.message : "Unknown error",
       })
     }
-  }
+  }, [supabaseClient])
 
-  const handleTestOAuth = async () => {
+  const handleTestOAuth = useCallback(async () => {
     setOauthTest({ status: "loading" })
     try {
       if (!supabaseClient) {
@@ -129,7 +131,7 @@ export function AuthDebug() {
         message: error instanceof Error ? error.message : "Unknown error",
       })
     }
-  }
+  }, [supabaseClient])
 
   const handleRetry = () => {
     retrySupabaseInitialization()
@@ -283,7 +285,7 @@ export function AuthDebug() {
                 size="sm"
                 onClick={handleTestConnection}
                 className="text-xs"
-                disabled={connectionTest.status === "loading"}
+                disabled={connectionTest.status === "loading" || !supabaseClient}
               >
                 Test Connection
               </Button>
@@ -292,7 +294,7 @@ export function AuthDebug() {
                 size="sm"
                 onClick={handleTestSession}
                 className="text-xs"
-                disabled={sessionTest.status === "loading"}
+                disabled={sessionTest.status === "loading" || !supabaseClient}
               >
                 Test Session
               </Button>
@@ -301,7 +303,7 @@ export function AuthDebug() {
                 size="sm"
                 onClick={handleTestOAuth}
                 className="text-xs"
-                disabled={oauthTest.status === "loading"}
+                disabled={oauthTest.status === "loading" || !supabaseClient}
               >
                 Test OAuth
               </Button>

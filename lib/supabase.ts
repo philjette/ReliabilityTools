@@ -57,6 +57,7 @@ export function getSupabaseClient() {
       urlAvailable: !!supabaseUrl,
       keyAvailable: !!supabaseAnonKey,
       urlValue: supabaseUrl ? `${supabaseUrl.substring(0, 10)}...` : "undefined",
+      keyValue: supabaseAnonKey ? `${supabaseAnonKey.substring(0, 10)}...` : "undefined",
       usingFallbacks: !process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
     })
 

@@ -21,16 +21,45 @@ interface SaveFMEAParams {
 
 export async function saveFMEA(params: SaveFMEAParams) {
   try {
+    console.log(
+      "Starting saveFMEA with params:",
+      JSON.stringify({
+        title: params.title,
+        assetType: params.assetType,
+        // Log other non-sensitive fields
+      }),
+    )
+
     const supabase = createServerActionClient({ cookies })
+    console.log("Supabase client created")
 
     // Get the current user
     const {
       data: { user },
+      error: userError,
     } = await supabase.auth.getUser()
 
+    if (userError) {
+      console.error("Error getting user:", userError)
+      throw new Error(`Authentication error: ${userError.message}`)
+    }
+
     if (!user) {
+      console.error("No user found")
       throw new Error("User not authenticated")
     }
+
+    console.log("User authenticated:", user.id)
+
+    // Check if the fmeas table exists
+    const { error: tableCheckError } = await supabase.from("fmeas").select("id").limit(1)
+
+    if (tableCheckError) {
+      console.error("Error checking fmeas table:", tableCheckError)
+      throw new Error(`Database table error: ${tableCheckError.message}`)
+    }
+
+    console.log("Table check passed")
 
     // Insert the FMEA into the database
     const { data, error } = await supabase
@@ -55,8 +84,11 @@ export async function saveFMEA(params: SaveFMEAParams) {
       throw new Error(`Failed to save FMEA: ${error.message}`)
     }
 
+    console.log("FMEA saved successfully:", data[0].id)
+
     // Revalidate the dashboard path to show the new FMEA
     revalidatePath("/dashboard")
+    revalidatePath("/dashboard/fmeas")
 
     return data[0]
   } catch (error) {

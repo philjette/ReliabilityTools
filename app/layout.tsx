@@ -9,14 +9,6 @@ import { AuthProvider } from "@/contexts/auth-context"
 import { AppContextProvider } from "@/contexts/AppContext"
 import { Toaster } from "@/components/ui/toaster"
 
-// Add this console log to check environment variables during server-side rendering
-console.log("Server-side Environment Variables Check:", {
-  NEXT_PUBLIC_SUPABASE_URL: typeof process.env.NEXT_PUBLIC_SUPABASE_URL,
-  NEXT_PUBLIC_SUPABASE_ANON_KEY: typeof process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-  URL_VALUE: process.env.NEXT_PUBLIC_SUPABASE_URL ? "Has value" : "No value",
-  KEY_VALUE: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ? "Has value" : "No value",
-})
-
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {

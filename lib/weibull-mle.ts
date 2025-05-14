@@ -11,8 +11,11 @@ export interface AssetData {
 
 export interface WeibullParams {
   shape: number // β (beta) parameter
-  scale: number // η (eta) parameter
+  scale: number // η (eta) parameter in hours
 }
+
+// Hours in a year (24 * 365 = 8760)
+const HOURS_IN_YEAR = 8760
 
 export function fitWeibullMLE(data: AssetData[]): WeibullParams {
   // Convert dates to operating hours
@@ -30,7 +33,7 @@ export function fitWeibullMLE(data: AssetData[]): WeibullParams {
 
   // Initial parameter guesses
   let shape = 2.0 // Initial shape parameter guess
-  let scale = 10000 // Initial scale parameter guess
+  let scale = 10000 // Initial scale parameter guess in hours
 
   // Maximum iterations for optimization
   const maxIterations = 100
