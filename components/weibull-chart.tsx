@@ -41,74 +41,88 @@ export function WeibullChart({ type, shape, scale, failureModes = [], showCombin
   // If we're showing multiple failure modes, use a LineChart
   if (failureModes.length > 0) {
     return (
-      <ResponsiveContainer width="100%" height={300}>
-        <LineChart data={data} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
-          <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey="time" label={{ value: "Time (years)", position: "insideBottom", offset: -5 }} />
-          <YAxis
-            label={{ value: yAxisLabel, angle: -90, position: "insideLeft" }}
-            domain={type === "cdf" ? [0, 1] : [0, "auto"]}
-          />
-          <Tooltip
-            formatter={(value: number, name: string) => [value.toFixed(4), name]}
-            labelFormatter={(label) => `Time: ${label} years`}
-          />
-          <Legend />
+      <div className="w-full h-[400px]">
+        <ResponsiveContainer width="100%" height="100%">
+          <LineChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 30 }}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis
+              dataKey="time"
+              label={{ value: "Time (years)", position: "insideBottomRight", offset: -10 }}
+              tickMargin={10}
+            />
+            <YAxis
+              label={{ value: yAxisLabel, angle: -90, position: "insideLeft", offset: -5 }}
+              domain={type === "cdf" ? [0, 1] : [0, "auto"]}
+              tickMargin={10}
+            />
+            <Tooltip
+              formatter={(value: number, name: string) => [value.toFixed(4), name]}
+              labelFormatter={(label) => `Time: ${label} years`}
+            />
+            <Legend wrapperStyle={{ paddingTop: 10 }} />
 
-          {/* Render lines for each failure mode */}
-          {!showCombined &&
-            failureModes.map((mode, index) => (
+            {/* Render lines for each failure mode */}
+            {!showCombined &&
+              failureModes.map((mode, index) => (
+                <Line
+                  key={index}
+                  type="monotone"
+                  dataKey={mode.name}
+                  name={mode.name}
+                  stroke={mode.color}
+                  dot={false}
+                  activeDot={{ r: 4 }}
+                />
+              ))}
+
+            {/* Render combined line if showCombined is true */}
+            {showCombined && (
               <Line
-                key={index}
                 type="monotone"
-                dataKey={mode.name}
-                name={mode.name}
-                stroke={mode.color}
+                dataKey="combined"
+                name="Overall System Failure"
+                stroke="#ff0000"
+                strokeWidth={2}
                 dot={false}
                 activeDot={{ r: 4 }}
               />
-            ))}
-
-          {/* Render combined line if showCombined is true */}
-          {showCombined && (
-            <Line
-              type="monotone"
-              dataKey="combined"
-              name="Overall System Failure"
-              stroke="#ff0000"
-              strokeWidth={2}
-              dot={false}
-              activeDot={{ r: 4 }}
-            />
-          )}
-        </LineChart>
-      </ResponsiveContainer>
+            )}
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
     )
   }
 
   // For single failure mode, use AreaChart (original implementation)
   return (
-    <ResponsiveContainer width="100%" height={300}>
-      <AreaChart data={data} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
-        <defs>
-          <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="5%" stopColor="#0ea5e9" stopOpacity={0.8} />
-            <stop offset="95%" stopColor="#0ea5e9" stopOpacity={0} />
-          </linearGradient>
-        </defs>
-        <CartesianGrid strokeDasharray="3 3" />
-        <XAxis dataKey="time" label={{ value: "Time (years)", position: "insideBottom", offset: -5 }} />
-        <YAxis
-          label={{ value: yAxisLabel, angle: -90, position: "insideLeft" }}
-          domain={type === "cdf" ? [0, 1] : [0, "auto"]}
-        />
-        <Tooltip
-          formatter={(value: number) => [value.toFixed(4), yAxisLabel]}
-          labelFormatter={(label) => `Time: ${label} years`}
-        />
-        <Area type="monotone" dataKey="value" stroke="#0ea5e9" fillOpacity={1} fill="url(#colorValue)" />
-      </AreaChart>
-    </ResponsiveContainer>
+    <div className="w-full h-[400px]">
+      <ResponsiveContainer width="100%" height="100%">
+        <AreaChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 30 }}>
+          <defs>
+            <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="5%" stopColor="#0ea5e9" stopOpacity={0.8} />
+              <stop offset="95%" stopColor="#0ea5e9" stopOpacity={0} />
+            </linearGradient>
+          </defs>
+          <CartesianGrid strokeDasharray="3 3" />
+          <XAxis
+            dataKey="time"
+            label={{ value: "Time (years)", position: "insideBottomRight", offset: -10 }}
+            tickMargin={10}
+          />
+          <YAxis
+            label={{ value: yAxisLabel, angle: -90, position: "insideLeft", offset: -5 }}
+            domain={type === "cdf" ? [0, 1] : [0, "auto"]}
+            tickMargin={10}
+          />
+          <Tooltip
+            formatter={(value: number) => [value.toFixed(4), yAxisLabel]}
+            labelFormatter={(label) => `Time: ${label} years`}
+          />
+          <Area type="monotone" dataKey="value" stroke="#0ea5e9" fillOpacity={1} fill="url(#colorValue)" />
+        </AreaChart>
+      </ResponsiveContainer>
+    </div>
   )
 }
 

@@ -26,8 +26,11 @@ interface AssetData {
 // Weibull parameters interface
 interface WeibullParams {
   shape: number // β (beta) parameter
-  scale: number // η (eta) parameter
+  scale: number // η (eta) parameter in hours
 }
+
+// Constants
+const HOURS_IN_YEAR = 8760
 
 export function AssetDataUpload() {
   const [assetType, setAssetType] = useState("")
@@ -380,7 +383,7 @@ export function AssetDataUpload() {
     // B10 life (time when 10% fail)
     const b10Life = scale * Math.log(1 / 0.9) ** (1 / shape)
 
-    // Reliability at different time points
+    // Reliability at different time points (in hours)
     const reliabilityAt1000 = Math.exp(-((1000 / scale) ** shape)) * 100
     const reliabilityAt5000 = Math.exp(-((5000 / scale) ** shape)) * 100
     const reliabilityAt10000 = Math.exp(-((10000 / scale) ** shape)) * 100
@@ -559,7 +562,7 @@ export function AssetDataUpload() {
                 <div className="space-y-1 bg-muted p-3 rounded-md">
                   <p className="text-sm font-medium">Scale Parameter (η)</p>
                   <p className="text-2xl font-bold">
-                    {weibullParams.scale.toFixed(0)} <span className="text-sm">hours</span>
+                    {(weibullParams.scale / HOURS_IN_YEAR).toFixed(2)} <span className="text-sm">years</span>
                   </p>
                   <p className="text-xs text-muted-foreground">
                     Characteristic life (63.2% of units will fail by this time)
@@ -641,31 +644,31 @@ export function AssetDataUpload() {
                       <div className="space-y-1">
                         <p className="text-sm font-medium">Mean Time To Failure (MTTF)</p>
                         <p className="text-2xl font-bold">
-                          {metrics.mttf.toFixed(0)} <span className="text-sm">hours</span>
+                          {(metrics.mttf / HOURS_IN_YEAR).toFixed(2)} <span className="text-sm">years</span>
                         </p>
                       </div>
                       <div className="space-y-1">
                         <p className="text-sm font-medium">Median Life (B50)</p>
                         <p className="text-2xl font-bold">
-                          {metrics.medianLife.toFixed(0)} <span className="text-sm">hours</span>
+                          {(metrics.medianLife / HOURS_IN_YEAR).toFixed(2)} <span className="text-sm">years</span>
                         </p>
                       </div>
                       <div className="space-y-1">
                         <p className="text-sm font-medium">B10 Life</p>
                         <p className="text-2xl font-bold">
-                          {metrics.b10Life.toFixed(0)} <span className="text-sm">hours</span>
+                          {(metrics.b10Life / HOURS_IN_YEAR).toFixed(2)} <span className="text-sm">years</span>
                         </p>
                       </div>
                       <div className="space-y-1">
-                        <p className="text-sm font-medium">Reliability at 1,000 hours</p>
+                        <p className="text-sm font-medium">Reliability at 0.11 years</p>
                         <p className="text-2xl font-bold">{metrics.reliabilityAt1000.toFixed(1)}%</p>
                       </div>
                       <div className="space-y-1">
-                        <p className="text-sm font-medium">Reliability at 5,000 hours</p>
+                        <p className="text-sm font-medium">Reliability at 0.57 years</p>
                         <p className="text-2xl font-bold">{metrics.reliabilityAt5000.toFixed(1)}%</p>
                       </div>
                       <div className="space-y-1">
-                        <p className="text-sm font-medium">Reliability at 10,000 hours</p>
+                        <p className="text-sm font-medium">Reliability at 1.14 years</p>
                         <p className="text-2xl font-bold">{metrics.reliabilityAt10000.toFixed(1)}%</p>
                       </div>
                     </>
