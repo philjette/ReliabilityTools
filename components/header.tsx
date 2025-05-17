@@ -1,5 +1,7 @@
 "use client"
 
+import type React from "react"
+
 import { useState, useEffect } from "react"
 import Link from "next/link"
 import { Activity, ChevronDown, Menu } from "lucide-react"
@@ -10,6 +12,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { useToast } from "@/components/ui/use-toast"
+import { useRouter } from "next/navigation"
 
 interface HeaderProps {
   activePath?: string
@@ -20,21 +23,40 @@ export function Header({ activePath = "/" }: HeaderProps) {
   const [isClient, setIsClient] = useState(false)
   const [isOpen, setIsOpen] = useState(false)
   const { toast } = useToast()
+  const router = useRouter()
 
   useEffect(() => {
     setIsClient(true)
-    console.log("Header - Auth status:", {
-      isLoading,
-      isAuthenticated: !!user,
-      userId: user?.id,
-      email: user?.email,
-    })
-  }, [user, isLoading])
+  }, [])
 
   // Helper function to determine if a path is active
   const isActive = (path: string) => {
     if (path === "/") return activePath === "/"
     return activePath.startsWith(path)
+  }
+
+  // Handle dashboard navigation with authentication check
+  const handleDashboardClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    e.preventDefault()
+
+    if (!isClient || isLoading) {
+      toast({
+        title: "Loading",
+        description: "Please wait while we check your authentication status.",
+      })
+      return
+    }
+
+    if (!user) {
+      toast({
+        title: "Authentication Required",
+        description: "You need to sign in to access the dashboard.",
+        variant: "destructive",
+      })
+      router.push("/auth/signin")
+    } else {
+      router.push("/dashboard")
+    }
   }
 
   return (
@@ -83,12 +105,13 @@ export function Header({ activePath = "/" }: HeaderProps) {
           </DropdownMenu>
 
           {isClient && (
-            <Link
-              href="/direct-dashboard"
-              className={`font-medium ${isActive("/dashboard") ? "" : "text-muted-foreground"}`}
+            <a
+              href="#"
+              onClick={handleDashboardClick}
+              className={`font-medium ${isActive("/dashboard") ? "" : "text-muted-foreground"} cursor-pointer`}
             >
               Dashboard
-            </Link>
+            </a>
           )}
         </nav>
 
@@ -141,13 +164,16 @@ export function Header({ activePath = "/" }: HeaderProps) {
                 </div>
 
                 {isClient && (
-                  <Link
-                    href="/direct-dashboard"
-                    className={`font-medium text-lg ${isActive("/dashboard") ? "" : "text-muted-foreground"}`}
-                    onClick={() => setIsOpen(false)}
+                  <a
+                    href="#"
+                    className={`font-medium text-lg ${isActive("/dashboard") ? "" : "text-muted-foreground"} cursor-pointer`}
+                    onClick={(e) => {
+                      handleDashboardClick(e)
+                      setIsOpen(false)
+                    }}
                   >
                     Dashboard
-                  </Link>
+                  </a>
                 )}
 
                 {isClient && !isLoading && !user && (

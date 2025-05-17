@@ -15,10 +15,11 @@ interface AuthGuardProps {
 }
 
 export function AuthGuard({ children }: AuthGuardProps) {
-  const { user, isLoading } = useAuth()
+  const { user, isLoading, supabaseStatus } = useAuth()
   const router = useRouter()
   const [isClient, setIsClient] = useState(false)
   const [authError, setAuthError] = useState<string | null>(null)
+  const [redirecting, setRedirecting] = useState(false)
 
   // This effect runs only on the client after hydration
   useEffect(() => {
@@ -35,7 +36,13 @@ export function AuthGuard({ children }: AuthGuardProps) {
   // Only redirect after we've checked authentication status and we're on the client
   useEffect(() => {
     if (isClient && !isLoading && !user && !authError) {
-      router.push("/auth/signin")
+      setRedirecting(true)
+      // Add a small delay to prevent immediate redirect which can cause issues
+      const timer = setTimeout(() => {
+        router.push("/auth/signin")
+      }, 100)
+
+      return () => clearTimeout(timer)
     }
   }, [user, isLoading, router, isClient, authError])
 
@@ -63,7 +70,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
   }
 
   // Show loading state while checking authentication
-  if (isLoading) {
+  if (isLoading || !supabaseStatus.isInitialized) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="flex flex-col items-center gap-2">
@@ -75,7 +82,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
   }
 
   // If not authenticated, show loading while redirecting
-  if (!user) {
+  if (!user || redirecting) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="flex flex-col items-center gap-2">

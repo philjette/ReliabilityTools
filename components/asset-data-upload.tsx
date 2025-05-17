@@ -374,27 +374,32 @@ export function AssetDataUpload() {
   const calculateReliabilityMetrics = () => {
     const { shape, scale } = weibullParams
 
-    // Mean Time To Failure (MTTF)
+    // Mean Time To Failure (MTTF) in hours
     const mttf = scale * Math.exp(1) ** (1 / shape)
 
-    // Median life (B50)
+    // Median life (B50) in hours
     const medianLife = scale * Math.log(2) ** (1 / shape)
 
-    // B10 life (time when 10% fail)
+    // B10 life (time when 10% fail) in hours
     const b10Life = scale * Math.log(1 / 0.9) ** (1 / shape)
 
-    // Reliability at different time points (in hours)
-    const reliabilityAt1000 = Math.exp(-((1000 / scale) ** shape)) * 100
-    const reliabilityAt5000 = Math.exp(-((5000 / scale) ** shape)) * 100
-    const reliabilityAt10000 = Math.exp(-((10000 / scale) ** shape)) * 100
+    // Convert time points from hours to years
+    const year1 = 1 * HOURS_IN_YEAR // 1 year in hours
+    const year5 = 5 * HOURS_IN_YEAR // 5 years in hours
+    const year10 = 10 * HOURS_IN_YEAR // 10 years in hours
+
+    // Reliability at different time points (in years)
+    const reliabilityAt1Year = Math.exp(-((year1 / scale) ** shape)) * 100
+    const reliabilityAt5Years = Math.exp(-((year5 / scale) ** shape)) * 100
+    const reliabilityAt10Years = Math.exp(-((year10 / scale) ** shape)) * 100
 
     return {
       mttf,
       medianLife,
       b10Life,
-      reliabilityAt1000,
-      reliabilityAt5000,
-      reliabilityAt10000,
+      reliabilityAt1Year,
+      reliabilityAt5Years,
+      reliabilityAt10Years,
     }
   }
 
@@ -660,16 +665,16 @@ export function AssetDataUpload() {
                         </p>
                       </div>
                       <div className="space-y-1">
-                        <p className="text-sm font-medium">Reliability at 0.11 years</p>
-                        <p className="text-2xl font-bold">{metrics.reliabilityAt1000.toFixed(1)}%</p>
+                        <p className="text-sm font-medium">Reliability at 1 year</p>
+                        <p className="text-2xl font-bold">{metrics.reliabilityAt1Year.toFixed(1)}%</p>
                       </div>
                       <div className="space-y-1">
-                        <p className="text-sm font-medium">Reliability at 0.57 years</p>
-                        <p className="text-2xl font-bold">{metrics.reliabilityAt5000.toFixed(1)}%</p>
+                        <p className="text-sm font-medium">Reliability at 5 years</p>
+                        <p className="text-2xl font-bold">{metrics.reliabilityAt5Years.toFixed(1)}%</p>
                       </div>
                       <div className="space-y-1">
-                        <p className="text-sm font-medium">Reliability at 1.14 years</p>
-                        <p className="text-2xl font-bold">{metrics.reliabilityAt10000.toFixed(1)}%</p>
+                        <p className="text-sm font-medium">Reliability at 10 years</p>
+                        <p className="text-2xl font-bold">{metrics.reliabilityAt10Years.toFixed(1)}%</p>
                       </div>
                     </>
                   )

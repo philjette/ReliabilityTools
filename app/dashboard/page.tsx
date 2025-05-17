@@ -2,9 +2,6 @@ import Link from "next/link"
 import { BarChart3, FileText, Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { DbDebug } from "@/components/db-debug"
-import { EnvDebug } from "@/components/env-debug"
-import { AuthDebug } from "@/components/auth-debug"
 import { getUserFMEAs } from "@/lib/fmea-actions"
 
 export default async function Dashboard() {
@@ -131,15 +128,6 @@ export default async function Dashboard() {
                 </div>
               </CardContent>
             </Card>
-          </div>
-
-          <div className="mt-4 space-y-6">
-            <h2 className="text-2xl font-bold tracking-tighter">Debug Tools</h2>
-            <div className="grid gap-6 md:grid-cols-2">
-              <EnvDebug />
-              <AuthDebug />
-              <DbDebug />
-            </div>
           </div>
         </div>
       </div>
