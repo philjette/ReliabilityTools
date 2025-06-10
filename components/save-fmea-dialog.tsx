@@ -42,13 +42,14 @@ export function SaveFMEADialog({
   failureModes,
   weibullParameters,
 }: SaveFMEADialogProps) {
-  const { user } = useAuth()
+  const { user, session } = useAuth()
   const { toast } = useToast()
   const [title, setTitle] = useState("")
   const [isSaving, setIsSaving] = useState(false)
   const [isOpen, setIsOpen] = useState(false)
 
   const handleSave = async () => {
+    // Validation
     if (!title.trim()) {
       toast({
         title: "Title required",
@@ -58,10 +59,35 @@ export function SaveFMEADialog({
       return
     }
 
+    if (!user || !session) {
+      toast({
+        title: "Authentication required",
+        description: "Please sign in to save your FMEA",
+        variant: "destructive",
+      })
+      return
+    }
+
+    if (!failureModes || failureModes.length === 0) {
+      toast({
+        title: "Failure modes required",
+        description: "Please add at least one failure mode before saving",
+        variant: "destructive",
+      })
+      return
+    }
+
     try {
       setIsSaving(true)
-      await saveFMEA({
-        title,
+
+      console.log("=== Starting FMEA Save ===")
+      console.log("User:", user.email)
+      console.log("Session exists:", !!session)
+      console.log("Title:", title)
+      console.log("Failure modes:", failureModes.length)
+
+      const result = await saveFMEA({
+        title: title.trim(),
         assetType,
         voltageRating,
         operatingEnvironment,
@@ -73,17 +99,27 @@ export function SaveFMEADialog({
         weibullParameters,
       })
 
+      console.log("FMEA saved successfully:", result)
+
       toast({
-        title: "FMEA saved",
-        description: "Your FMEA has been saved successfully",
+        title: "Success!",
+        description: `FMEA "${title}" has been saved successfully`,
       })
+
       setIsOpen(false)
       setTitle("")
+
+      // Optionally redirect to dashboard
+      // window.location.href = "/dashboard/fmeas"
     } catch (error) {
-      console.error("Error saving FMEA:", error)
+      console.error("=== Error saving FMEA ===")
+      console.error("Error:", error)
+
+      const errorMessage = error instanceof Error ? error.message : "Unknown error occurred"
+
       toast({
-        title: "Error",
-        description: "Failed to save FMEA. Please try again.",
+        title: "Save failed",
+        description: errorMessage,
         variant: "destructive",
       })
     } finally {
@@ -91,8 +127,23 @@ export function SaveFMEADialog({
     }
   }
 
-  if (!user) {
-    return null
+  // Don't show the button if user is not authenticated
+  if (!user || !session) {
+    return (
+      <Button
+        variant="outline"
+        onClick={() => {
+          toast({
+            title: "Sign in required",
+            description: "Please sign in to save your FMEA",
+            variant: "destructive",
+          })
+        }}
+      >
+        <Save className="h-4 w-4 mr-2" />
+        Save FMEA
+      </Button>
+    )
   }
 
   return (
@@ -106,24 +157,34 @@ export function SaveFMEADialog({
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Save FMEA</DialogTitle>
-          <DialogDescription>Save this FMEA to your account for future reference.</DialogDescription>
+          <DialogDescription>Save this FMEA analysis to your dashboard for future reference.</DialogDescription>
         </DialogHeader>
         <div className="space-y-4 py-4">
           <div className="space-y-2">
-            <Label htmlFor="title">Title</Label>
+            <Label htmlFor="title">FMEA Title *</Label>
             <Input
               id="title"
-              placeholder="Enter a title for your FMEA"
+              placeholder="e.g., Power Transformer Analysis - Site A"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
+              disabled={isSaving}
             />
+          </div>
+          <div className="text-sm text-muted-foreground">
+            <p>This FMEA will include:</p>
+            <ul className="list-disc list-inside mt-1 space-y-1">
+              <li>{failureModes?.length || 0} failure mode(s)</li>
+              <li>Asset type: {assetType || "Not specified"}</li>
+              <li>Voltage rating: {voltageRating || "Not specified"}</li>
+              <li>Weibull parameters for reliability analysis</li>
+            </ul>
           </div>
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={() => setIsOpen(false)}>
+          <Button variant="outline" onClick={() => setIsOpen(false)} disabled={isSaving}>
             Cancel
           </Button>
-          <Button onClick={handleSave} disabled={isSaving}>
+          <Button onClick={handleSave} disabled={isSaving || !title.trim()}>
             {isSaving ? "Saving..." : "Save FMEA"}
           </Button>
         </DialogFooter>
