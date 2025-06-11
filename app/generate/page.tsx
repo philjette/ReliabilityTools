@@ -28,6 +28,7 @@ import {
 } from "@/lib/electrical-assets"
 import { type FailureMode, generateFMEA } from "@/lib/actions"
 import { DownloadPdfButton } from "@/components/download-pdf-button"
+import { DebugAuthButton } from "@/components/debug-auth-button"
 
 // Array of colors for failure mode curves
 const CURVE_COLORS = [
@@ -166,6 +167,21 @@ export default function GenerateFMEA() {
                     Configure electrical transmission and distribution asset details to generate an AI-powered FMEA
                     report
                   </p>
+                  <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                    <p className="text-sm text-yellow-800 mb-2">Debug Tools:</p>
+                    <DebugAuthButton />
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="ml-2"
+                      onClick={() => {
+                        console.log("Simple test button clicked!")
+                        alert("Test button works!")
+                      }}
+                    >
+                      🧪 Simple Test
+                    </Button>
+                  </div>
                 </div>
 
                 {error && (
@@ -293,27 +309,29 @@ export default function GenerateFMEA() {
                     </div>
                   </CardContent>
                   <CardFooter>
-                    <Button
-                      onClick={handleGenerate}
-                      disabled={
-                        isGenerating ||
-                        !assetType ||
-                        !voltageRating ||
-                        !operatingEnvironment ||
-                        !ageRange ||
-                        !loadProfile ||
-                        !assetCriticality
-                      }
-                    >
-                      {isGenerating ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Generating...
-                        </>
-                      ) : (
-                        "Generate FMEA"
-                      )}
-                    </Button>
+                    <div className="flex gap-2">
+                      <Button
+                        onClick={handleGenerate}
+                        disabled={
+                          isGenerating ||
+                          !assetType ||
+                          !voltageRating ||
+                          !operatingEnvironment ||
+                          !ageRange ||
+                          !loadProfile ||
+                          !assetCriticality
+                        }
+                      >
+                        {isGenerating ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Generating...
+                          </>
+                        ) : (
+                          "Generate FMEA"
+                        )}
+                      </Button>
+                    </div>
                   </CardFooter>
                 </Card>
               </div>

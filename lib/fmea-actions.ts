@@ -22,49 +22,36 @@ interface SaveFMEAParams {
 export async function saveFMEA(params: SaveFMEAParams) {
   try {
     console.log("=== Starting saveFMEA ===")
+    console.log("Environment check:")
+    console.log("SUPABASE_URL:", process.env.NEXT_PUBLIC_SUPABASE_URL ? "Present" : "Missing")
+    console.log("SUPABASE_ANON_KEY:", process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ? "Present" : "Missing")
 
-    // Create Supabase client with proper configuration
-    const supabase = createServerActionClient({
-      cookies,
-      supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL,
-      supabaseKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-    })
+    // Create Supabase client - use the standard approach
+    const supabase = createServerActionClient({ cookies })
 
-    // First, let's verify the client is working
     console.log("Supabase client created")
 
-    // Get the current session
-    const { data: sessionData, error: sessionError } = await supabase.auth.getSession()
+    // Get the current user using getUser() instead of getSession()
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser()
 
-    if (sessionError) {
-      console.error("Session error:", sessionError)
-      throw new Error(`Authentication failed: ${sessionError.message}`)
+    console.log("Auth getUser result:")
+    console.log("User error:", userError)
+    console.log("User:", user ? { id: user.id, email: user.email } : "null")
+
+    if (userError) {
+      console.error("User error:", userError)
+      throw new Error(`Authentication failed: ${userError.message}`)
     }
 
-    if (!sessionData.session) {
-      console.error("No session found")
-      throw new Error("No active session. Please sign in again.")
-    }
-
-    const user = sessionData.session.user
     if (!user || !user.id) {
-      console.error("No user in session")
-      throw new Error("Invalid user session. Please sign in again.")
+      console.error("No user found")
+      throw new Error("No authenticated user found. Please sign in again.")
     }
 
-    console.log("User found:", { id: user.id, email: user.email })
-
-    // Verify the user exists in auth.users table
-    const { data: userCheck, error: userCheckError } = await supabase
-      .from("auth.users")
-      .select("id")
-      .eq("id", user.id)
-      .single()
-
-    if (userCheckError) {
-      console.log("User check failed, but this might be expected due to RLS")
-      // This might fail due to RLS policies, but let's continue
-    }
+    console.log("User authenticated:", { id: user.id, email: user.email })
 
     // Validate required fields
     if (!params.title?.trim()) {
@@ -77,7 +64,7 @@ export async function saveFMEA(params: SaveFMEAParams) {
 
     // Prepare the data for insertion
     const fmeaData = {
-      user_id: user.id, // This should be a valid UUID from auth.users
+      user_id: user.id,
       title: params.title.trim(),
       asset_type: params.assetType || "",
       voltage_rating: params.voltageRating || "",
@@ -90,18 +77,28 @@ export async function saveFMEA(params: SaveFMEAParams) {
       weibull_parameters: params.weibullParameters || {},
     }
 
-    console.log("Attempting to insert FMEA with user_id:", user.id)
+    console.log("Attempting to insert FMEA:")
+    console.log("User ID:", user.id)
+    console.log("Title:", fmeaData.title)
+    console.log("Failure modes count:", fmeaData.failure_modes.length)
 
     // Insert the FMEA into the database
     const { data, error } = await supabase.from("fmeas").insert(fmeaData).select().single()
 
+    console.log("Insert result:")
+    console.log("Error:", error)
+    console.log("Data:", data)
+
     if (error) {
       console.error("Database insert error:", error)
+      console.error("Error code:", error.code)
+      console.error("Error details:", error.details)
+      console.error("Error hint:", error.hint)
 
       // Check if it's a foreign key constraint error
       if (error.message.includes("fk_user") || error.message.includes("foreign key")) {
         throw new Error(
-          `User authentication issue: Your user account may not be properly set up. Please sign out and sign in again.`,
+          `User authentication issue: Your user account may not be properly set up. Please sign out and sign in again. Error: ${error.message}`,
         )
       }
 
@@ -121,7 +118,9 @@ export async function saveFMEA(params: SaveFMEAParams) {
     return data
   } catch (error) {
     console.error("=== Error in saveFMEA ===")
+    console.error("Error type:", typeof error)
     console.error("Error details:", error)
+    console.error("Error stack:", error instanceof Error ? error.stack : "No stack")
 
     if (error instanceof Error) {
       throw error
@@ -131,42 +130,36 @@ export async function saveFMEA(params: SaveFMEAParams) {
   }
 }
 
-// Add a function to test authentication
-export async function testAuthentication() {
+// Simplified test function to debug authentication
+export async function debugAuth() {
   try {
-    const supabase = createServerActionClient({
-      cookies,
-      supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL,
-      supabaseKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-    })
+    console.log("=== Debug Auth ===")
 
+    const supabase = createServerActionClient({ cookies })
+
+    // Test 1: getUser()
+    const { data: userData, error: userError } = await supabase.auth.getUser()
+    console.log("getUser result:", { userData, userError })
+
+    // Test 2: getSession()
     const { data: sessionData, error: sessionError } = await supabase.auth.getSession()
-
-    if (sessionError) {
-      return { success: false, error: sessionError.message }
-    }
-
-    if (!sessionData.session) {
-      return { success: false, error: "No active session" }
-    }
-
-    const user = sessionData.session.user
+    console.log("getSession result:", { sessionData, sessionError })
 
     return {
-      success: true,
-      user: {
-        id: user.id,
-        email: user.email,
-        created_at: user.created_at,
+      getUser: {
+        success: !userError,
+        user: userData.user ? { id: userData.user.id, email: userData.user.email } : null,
+        error: userError?.message,
       },
-      session: {
-        access_token: sessionData.session.access_token ? "Present" : "Missing",
-        refresh_token: sessionData.session.refresh_token ? "Present" : "Missing",
+      getSession: {
+        success: !sessionError,
+        session: sessionData.session ? { user_id: sessionData.session.user.id } : null,
+        error: sessionError?.message,
       },
     }
   } catch (error) {
+    console.error("Debug auth error:", error)
     return {
-      success: false,
       error: error instanceof Error ? error.message : "Unknown error",
     }
   }
@@ -176,16 +169,18 @@ export async function getUserFMEAs() {
   try {
     const supabase = createServerActionClient({ cookies })
 
-    const { data: sessionData } = await supabase.auth.getSession()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
 
-    if (!sessionData.session?.user) {
+    if (!user) {
       return []
     }
 
     const { data, error } = await supabase
       .from("fmeas")
       .select("*")
-      .eq("user_id", sessionData.session.user.id)
+      .eq("user_id", user.id)
       .order("created_at", { ascending: false })
 
     if (error) {
@@ -239,7 +234,6 @@ export async function deleteFMEA(id: string) {
   }
 }
 
-// Add back the PDF generation functions
 export async function generatePdf(params: SaveFMEAParams): Promise<Uint8Array> {
   return generateFmeaPdf(params)
 }

@@ -49,6 +49,7 @@ export function WeibullChart({ type, shape, scale, failureModes = [], showCombin
               dataKey="time"
               label={{ value: "Time (years)", position: "insideBottomRight", offset: -10 }}
               tickMargin={10}
+              tickFormatter={(value) => Math.round(value).toString()}
             />
             <YAxis
               label={{ value: yAxisLabel, angle: -90, position: "insideLeft", offset: -5 }}
@@ -109,6 +110,7 @@ export function WeibullChart({ type, shape, scale, failureModes = [], showCombin
             dataKey="time"
             label={{ value: "Time (years)", position: "insideBottomRight", offset: -10 }}
             tickMargin={10}
+            tickFormatter={(value) => Math.round(value).toString()}
           />
           <YAxis
             label={{ value: yAxisLabel, angle: -90, position: "insideLeft", offset: -5 }}
