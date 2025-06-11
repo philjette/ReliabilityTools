@@ -38,6 +38,18 @@ export function WeibullChart({ type, shape, scale, failureModes = [], showCombin
   // Determine y-axis label based on chart type
   const yAxisLabel = type === "cdf" ? "Probability" : type === "pdf" ? "Density" : "Hazard Rate"
 
+  // Calculate x-axis ticks (in years, as integers)
+  const HOURS_IN_YEAR = 8760
+  // For multi-mode, use the largest scale; for single, use the given scale
+  const maxScale = failureModes.length > 0
+    ? Math.max(...failureModes.map((mode) => mode.scale))
+    : scale
+  const maxTime = (maxScale * 2) / HOURS_IN_YEAR
+  // Choose a reasonable number of ticks (e.g., 6)
+  const numTicks = 6
+  const tickStep = Math.ceil(maxTime / (numTicks - 1)) || 1
+  const ticks = Array.from({ length: numTicks }, (_, i) => i * tickStep).filter(t => t <= Math.ceil(maxTime))
+
   // If we're showing multiple failure modes, use a LineChart
   if (failureModes.length > 0) {
     return (
@@ -49,6 +61,7 @@ export function WeibullChart({ type, shape, scale, failureModes = [], showCombin
               dataKey="time"
               label={{ value: "Time (years)", position: "insideBottomRight", offset: -10 }}
               tickMargin={10}
+              ticks={ticks}
               tickFormatter={(value) => Math.round(value).toString()}
             />
             <YAxis
@@ -110,6 +123,7 @@ export function WeibullChart({ type, shape, scale, failureModes = [], showCombin
             dataKey="time"
             label={{ value: "Time (years)", position: "insideBottomRight", offset: -10 }}
             tickMargin={10}
+            ticks={ticks}
             tickFormatter={(value) => Math.round(value).toString()}
           />
           <YAxis
