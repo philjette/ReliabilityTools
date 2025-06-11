@@ -38,17 +38,26 @@ export function WeibullChart({ type, shape, scale, failureModes = [], showCombin
   // Determine y-axis label based on chart type
   const yAxisLabel = type === "cdf" ? "Probability" : type === "pdf" ? "Density" : "Hazard Rate"
 
-  // Calculate x-axis ticks (in years, as integers)
-  const HOURS_IN_YEAR = 8760
+  // Calculate x-axis ticks (in years)
   // For multi-mode, use the largest scale; for single, use the given scale
   const maxScale = failureModes.length > 0
     ? Math.max(...failureModes.map((mode) => mode.scale))
     : scale
-  const maxTime = (maxScale * 2) / HOURS_IN_YEAR
-  // Choose a reasonable number of ticks (e.g., 6)
+  const maxTime = maxScale * 2 // scale is already in years
   const numTicks = 6
-  const tickStep = Math.ceil(maxTime / (numTicks - 1)) || 1
-  const ticks = Array.from({ length: numTicks }, (_, i) => i * tickStep).filter(t => t <= Math.ceil(maxTime))
+
+  let ticks: number[];
+  if (maxTime < 2) {
+    // For small ranges, use 1 decimal place
+    const step = maxTime / (numTicks - 1);
+    ticks = Array.from({ length: numTicks }, (_, i) => +(i * step).toFixed(1));
+    if (ticks[ticks.length - 1] < maxTime) ticks.push(+maxTime.toFixed(1));
+  } else {
+    // For larger ranges, use integer ticks
+    const tickStep = Math.ceil(maxTime / (numTicks - 1)) || 1;
+    ticks = Array.from({ length: numTicks }, (_, i) => i * tickStep).filter(t => t <= Math.ceil(maxTime));
+    if (ticks[ticks.length - 1] < Math.ceil(maxTime)) ticks.push(Math.ceil(maxTime));
+  }
 
   // If we're showing multiple failure modes, use a LineChart
   if (failureModes.length > 0) {
@@ -62,7 +71,7 @@ export function WeibullChart({ type, shape, scale, failureModes = [], showCombin
               label={{ value: "Time (years)", position: "insideBottomRight", offset: -10 }}
               tickMargin={10}
               ticks={ticks}
-              tickFormatter={(value) => Math.round(value).toString()}
+              tickFormatter={(value) => maxTime < 2 ? value.toFixed(1) : Math.round(value).toString()}
             />
             <YAxis
               label={{ value: yAxisLabel, angle: -90, position: "insideLeft", offset: -5 }}
@@ -124,7 +133,7 @@ export function WeibullChart({ type, shape, scale, failureModes = [], showCombin
             label={{ value: "Time (years)", position: "insideBottomRight", offset: -10 }}
             tickMargin={10}
             ticks={ticks}
-            tickFormatter={(value) => Math.round(value).toString()}
+            tickFormatter={(value) => maxTime < 2 ? value.toFixed(1) : Math.round(value).toString()}
           />
           <YAxis
             label={{ value: yAxisLabel, angle: -90, position: "insideLeft", offset: -5 }}
@@ -142,24 +151,17 @@ export function WeibullChart({ type, shape, scale, failureModes = [], showCombin
   )
 }
 
-// Hours in a year (24 * 365 = 8760)
-const HOURS_IN_YEAR = 8760
-
 // Generate data points for different Weibull distribution functions
 function generateWeibullData(type: "cdf" | "pdf" | "hazard", shape: number, scale: number) {
   const data = []
-  // Convert scale from hours to years for calculation
-  const scaleInHours = scale
-  // But we'll display in years, so max time is 2x scale in years
-  const maxTime = (scaleInHours * 2) / HOURS_IN_YEAR
+  // scale is in years, so all calculations are in years
+  const maxTime = scale * 2
   const step = maxTime / 100 // 100 data points
 
   for (let i = 0; i <= 100; i++) {
-    const timeInYears = i * step
-    // Convert back to hours for the calculation
-    const timeInHours = timeInYears * HOURS_IN_YEAR
+    const time = i * step
 
-    if (timeInHours === 0 && (type === "pdf" || type === "hazard")) {
+    if (time === 0 && (type === "pdf" || type === "hazard")) {
       // Skip t=0 for PDF and hazard function to avoid division by zero
       continue
     }
@@ -168,26 +170,22 @@ function generateWeibullData(type: "cdf" | "pdf" | "hazard", shape: number, scal
     switch (type) {
       case "cdf":
         // Cumulative Distribution Function: F(t) = 1 - exp(-(t/η)^β)
-        value = 1 - Math.exp(-Math.pow(timeInHours / scaleInHours, shape))
+        value = 1 - Math.exp(-Math.pow(time / scale, shape))
         break
       case "pdf":
         // Probability Density Function: f(t) = (β/η)(t/η)^(β-1)exp(-(t/η)^β)
         value =
-          (shape / scaleInHours) *
-          Math.pow(timeInHours / scaleInHours, shape - 1) *
-          Math.exp(-Math.pow(timeInHours / scaleInHours, shape))
-        // Scale the PDF value to account for the change in time units
-        value = value * HOURS_IN_YEAR
+          (shape / scale) *
+          Math.pow(time / scale, shape - 1) *
+          Math.exp(-Math.pow(time / scale, shape))
         break
       case "hazard":
         // Hazard Function: h(t) = (β/η)(t/η)^(β-1)
-        value = (shape / scaleInHours) * Math.pow(timeInHours / scaleInHours, shape - 1)
-        // Scale the hazard rate to account for the change in time units
-        value = value * HOURS_IN_YEAR
+        value = (shape / scale) * Math.pow(time / scale, shape - 1)
         break
     }
 
-    data.push({ time: timeInYears, value })
+    data.push({ time, value })
   }
 
   return data
@@ -203,44 +201,38 @@ function generateMultiModeData(
 
   // Find the maximum scale to determine the time range
   const maxScale = Math.max(...failureModes.map((mode) => mode.scale))
-  // Convert max scale from hours to years
-  const maxTime = (maxScale * 2) / HOURS_IN_YEAR
+  // scale is in years
+  const maxTime = maxScale * 2
   const step = maxTime / 100
 
   const data = []
 
   for (let i = 0; i <= 100; i++) {
-    const timeInYears = i * step
-    // Convert to hours for calculation
-    const timeInHours = timeInYears * HOURS_IN_YEAR
+    const time = i * step
 
-    if (timeInHours === 0 && (type === "pdf" || type === "hazard")) {
+    if (time === 0 && (type === "pdf" || type === "hazard")) {
       continue
     }
 
-    const point: any = { time: timeInYears }
+    const point: any = { time }
 
     // Calculate values for each failure mode
     for (const mode of failureModes) {
       let value = 0
-      const scaleInHours = mode.scale
+      const scale = mode.scale
 
       switch (type) {
         case "cdf":
-          value = 1 - Math.exp(-Math.pow(timeInHours / scaleInHours, mode.shape))
+          value = 1 - Math.exp(-Math.pow(time / scale, mode.shape))
           break
         case "pdf":
           value =
-            (mode.shape / scaleInHours) *
-            Math.pow(timeInHours / scaleInHours, mode.shape - 1) *
-            Math.exp(-Math.pow(timeInHours / scaleInHours, mode.shape))
-          // Scale the PDF value
-          value = value * HOURS_IN_YEAR
+            (mode.shape / scale) *
+            Math.pow(time / scale, mode.shape - 1) *
+            Math.exp(-Math.pow(time / scale, mode.shape))
           break
         case "hazard":
-          value = (mode.shape / scaleInHours) * Math.pow(timeInHours / scaleInHours, mode.shape - 1)
-          // Scale the hazard rate
-          value = value * HOURS_IN_YEAR
+          value = (mode.shape / scale) * Math.pow(time / scale, mode.shape - 1)
           break
       }
       point[mode.name] = value
@@ -250,38 +242,35 @@ function generateMultiModeData(
     if (showCombined) {
       if (type === "cdf") {
         // For CDF, the combined system failure probability is 1 - product of individual reliabilities
-        // System reliability = product of component reliabilities
-        // System failure probability = 1 - system reliability
         const systemReliability = failureModes.reduce((acc, mode) => {
-          const componentReliability = Math.exp(-Math.pow(timeInHours / mode.scale, mode.shape))
+          const componentReliability = Math.exp(-Math.pow(time / mode.scale, mode.shape))
           return acc * componentReliability
         }, 1)
         point.combined = 1 - systemReliability
       } else if (type === "pdf") {
-        // For PDF, we need to calculate the derivative of the CDF
-        // This is a simplification - in a real application, you might want to use a more accurate method
+        // For PDF, approximate derivative of the CDF
         const systemReliability = failureModes.reduce((acc, mode) => {
-          const componentReliability = Math.exp(-Math.pow(timeInHours / mode.scale, mode.shape))
+          const componentReliability = Math.exp(-Math.pow(time / mode.scale, mode.shape))
           return acc * componentReliability
         }, 1)
 
         // Calculate reliability at t+dt
-        const dt = (step * HOURS_IN_YEAR) / 10
-        const timeNextHours = timeInHours + dt
+        const dt = step / 10
+        const timeNext = time + dt
         const systemReliabilityNext = failureModes.reduce((acc, mode) => {
-          const componentReliability = Math.exp(-Math.pow(timeNextHours / mode.scale, mode.shape))
+          const componentReliability = Math.exp(-Math.pow(timeNext / mode.scale, mode.shape))
           return acc * componentReliability
         }, 1)
 
         // Approximate derivative
-        point.combined = ((systemReliability - systemReliabilityNext) / dt) * HOURS_IN_YEAR
+        point.combined = ((systemReliability - systemReliabilityNext) / dt)
       } else if (type === "hazard") {
         // For hazard rate, it's the sum of individual hazard rates in a series system
         point.combined =
           failureModes.reduce((acc, mode) => {
-            const hazardRate = (mode.shape / mode.scale) * Math.pow(timeInHours / mode.scale, mode.shape - 1)
+            const hazardRate = (mode.shape / mode.scale) * Math.pow(time / mode.scale, mode.shape - 1)
             return acc + hazardRate
-          }, 0) * HOURS_IN_YEAR
+          }, 0)
       }
     }
 
