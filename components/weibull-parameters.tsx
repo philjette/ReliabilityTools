@@ -82,7 +82,7 @@ export function WeibullParameters({ shape, scale, onShapeChange, onScaleChange }
           />
           <Input
             type="number"
-            min={0}
+            min={1}
             max={200}
             step={1}
             value={scaleInYears}
