@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { createServerActionClient } from "@supabase/auth-helpers-nextjs"
+import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs"
 import { cookies } from "next/headers"
 
 export async function POST(request: NextRequest) {
@@ -18,32 +18,58 @@ export async function POST(request: NextRequest) {
     console.log("NEXT_PUBLIC_SUPABASE_URL:", process.env.NEXT_PUBLIC_SUPABASE_URL ? "Present" : "Missing")
     console.log("NEXT_PUBLIC_SUPABASE_ANON_KEY:", process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ? "Present" : "Missing")
 
-    // Test Supabase client creation
+    // Get cookies for debugging
+    const cookieStore = cookies()
+    const allCookies = cookieStore.getAll()
+    console.log(
+      "Available cookies:",
+      allCookies.map((c) => ({ name: c.name, hasValue: !!c.value })),
+    )
+
+    // Test Supabase client creation - use RouteHandlerClient instead
     console.log("Creating Supabase client...")
-    const supabase = createServerActionClient({ cookies })
+    const supabase = createRouteHandlerClient({ cookies })
     console.log("Supabase client created successfully")
 
-    // Test authentication
+    // Test authentication with both methods
     console.log("Testing authentication...")
+
+    // Method 1: getUser()
     const {
-      data: { user },
+      data: { user: userData },
       error: userError,
     } = await supabase.auth.getUser()
 
-    if (userError) {
-      console.error("Auth error:", userError)
+    console.log("getUser() result:", {
+      user: userData ? { id: userData.id, email: userData.email } : null,
+      error: userError?.message,
+    })
+
+    // Method 2: getSession()
+    const {
+      data: { session },
+      error: sessionError,
+    } = await supabase.auth.getSession()
+
+    console.log("getSession() result:", {
+      session: session ? { user_id: session.user.id, expires_at: session.expires_at } : null,
+      error: sessionError?.message,
+    })
+
+    // Use session user if available, fallback to getUser
+    const user = session?.user || userData
+
+    if (!user) {
+      console.error("No user found in either session or getUser")
       return NextResponse.json({
         success: false,
         error: "Authentication failed",
-        details: userError.message,
-      })
-    }
-
-    if (!user) {
-      console.error("No user found")
-      return NextResponse.json({
-        success: false,
-        error: "No authenticated user",
+        details: "No authenticated user found. Please sign in again.",
+        debug: {
+          userError: userError?.message,
+          sessionError: sessionError?.message,
+          cookieCount: allCookies.length,
+        },
       })
     }
 
@@ -59,6 +85,7 @@ export async function POST(request: NextRequest) {
         success: false,
         error: "Database connection failed",
         details: testError.message,
+        code: testError.code,
       })
     }
 
@@ -97,6 +124,7 @@ export async function POST(request: NextRequest) {
         error: "Database insert failed",
         details: error.message,
         code: error.code,
+        hint: error.hint,
       })
     }
 

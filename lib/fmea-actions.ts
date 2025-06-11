@@ -26,28 +26,35 @@ export async function saveFMEA(params: SaveFMEAParams) {
     console.log("SUPABASE_URL:", process.env.NEXT_PUBLIC_SUPABASE_URL ? "Present" : "Missing")
     console.log("SUPABASE_ANON_KEY:", process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ? "Present" : "Missing")
 
-    // Create Supabase client - use the standard approach
+    // Create Supabase client
     const supabase = createServerActionClient({ cookies })
-
     console.log("Supabase client created")
 
-    // Get the current user using getUser() instead of getSession()
+    // Try both authentication methods
     const {
-      data: { user },
+      data: { user: userData },
       error: userError,
     } = await supabase.auth.getUser()
 
-    console.log("Auth getUser result:")
-    console.log("User error:", userError)
-    console.log("User:", user ? { id: user.id, email: user.email } : "null")
+    const {
+      data: { session },
+      error: sessionError,
+    } = await supabase.auth.getSession()
 
-    if (userError) {
-      console.error("User error:", userError)
-      throw new Error(`Authentication failed: ${userError.message}`)
-    }
+    console.log("Auth results:")
+    console.log(
+      "getUser:",
+      userData ? { id: userData.id, email: userData.email } : "null",
+      "Error:",
+      userError?.message,
+    )
+    console.log("getSession:", session ? { user_id: session.user.id } : "null", "Error:", sessionError?.message)
+
+    // Use session user if available, fallback to getUser
+    const user = session?.user || userData
 
     if (!user || !user.id) {
-      console.error("No user found")
+      console.error("No authenticated user found")
       throw new Error("No authenticated user found. Please sign in again.")
     }
 
