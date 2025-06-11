@@ -44,19 +44,18 @@ export function WeibullChart({ type, shape, scale, failureModes = [], showCombin
     ? Math.max(...failureModes.map((mode) => mode.scale))
     : scale
   const maxTime = maxScale * 2 // scale is already in years
-  const numTicks = 6
 
   let ticks: number[];
-  if (maxTime < 2) {
-    // For small ranges, use 1 decimal place
-    const step = maxTime / (numTicks - 1);
-    ticks = Array.from({ length: numTicks }, (_, i) => +(i * step).toFixed(1));
-    if (ticks[ticks.length - 1] < maxTime) ticks.push(+maxTime.toFixed(1));
+  if (maxTime < 20) {
+    // Tick at each integer value from 0 to Math.ceil(maxTime)
+    ticks = Array.from({ length: Math.ceil(maxTime) + 1 }, (_, i) => i);
   } else {
-    // For larger ranges, use integer ticks
-    const tickStep = Math.ceil(maxTime / (numTicks - 1)) || 1;
-    ticks = Array.from({ length: numTicks }, (_, i) => i * tickStep).filter(t => t <= Math.ceil(maxTime));
-    if (ticks[ticks.length - 1] < Math.ceil(maxTime)) ticks.push(Math.ceil(maxTime));
+    // Tick at every multiple of 5 from 0 up to the next multiple of 5 >= maxTime
+    const lastTick = Math.ceil(maxTime / 5) * 5;
+    ticks = [];
+    for (let t = 0; t <= lastTick; t += 5) {
+      ticks.push(t);
+    }
   }
 
   // If we're showing multiple failure modes, use a LineChart
