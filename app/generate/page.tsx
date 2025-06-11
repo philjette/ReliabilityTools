@@ -140,6 +140,45 @@ export default function GenerateFMEA() {
     URL.revokeObjectURL(url)
   }
 
+  const handleDebugSave = async () => {
+    try {
+      console.log("Testing debug save...")
+
+      const testData = {
+        title: `Debug Test FMEA - ${new Date().toISOString()}`,
+        assetType,
+        voltageRating,
+        operatingEnvironment,
+        ageRange,
+        loadProfile,
+        assetCriticality,
+        additionalNotes,
+        failureModes,
+        weibullParameters,
+      }
+
+      const response = await fetch("/api/debug-save", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(testData),
+      })
+
+      const result = await response.json()
+      console.log("Debug save result:", result)
+
+      if (result.success) {
+        alert(`Debug save successful! FMEA ID: ${result.id}`)
+      } else {
+        alert(`Debug save failed: ${result.error} - ${result.details}`)
+      }
+    } catch (error) {
+      console.error("Debug save error:", error)
+      alert(`Debug save error: ${error}`)
+    }
+  }
+
   // Prepare failure mode data for the chart
   const prepareFailureModesForChart = () => {
     return failureModes.slice(0, 5).map((mode, index) => {
@@ -169,18 +208,29 @@ export default function GenerateFMEA() {
                   </p>
                   <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
                     <p className="text-sm text-yellow-800 mb-2">Debug Tools:</p>
-                    <DebugAuthButton />
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="ml-2"
-                      onClick={() => {
-                        console.log("Simple test button clicked!")
-                        alert("Test button works!")
-                      }}
-                    >
-                      🧪 Simple Test
-                    </Button>
+                    <div className="flex gap-2 flex-wrap">
+                      <DebugAuthButton />
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          console.log("Simple test button clicked!")
+                          alert("Test button works!")
+                        }}
+                      >
+                        🧪 Simple Test
+                      </Button>
+                      {isGenerated && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={handleDebugSave}
+                          className="bg-blue-50 hover:bg-blue-100"
+                        >
+                          🔍 Debug Save
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 </div>
 
