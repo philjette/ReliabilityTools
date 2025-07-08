@@ -63,7 +63,7 @@ export async function generateFMEA(
       7. Effects on the system
       8. Recommended actions
       9. Preventative maintenance actions with recommended frequencies based on the asset criticality
-      10. Weibull distribution parameters (shape and scale) that would be appropriate for this failure mode. Scale should be in years.
+      10. Weibull distribution parameters (shape and scale) that would be appropriate for this failure mode
       
       The maintenance frequencies should be appropriate for the asset criticality:
       - High criticality assets should have more frequent and thorough maintenance
@@ -104,7 +104,7 @@ export async function generateFMEA(
         "weibullParameters": {
           "Failure Mode Name": {
             "shape": 2.5,
-            "scale": 55
+            "scale": 15000
           }
         }
       }
@@ -114,7 +114,8 @@ export async function generateFMEA(
         - β < 1 for early life failures
         - β = 1 for random failures
         - β > 1 for wear-out failures
-      - Scale parameter (η) should be in years and represent the characteristic life (when 63.2% of units fail)
+      - Scale parameter (η) should be in hours and represent the characteristic life (when 63.2% of units fail)
+        - For electrical equipment, this is typically between 5,000 and 50,000 hours depending on the component
     `
 
     // Call OpenAI API using AI SDK

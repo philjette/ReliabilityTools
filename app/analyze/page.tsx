@@ -17,7 +17,7 @@ import { CSVTemplateButton } from "@/components/csv-template-button"
 export default function AnalyzeData() {
   const [activeTab, setActiveTab] = useState<string>("manual")
   const [shape, setShape] = useState(2.1)
-  const [scale, setScale] = useState(50)
+  const [scale, setScale] = useState(4500)
   const [isAnalyzed, setIsAnalyzed] = useState(false)
   const [chartType, setChartType] = useState("cdf")
 
@@ -95,7 +95,7 @@ export default function AnalyzeData() {
                       <CardFooter className="flex justify-between">
                         <div className="text-sm text-muted-foreground">
                           <span className="font-medium">Shape (β):</span> {shape.toFixed(2)} |{" "}
-                          <span className="font-medium">Scale (η):</span> {scale.toFixed(0)} years
+                          <span className="font-medium">Scale (η):</span> {scale.toFixed(0)} hours
                         </div>
                         <Button variant="outline" size="sm" onClick={handleDownload}>
                           <Download className="h-4 w-4 mr-2" />
@@ -114,26 +114,26 @@ export default function AnalyzeData() {
                           <div className="space-y-1">
                             <p className="text-sm font-medium">Mean Time To Failure (MTTF)</p>
                             <p className="text-2xl font-bold">
-                              {(scale * Math.exp(1) ** (1 / shape)).toFixed(0)} <span className="text-sm">years</span>
+                              {(scale * Math.exp(1) ** (1 / shape)).toFixed(0)} <span className="text-sm">hours</span>
                             </p>
                           </div>
                           <div className="space-y-1">
                             <p className="text-sm font-medium">Median Life</p>
                             <p className="text-2xl font-bold">
-                              {(scale * Math.log(2) ** (1 / shape)).toFixed(0)} <span className="text-sm">years</span>
+                              {(scale * Math.log(2) ** (1 / shape)).toFixed(0)} <span className="text-sm">hours</span>
                             </p>
                           </div>
                           <div className="space-y-1">
                             <p className="text-sm font-medium">B10 Life</p>
                             <p className="text-2xl font-bold">
                               {(scale * Math.log(1 / 0.9) ** (1 / shape)).toFixed(0)}{" "}
-                              <span className="text-sm">years</span>
+                              <span className="text-sm">hours</span>
                             </p>
                           </div>
                           <div className="space-y-1">
                             <p className="text-sm font-medium">Reliability at 1000 hours</p>
                             <p className="text-2xl font-bold">
-                              {(Math.exp(-((1000 / (scale * 8760)) ** shape)) * 100).toFixed(1)}%
+                              {(Math.exp(-((1000 / scale) ** shape)) * 100).toFixed(1)}%
                             </p>
                           </div>
                         </div>

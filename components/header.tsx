@@ -104,7 +104,7 @@ export function Header({ activePath = "/" }: HeaderProps) {
             </DropdownMenuContent>
           </DropdownMenu>
 
-          {isClient && user && (
+          {isClient && (
             <a
               href="#"
               onClick={handleDashboardClick}
@@ -163,7 +163,7 @@ export function Header({ activePath = "/" }: HeaderProps) {
                   </div>
                 </div>
 
-                {isClient && user && (
+                {isClient && (
                   <a
                     href="#"
                     className={`font-medium text-lg ${isActive("/dashboard") ? "" : "text-muted-foreground"} cursor-pointer`}

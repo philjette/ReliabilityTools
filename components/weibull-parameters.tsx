@@ -17,8 +17,8 @@ interface WeibullParametersProps {
 }
 
 export function WeibullParameters({ shape, scale, onShapeChange, onScaleChange }: WeibullParametersProps) {
-  // No conversion needed; scale is already in years
-  const scaleInYears = scale
+  // Convert scale from hours to years for display and round to integer
+  const scaleInYears = Math.round(scale / HOURS_IN_YEAR)
 
   const handleShapeInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = Number.parseFloat(e.target.value)
@@ -30,14 +30,14 @@ export function WeibullParameters({ shape, scale, onShapeChange, onScaleChange }
   const handleScaleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = Number.parseInt(e.target.value, 10)
     if (!isNaN(value) && value >= 0 && value <= 200) {
-      // Pass years directly
-      onScaleChange(value)
+      // Convert years to hours when updating
+      onScaleChange(value * HOURS_IN_YEAR)
     }
   }
 
   const handleScaleSliderChange = (values: number[]) => {
-    // Pass years directly
-    onScaleChange(values[0])
+    // Convert years to hours when updating
+    onScaleChange(values[0] * HOURS_IN_YEAR)
   }
 
   return (
@@ -82,7 +82,7 @@ export function WeibullParameters({ shape, scale, onShapeChange, onScaleChange }
           />
           <Input
             type="number"
-            min={1}
+            min={0}
             max={200}
             step={1}
             value={scaleInYears}
