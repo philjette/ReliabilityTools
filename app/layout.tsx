@@ -9,6 +9,9 @@ const inter = Inter({ subsets: ["latin"] })
 export const metadata: Metadata = {
   title: "AssetX.pro - Reliability Engineering Tools",
   description: "Professional reliability engineering tools for electrical transmission and distribution assets",
+  icons: {
+    icon: "/favicon.ico",
+  },
     generator: 'v0.dev'
 }
 
