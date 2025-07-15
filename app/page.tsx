@@ -94,33 +94,7 @@ export default function HomePage() {
       </section>
 
       {/* Stats Section */}
-      <section className="py-16 bg-gray-50">
-        <div className="container mx-auto px-4">
-          <div className="grid md:grid-cols-3 gap-8 text-center">
-            <div>
-              <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Shield className="h-8 w-8 text-blue-600" />
-              </div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-2">99.9%</h3>
-              <p className="text-gray-600">Reliability Accuracy</p>
-            </div>
-            <div>
-              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Clock className="h-8 w-8 text-green-600" />
-              </div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-2">10x</h3>
-              <p className="text-gray-600">Faster Analysis</p>
-            </div>
-            <div>
-              <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Users className="h-8 w-8 text-purple-600" />
-              </div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-2">500+</h3>
-              <p className="text-gray-600">Engineers Trust Us</p>
-            </div>
-          </div>
-        </div>
-      </section>
+      
 
       <Footer />
     </div>

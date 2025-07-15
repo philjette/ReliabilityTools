@@ -3,7 +3,47 @@
 import { generateText } from "ai"
 import { openai } from "@ai-sdk/openai"
 import { generateFmeaPdf } from "@/lib/pdf-export"
-import type { FailureMode } from "@/lib/actions"
+
+export interface FMEAConfig {
+  assetType: string
+  voltageRating: string
+  operatingEnvironment: string
+  ageRange: string
+  loadProfile: string
+  assetCriticality: string
+  additionalNotes?: string
+}
+
+export interface FailureMode {
+  name: string
+  description: string
+  severity: number
+  occurrence: number
+  detection: number
+  causes: string[]
+  effects: string[]
+  recommendations: string[]
+  maintenanceActions?: Array<{
+    action: string
+    frequency: string
+    description: string
+  }>
+}
+
+export interface FMEA {
+  id: string
+  title: string
+  asset_type: string
+  voltage_rating: string
+  operating_environment: string
+  age_range: string
+  load_profile: string
+  asset_criticality: string
+  additional_notes?: string
+  failure_modes: FailureMode[]
+  weibull_parameters: Record<string, { shape: number; scale: number }>
+  created_at: string
+}
 
 interface SaveFMEAParams {
   title: string
@@ -104,6 +144,10 @@ export async function generatePdf(params: SaveFMEAParams): Promise<Uint8Array> {
   return generateFmeaPdf(params)
 }
 
+export async function generatePdfFromSaved(id: string): Promise<Uint8Array> {
+  throw new Error("This functionality requires saved FMEAs which have been disabled.")
+}
+
 // Placeholder functions for removed database functionality
 export async function saveFMEA(params: SaveFMEAParams) {
   throw new Error("Save functionality has been disabled. Use PDF export instead.")
@@ -119,8 +163,4 @@ export async function getFMEAById(id: string) {
 
 export async function deleteFMEA(id: string) {
   throw new Error("Delete functionality has been disabled.")
-}
-
-export async function generatePdfFromSaved(id: string): Promise<Uint8Array> {
-  throw new Error("This functionality requires saved FMEAs which have been disabled.")
 }

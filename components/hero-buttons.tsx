@@ -1,6 +1,6 @@
-import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { FileText, BarChart3 } from "lucide-react"
+import Link from "next/link"
 
 export function HeroButtons() {
   return (
@@ -11,7 +11,7 @@ export function HeroButtons() {
           Generate FMEA
         </Link>
       </Button>
-      <Button variant="outline" size="lg" asChild>
+      <Button asChild variant="outline" size="lg">
         <Link href="/analyze">
           <BarChart3 className="mr-2 h-5 w-5" />
           Analyze Data
