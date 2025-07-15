@@ -13,7 +13,7 @@ export default function AboutPage() {
       <div className="container mx-auto px-4 py-16">
         {/* Mission Section */}
         <section className="text-center mb-16">
-          <h1 className="text-4xl font-bold text-gray-900 mb-6">About AssetX.pro</h1>
+          <h1 className="text-4xl font-bold text-gray-900 mb-6">About assetx</h1>
           <div className="max-w-3xl mx-auto">
             <h2 className="text-2xl font-semibold text-gray-800 mb-4">Our Mission</h2>
             <p className="text-lg text-gray-600 leading-relaxed">
