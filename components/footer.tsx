@@ -3,23 +3,62 @@ import { Activity } from "lucide-react"
 
 export function Footer() {
   return (
-    <footer className="border-t py-6 md:py-8">
-      <div className="container flex flex-col items-center justify-center gap-4 px-4 md:px-6 md:flex-row">
-        <div className="flex items-center gap-2 text-sm">
-          <Activity className="h-5 w-5 text-primary" />
-          <span className="font-semibold">AssetX.pro</span>
+    <footer className="border-t bg-muted/50">
+      <div className="container px-4 py-8 md:px-6">
+        <div className="grid gap-8 lg:grid-cols-4">
+          <div className="space-y-4">
+            <Link href="/" className="flex items-center gap-2 font-bold text-xl">
+              <Activity className="h-6 w-6 text-primary" />
+              <span>AssetX.pro</span>
+            </Link>
+            <p className="text-sm text-muted-foreground">
+              Professional reliability engineering tools for electrical asset management and failure analysis.
+            </p>
+          </div>
+          <div className="space-y-4">
+            <h4 className="text-sm font-semibold">Tools</h4>
+            <ul className="space-y-2 text-sm">
+              <li>
+                <Link href="/generate" className="text-muted-foreground hover:text-foreground">
+                  FMEA Generator
+                </Link>
+              </li>
+              <li>
+                <Link href="/analyze" className="text-muted-foreground hover:text-foreground">
+                  Data Analysis
+                </Link>
+              </li>
+            </ul>
+          </div>
+          <div className="space-y-4">
+            <h4 className="text-sm font-semibold">Company</h4>
+            <ul className="space-y-2 text-sm">
+              <li>
+                <Link href="/about" className="text-muted-foreground hover:text-foreground">
+                  About
+                </Link>
+              </li>
+            </ul>
+          </div>
+          <div className="space-y-4">
+            <h4 className="text-sm font-semibold">Legal</h4>
+            <ul className="space-y-2 text-sm">
+              <li>
+                <Link href="#" className="text-muted-foreground hover:text-foreground">
+                  Privacy Policy
+                </Link>
+              </li>
+              <li>
+                <Link href="#" className="text-muted-foreground hover:text-foreground">
+                  Terms of Service
+                </Link>
+              </li>
+            </ul>
+          </div>
         </div>
-        <p className="text-center text-sm text-muted-foreground md:text-left">
-          &copy; {new Date().getFullYear()} AssetX.pro. All rights reserved.
-        </p>
-        <nav className="flex gap-4 sm:gap-6 md:ml-auto">
-          <Link href="#" className="text-sm font-medium hover:underline underline-offset-4">
-            Terms
-          </Link>
-          <Link href="#" className="text-sm font-medium hover:underline underline-offset-4">
-            Privacy
-          </Link>
-        </nav>
+        <div className="mt-8 border-t pt-8 text-center text-sm text-muted-foreground">
+          <p>&copy; 2024 AssetX.pro. All rights reserved.</p>
+        </div>
       </div>
     </footer>
   )

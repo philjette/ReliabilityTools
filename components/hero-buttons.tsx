@@ -1,33 +1,22 @@
-"use client"
-
 import Link from "next/link"
-import { useAuth } from "@/contexts/auth-context"
 import { Button } from "@/components/ui/button"
+import { FileText, BarChart3 } from "lucide-react"
 
 export function HeroButtons() {
-  const { user, isLoading } = useAuth()
-
   return (
-    <div className="flex flex-col sm:flex-row gap-4 mt-8">
-      {!isLoading && user ? (
-        <>
-          <Button size="lg" asChild>
-            <Link href="/dashboard/home">Go to Dashboard</Link>
-          </Button>
-          <Button size="lg" variant="outline" asChild>
-            <Link href="/generate">Generate FMEA</Link>
-          </Button>
-        </>
-      ) : (
-        <>
-          <Button size="lg" asChild>
-            <Link href="/auth/signin">Get Started</Link>
-          </Button>
-          <Button size="lg" variant="outline" asChild>
-            <Link href="/about">Learn More</Link>
-          </Button>
-        </>
-      )}
+    <div className="flex flex-col sm:flex-row gap-4">
+      <Button asChild size="lg">
+        <Link href="/generate">
+          <FileText className="mr-2 h-5 w-5" />
+          Generate FMEA
+        </Link>
+      </Button>
+      <Button variant="outline" size="lg" asChild>
+        <Link href="/analyze">
+          <BarChart3 className="mr-2 h-5 w-5" />
+          Analyze Data
+        </Link>
+      </Button>
     </div>
   )
 }

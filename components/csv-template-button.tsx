@@ -1,48 +1,39 @@
 "use client"
 
-import { useState } from "react"
-import { FileDown } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { Download } from "lucide-react"
 
 export function CSVTemplateButton() {
-  const [isGenerating, setIsGenerating] = useState(false)
+  const downloadTemplate = () => {
+    const csvContent = [
+      "Asset Name,Failure Time,Failure Mode,Operating Hours,Environment,Voltage Rating",
+      "Transformer A,2160,Insulation Breakdown,8760,Outdoor,138kV",
+      "Transformer A,4320,Cooling System,17520,Outdoor,138kV",
+      "Transformer A,6480,Tap Changer,26280,Outdoor,138kV",
+      "Circuit Breaker B,1440,Contact Wear,5840,Indoor,69kV",
+      "Circuit Breaker B,2880,Arc Chamber,11680,Indoor,69kV",
+      "Circuit Breaker B,4320,Operating Mechanism,17520,Indoor,69kV",
+      "Cable C,8760,Insulation Degradation,35040,Underground,25kV",
+      "Cable C,17520,Water Ingress,70080,Underground,25kV",
+      "Switch D,720,Contact Corrosion,2920,Outdoor,12kV",
+      "Switch D,1440,Mechanical Wear,5840,Outdoor,12kV",
+    ].join("\n")
 
-  const generateTemplate = () => {
-    setIsGenerating(true)
-
-    try {
-      // Create CSV content
-      const headers = "asset_id,install_date,retirement_date"
-      const sampleData = [
-        "A001,2020-01-15,2022-06-30",
-        "A002,2020-02-01,",
-        "A003,2019-11-10,2023-03-15",
-        "A004,2021-05-22,",
-        "A005,2018-07-01,2022-12-10",
-      ].join("\n")
-
-      const csvContent = `${headers}\n${sampleData}`
-
-      // Create a blob and download link
-      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" })
-      const url = URL.createObjectURL(blob)
-      const link = document.createElement("a")
-      link.href = url
-      link.setAttribute("download", "asset_data_template.csv")
-      document.body.appendChild(link)
-      link.click()
-      document.body.removeChild(link)
-    } catch (error) {
-      console.error("Error generating template:", error)
-    } finally {
-      setIsGenerating(false)
-    }
+    const blob = new Blob([csvContent], { type: "text/csv" })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement("a")
+    link.href = url
+    link.download = "asset_failure_data_template.csv"
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
   }
 
   return (
-    <Button variant="outline" size="sm" onClick={generateTemplate} disabled={isGenerating}>
-      <FileDown className="h-4 w-4 mr-2" />
-      {isGenerating ? "Generating..." : "Download CSV Template"}
+    <Button onClick={downloadTemplate} variant="outline">
+      <Download className="h-4 w-4 mr-2" />
+      Download CSV Template
     </Button>
   )
 }

@@ -1,10 +1,18 @@
 "use server"
 
-import { createServerActionClient } from "@supabase/auth-helpers-nextjs"
-import { cookies } from "next/headers"
-import { revalidatePath } from "next/cache"
-import type { FailureMode } from "@/lib/actions"
+import { generateText } from "ai"
+import { openai } from "@ai-sdk/openai"
 import { generateFmeaPdf } from "@/lib/pdf-export"
+import type { FailureMode } from "@/lib/actions"
+
+interface GenerateFMEAParams {
+  assetName: string
+  assetType: string
+  voltageRating: string
+  operatingEnvironment: string
+  loadProfile: string
+  additionalContext: string
+}
 
 interface SaveFMEAParams {
   title: string
@@ -19,223 +27,64 @@ interface SaveFMEAParams {
   weibullParameters: Record<string, { shape: number; scale: number }>
 }
 
-export async function saveFMEA(params: SaveFMEAParams) {
+export async function generateFMEA(params: GenerateFMEAParams) {
   try {
-    console.log("=== Starting saveFMEA ===")
+    const prompt = `Generate a comprehensive FMEA (Failure Mode and Effects Analysis) for the following electrical asset:
 
-    // Create Supabase client with proper configuration
-    const supabase = createServerActionClient({
-      cookies,
-      supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL,
-      supabaseKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-    })
+Asset Name: ${params.assetName}
+Asset Type: ${params.assetType}
+Voltage Rating: ${params.voltageRating}
+Operating Environment: ${params.operatingEnvironment}
+Load Profile: ${params.loadProfile}
+Additional Context: ${params.additionalContext}
 
-    // First, let's verify the client is working
-    console.log("Supabase client created")
+Please provide a detailed FMEA with at least 5-8 failure modes. For each failure mode, include:
+1. Failure Mode name
+2. Description of the failure
+3. Potential causes (list 2-3)
+4. Effects of the failure (list 2-3)
+5. Severity rating (1-10)
+6. Occurrence rating (1-10)
+7. Detection rating (1-10)
+8. RPN (Risk Priority Number = Severity × Occurrence × Detection)
+9. Recommended actions (list 2-3)
 
-    // Get the current session
-    const { data: sessionData, error: sessionError } = await supabase.auth.getSession()
-
-    if (sessionError) {
-      console.error("Session error:", sessionError)
-      throw new Error(`Authentication failed: ${sessionError.message}`)
-    }
-
-    if (!sessionData.session) {
-      console.error("No session found")
-      throw new Error("No active session. Please sign in again.")
-    }
-
-    const user = sessionData.session.user
-    if (!user || !user.id) {
-      console.error("No user in session")
-      throw new Error("Invalid user session. Please sign in again.")
-    }
-
-    console.log("User found:", { id: user.id, email: user.email })
-
-    // Verify the user exists in auth.users table
-    const { data: userCheck, error: userCheckError } = await supabase
-      .from("auth.users")
-      .select("id")
-      .eq("id", user.id)
-      .single()
-
-    if (userCheckError) {
-      console.log("User check failed, but this might be expected due to RLS")
-      // This might fail due to RLS policies, but let's continue
-    }
-
-    // Validate required fields
-    if (!params.title?.trim()) {
-      throw new Error("Title is required")
-    }
-
-    if (!params.failureModes || params.failureModes.length === 0) {
-      throw new Error("At least one failure mode is required")
-    }
-
-    // Prepare the data for insertion
-    const fmeaData = {
-      user_id: user.id, // This should be a valid UUID from auth.users
-      title: params.title.trim(),
-      asset_type: params.assetType || "",
-      voltage_rating: params.voltageRating || "",
-      operating_environment: params.operatingEnvironment || "",
-      age_range: params.ageRange || "",
-      load_profile: params.loadProfile || "",
-      asset_criticality: params.assetCriticality || "",
-      additional_notes: params.additionalNotes || "",
-      failure_modes: params.failureModes,
-      weibull_parameters: params.weibullParameters || {},
-    }
-
-    console.log("Attempting to insert FMEA with user_id:", user.id)
-
-    // Insert the FMEA into the database
-    const { data, error } = await supabase.from("fmeas").insert(fmeaData).select().single()
-
-    if (error) {
-      console.error("Database insert error:", error)
-
-      // Check if it's a foreign key constraint error
-      if (error.message.includes("fk_user") || error.message.includes("foreign key")) {
-        throw new Error(
-          `User authentication issue: Your user account may not be properly set up. Please sign out and sign in again.`,
-        )
-      }
-
-      throw new Error(`Database error: ${error.message}`)
-    }
-
-    if (!data) {
-      throw new Error("No data returned from insert operation")
-    }
-
-    console.log("FMEA saved successfully:", data.id)
-
-    // Revalidate paths
-    revalidatePath("/dashboard")
-    revalidatePath("/dashboard/fmeas")
-
-    return data
-  } catch (error) {
-    console.error("=== Error in saveFMEA ===")
-    console.error("Error details:", error)
-
-    if (error instanceof Error) {
-      throw error
-    } else {
-      throw new Error("Unknown error occurred while saving FMEA")
-    }
-  }
+Format the response as a JSON array of objects with the following structure:
+{
+  "failureMode": "string",
+  "description": "string",
+  "causes": ["string", "string"],
+  "effects": ["string", "string"],
+  "severity": number,
+  "occurrence": number,
+  "detection": number,
+  "rpn": number,
+  "recommendedActions": ["string", "string"]
 }
 
-// Add a function to test authentication
-export async function testAuthentication() {
-  try {
-    const supabase = createServerActionClient({
-      cookies,
-      supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL,
-      supabaseKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+Ensure the ratings are realistic for electrical equipment and the RPN is calculated correctly.`
+
+    const { text } = await generateText({
+      model: openai("gpt-4o"),
+      prompt,
+      system:
+        "You are an expert reliability engineer specializing in electrical transmission and distribution equipment. Provide accurate, professional FMEA analysis based on industry standards and best practices.",
     })
 
-    const { data: sessionData, error: sessionError } = await supabase.auth.getSession()
-
-    if (sessionError) {
-      return { success: false, error: sessionError.message }
-    }
-
-    if (!sessionData.session) {
-      return { success: false, error: "No active session" }
-    }
-
-    const user = sessionData.session.user
+    // Parse the JSON response
+    const cleanedText = text.replace(/```json\n?|\n?```/g, "").trim()
+    const fmeaResults = JSON.parse(cleanedText)
 
     return {
       success: true,
-      user: {
-        id: user.id,
-        email: user.email,
-        created_at: user.created_at,
-      },
-      session: {
-        access_token: sessionData.session.access_token ? "Present" : "Missing",
-        refresh_token: sessionData.session.refresh_token ? "Present" : "Missing",
-      },
+      data: fmeaResults,
     }
   } catch (error) {
+    console.error("Error generating FMEA:", error)
     return {
       success: false,
-      error: error instanceof Error ? error.message : "Unknown error",
+      error: error instanceof Error ? error.message : "Unknown error occurred",
     }
-  }
-}
-
-export async function getUserFMEAs() {
-  try {
-    const supabase = createServerActionClient({ cookies })
-
-    const { data: sessionData } = await supabase.auth.getSession()
-
-    if (!sessionData.session?.user) {
-      return []
-    }
-
-    const { data, error } = await supabase
-      .from("fmeas")
-      .select("*")
-      .eq("user_id", sessionData.session.user.id)
-      .order("created_at", { ascending: false })
-
-    if (error) {
-      console.error("Error fetching FMEAs:", error)
-      return []
-    }
-
-    return data || []
-  } catch (error) {
-    console.error("Error in getUserFMEAs:", error)
-    return []
-  }
-}
-
-export async function getFMEAById(id: string) {
-  try {
-    const supabase = createServerActionClient({ cookies })
-
-    const { data, error } = await supabase.from("fmeas").select("*").eq("id", id).single()
-
-    if (error) {
-      console.error("Error fetching FMEA:", error)
-      return null
-    }
-
-    return data
-  } catch (error) {
-    console.error("Error in getFMEAById:", error)
-    return null
-  }
-}
-
-export async function deleteFMEA(id: string) {
-  try {
-    const supabase = createServerActionClient({ cookies })
-
-    const { error } = await supabase.from("fmeas").delete().eq("id", id)
-
-    if (error) {
-      console.error("Error deleting FMEA:", error)
-      throw new Error(`Failed to delete FMEA: ${error.message}`)
-    }
-
-    revalidatePath("/dashboard")
-    revalidatePath("/dashboard/fmeas")
-
-    return true
-  } catch (error) {
-    console.error("Error in deleteFMEA:", error)
-    throw error
   }
 }
 
@@ -243,24 +92,33 @@ export async function generatePdf(params: SaveFMEAParams): Promise<Uint8Array> {
   return generateFmeaPdf(params)
 }
 
+// Placeholder functions for database operations (since we removed authentication)
+export async function saveFMEA(params: SaveFMEAParams) {
+  // Since we removed authentication and database functionality,
+  // this function is a placeholder that throws an error
+  throw new Error("Save functionality has been disabled. Use PDF export instead.")
+}
+
+export async function getUserFMEAs() {
+  // Since we removed authentication and database functionality,
+  // this function returns an empty array
+  return []
+}
+
+export async function getFMEAById(id: string) {
+  // Since we removed authentication and database functionality,
+  // this function returns null
+  return null
+}
+
+export async function deleteFMEA(id: string) {
+  // Since we removed authentication and database functionality,
+  // this function throws an error
+  throw new Error("Delete functionality has been disabled.")
+}
+
 export async function generatePdfFromSaved(id: string): Promise<Uint8Array> {
-  const fmea = await getFMEAById(id)
-
-  if (!fmea) {
-    throw new Error("FMEA not found")
-  }
-
-  return generateFmeaPdf({
-    title: fmea.title,
-    assetType: fmea.asset_type,
-    voltageRating: fmea.voltage_rating,
-    operatingEnvironment: fmea.operating_environment,
-    ageRange: fmea.age_range,
-    loadProfile: fmea.load_profile,
-    assetCriticality: fmea.asset_criticality,
-    additionalNotes: fmea.additional_notes,
-    failureModes: fmea.failure_modes,
-    weibullParameters: fmea.weibull_parameters,
-    createdAt: fmea.created_at,
-  })
+  // Since we removed authentication and database functionality,
+  // this function throws an error
+  throw new Error("This functionality requires saved FMEAs which have been disabled.")
 }
