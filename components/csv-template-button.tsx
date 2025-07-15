@@ -4,26 +4,24 @@ import { Button } from "@/components/ui/button"
 import { Download } from "lucide-react"
 
 export function CSVTemplateButton() {
-  const downloadTemplate = () => {
-    const csvContent = [
-      "Asset Name,Failure Time,Failure Mode,Operating Hours,Environment,Voltage Rating",
-      "Transformer A,2160,Insulation Breakdown,8760,Outdoor,138kV",
-      "Transformer A,4320,Cooling System,17520,Outdoor,138kV",
-      "Transformer A,6480,Tap Changer,26280,Outdoor,138kV",
-      "Circuit Breaker B,1440,Contact Wear,5840,Indoor,69kV",
-      "Circuit Breaker B,2880,Arc Chamber,11680,Indoor,69kV",
-      "Circuit Breaker B,4320,Operating Mechanism,17520,Indoor,69kV",
-      "Cable C,8760,Insulation Degradation,35040,Underground,25kV",
-      "Cable C,17520,Water Ingress,70080,Underground,25kV",
-      "Switch D,720,Contact Corrosion,2920,Outdoor,12kV",
-      "Switch D,1440,Mechanical Wear,5840,Outdoor,12kV",
-    ].join("\n")
+  const handleDownload = () => {
+    const csvContent = `Asset_ID,Failure_Time_Hours,Failure_Mode,Environment
+T001,8760,Insulation Breakdown,Outdoor
+T002,12450,Contact Wear,Indoor
+T003,6890,Cooling System Failure,Outdoor
+T004,15670,Bushing Failure,Indoor
+T005,9340,Tap Changer Malfunction,Outdoor
+T006,11200,Oil Leak,Indoor
+T007,7650,Winding Fault,Outdoor
+T008,13890,Protection System Failure,Indoor
+T009,10450,Corrosion,Outdoor
+T010,14230,Mechanical Failure,Indoor`
 
     const blob = new Blob([csvContent], { type: "text/csv" })
     const url = URL.createObjectURL(blob)
     const link = document.createElement("a")
     link.href = url
-    link.download = "asset_failure_data_template.csv"
+    link.download = "failure_data_template.csv"
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)
@@ -31,8 +29,8 @@ export function CSVTemplateButton() {
   }
 
   return (
-    <Button onClick={downloadTemplate} variant="outline">
-      <Download className="h-4 w-4 mr-2" />
+    <Button onClick={handleDownload} variant="outline" size="sm">
+      <Download className="mr-2 h-4 w-4" />
       Download CSV Template
     </Button>
   )

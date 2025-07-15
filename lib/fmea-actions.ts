@@ -5,15 +5,6 @@ import { openai } from "@ai-sdk/openai"
 import { generateFmeaPdf } from "@/lib/pdf-export"
 import type { FailureMode } from "@/lib/actions"
 
-interface GenerateFMEAParams {
-  assetName: string
-  assetType: string
-  voltageRating: string
-  operatingEnvironment: string
-  loadProfile: string
-  additionalContext: string
-}
-
 interface SaveFMEAParams {
   title: string
   assetType: string
@@ -27,16 +18,25 @@ interface SaveFMEAParams {
   weibullParameters: Record<string, { shape: number; scale: number }>
 }
 
-export async function generateFMEA(params: GenerateFMEAParams) {
+export async function generateFMEA(
+  assetType: string,
+  voltageRating: string,
+  operatingEnvironment: string,
+  ageRange: string,
+  loadProfile: string,
+  assetCriticality: string,
+  additionalNotes: string,
+) {
   try {
     const prompt = `Generate a comprehensive FMEA (Failure Mode and Effects Analysis) for the following electrical asset:
 
-Asset Name: ${params.assetName}
-Asset Type: ${params.assetType}
-Voltage Rating: ${params.voltageRating}
-Operating Environment: ${params.operatingEnvironment}
-Load Profile: ${params.loadProfile}
-Additional Context: ${params.additionalContext}
+Asset Type: ${assetType}
+Voltage Rating: ${voltageRating}
+Operating Environment: ${operatingEnvironment}
+Age Range: ${ageRange}
+Load Profile: ${loadProfile}
+Asset Criticality: ${assetCriticality}
+Additional Notes: ${additionalNotes}
 
 Please provide a detailed FMEA with at least 5-8 failure modes. For each failure mode, include:
 1. Failure Mode name
@@ -48,18 +48,33 @@ Please provide a detailed FMEA with at least 5-8 failure modes. For each failure
 7. Detection rating (1-10)
 8. RPN (Risk Priority Number = Severity × Occurrence × Detection)
 9. Recommended actions (list 2-3)
+10. Maintenance actions with frequency
 
-Format the response as a JSON array of objects with the following structure:
+Format the response as a JSON object with the following structure:
 {
-  "failureMode": "string",
-  "description": "string",
-  "causes": ["string", "string"],
-  "effects": ["string", "string"],
-  "severity": number,
-  "occurrence": number,
-  "detection": number,
-  "rpn": number,
-  "recommendedActions": ["string", "string"]
+  "failureModes": [
+    {
+      "name": "string",
+      "description": "string",
+      "causes": ["string", "string"],
+      "effects": ["string", "string"],
+      "severity": number,
+      "occurrence": number,
+      "detection": number,
+      "recommendations": ["string", "string"],
+      "maintenanceActions": [
+        {
+          "action": "string",
+          "frequency": "string",
+          "description": "string"
+        }
+      ]
+    }
+  ],
+  "weibullParameters": {
+    "FailureMode1": {"shape": number, "scale": number},
+    "FailureMode2": {"shape": number, "scale": number}
+  }
 }
 
 Ensure the ratings are realistic for electrical equipment and the RPN is calculated correctly.`
@@ -68,23 +83,20 @@ Ensure the ratings are realistic for electrical equipment and the RPN is calcula
       model: openai("gpt-4o"),
       prompt,
       system:
-        "You are an expert reliability engineer specializing in electrical transmission and distribution equipment. Provide accurate, professional FMEA analysis based on industry standards and best practices.",
+        "You are an expert reliability engineer specializing in electrical transmission and distribution equipment. Provide accurate, professional FMEA analysis based on industry standards and best practices. Always respond with valid JSON.",
     })
 
     // Parse the JSON response
     const cleanedText = text.replace(/```json\n?|\n?```/g, "").trim()
-    const fmeaResults = JSON.parse(cleanedText)
+    const result = JSON.parse(cleanedText)
 
     return {
-      success: true,
-      data: fmeaResults,
+      failureModes: result.failureModes || [],
+      weibullParameters: result.weibullParameters || {},
     }
   } catch (error) {
     console.error("Error generating FMEA:", error)
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : "Unknown error occurred",
-    }
+    throw new Error("Failed to generate FMEA. Please try again.")
   }
 }
 
@@ -92,33 +104,23 @@ export async function generatePdf(params: SaveFMEAParams): Promise<Uint8Array> {
   return generateFmeaPdf(params)
 }
 
-// Placeholder functions for database operations (since we removed authentication)
+// Placeholder functions for removed database functionality
 export async function saveFMEA(params: SaveFMEAParams) {
-  // Since we removed authentication and database functionality,
-  // this function is a placeholder that throws an error
   throw new Error("Save functionality has been disabled. Use PDF export instead.")
 }
 
 export async function getUserFMEAs() {
-  // Since we removed authentication and database functionality,
-  // this function returns an empty array
   return []
 }
 
 export async function getFMEAById(id: string) {
-  // Since we removed authentication and database functionality,
-  // this function returns null
   return null
 }
 
 export async function deleteFMEA(id: string) {
-  // Since we removed authentication and database functionality,
-  // this function throws an error
   throw new Error("Delete functionality has been disabled.")
 }
 
 export async function generatePdfFromSaved(id: string): Promise<Uint8Array> {
-  // Since we removed authentication and database functionality,
-  // this function throws an error
   throw new Error("This functionality requires saved FMEAs which have been disabled.")
 }

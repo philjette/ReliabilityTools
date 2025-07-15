@@ -4,7 +4,7 @@ import { FileText, BarChart3 } from "lucide-react"
 
 export function HeroButtons() {
   return (
-    <div className="flex flex-col sm:flex-row gap-4">
+    <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
       <Button asChild size="lg">
         <Link href="/generate">
           <FileText className="mr-2 h-5 w-5" />

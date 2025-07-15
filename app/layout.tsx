@@ -7,9 +7,8 @@ import { Toaster } from "@/components/ui/toaster"
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "AssetX.pro - AI-Powered Reliability Engineering",
-  description:
-    "Professional FMEA generation and reliability analysis for electrical transmission and distribution assets",
+  title: "AssetX.pro - Reliability Engineering Tools",
+  description: "Professional reliability engineering tools for electrical transmission and distribution assets",
     generator: 'v0.dev'
 }
 

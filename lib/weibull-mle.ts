@@ -103,6 +103,73 @@ export function fitWeibullMLE(data: AssetData[]): WeibullParams {
 }
 
 /**
+ * Estimates Weibull parameters from failure time data
+ * This is a simplified version for the analyze page
+ */
+export function estimateWeibullParameters(failureTimes: number[]): WeibullParams {
+  // Sort failure times
+  const sortedTimes = [...failureTimes].sort((a, b) => a - b)
+
+  // Use method of moments for initial estimates
+  const n = sortedTimes.length
+  const mean = sortedTimes.reduce((sum, t) => sum + t, 0) / n
+  const variance = sortedTimes.reduce((sum, t) => sum + Math.pow(t - mean, 2), 0) / (n - 1)
+
+  // Initial shape parameter estimate using coefficient of variation
+  const cv = Math.sqrt(variance) / mean
+  let shape = 1.2 / cv // Rough approximation
+
+  // Initial scale parameter estimate
+  let scale = mean / Math.exp(1) ** (1 / shape)
+
+  // Refine estimates using maximum likelihood
+  const maxIterations = 50
+  const tolerance = 1e-6
+
+  for (let iter = 0; iter < maxIterations; iter++) {
+    // Calculate derivatives for Newton-Raphson
+    let sumLogT = 0
+    let sumTPowBeta = 0
+    let sumTPowBetaLogT = 0
+
+    for (const t of sortedTimes) {
+      const logT = Math.log(t)
+      const tPowBeta = Math.pow(t / scale, shape)
+
+      sumLogT += logT
+      sumTPowBeta += tPowBeta
+      sumTPowBetaLogT += tPowBeta * logT
+    }
+
+    // Update shape parameter
+    const firstDeriv = n / shape + sumLogT - sumTPowBetaLogT
+    const secondDeriv = -n / (shape * shape)
+
+    const newShape = shape - firstDeriv / secondDeriv
+
+    // Update scale parameter
+    const newScale = Math.pow(sumTPowBeta / n, 1 / newShape) * scale
+
+    // Check convergence
+    const shapeChange = Math.abs((newShape - shape) / shape)
+    const scaleChange = Math.abs((newScale - scale) / scale)
+
+    if (shapeChange < tolerance && scaleChange < tolerance) {
+      break
+    }
+
+    shape = newShape
+    scale = newScale
+  }
+
+  // Ensure reasonable bounds
+  shape = Math.max(0.1, Math.min(10, shape))
+  scale = Math.max(1, Math.min(1000000, scale))
+
+  return { shape, scale }
+}
+
+/**
  * Calculates goodness of fit metrics for the Weibull distribution
  */
 export function calculateGoodnessOfFit(

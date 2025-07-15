@@ -1,151 +1,127 @@
-import Link from "next/link"
-import { ArrowRight, CheckCircle, FileText, BarChart3, Shield, Zap } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { HeroButtons } from "@/components/hero-buttons"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Zap, BarChart3, FileText, Shield, Clock, Users } from "lucide-react"
 
 export default function HomePage() {
   return (
-    <div className="flex flex-col min-h-screen">
-      <Header activePath="/" />
-      <main className="flex-1">
-        {/* Hero Section */}
-        <section className="py-12 md:py-24 lg:py-32 xl:py-48">
-          <div className="container px-4 md:px-6">
-            <div className="flex flex-col items-center space-y-4 text-center">
-              <div className="space-y-2">
-                <h1 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl lg:text-6xl/none">
-                  Professional Reliability Engineering Tools
-                </h1>
-                <p className="mx-auto max-w-[700px] text-gray-500 md:text-xl dark:text-gray-400">
-                  Generate comprehensive FMEA reports and analyze failure data for electrical assets. Streamline your
-                  reliability engineering workflow with AI-powered insights.
-                </p>
+    <div className="min-h-screen bg-white">
+      <Header />
+
+      {/* Hero Section */}
+      <section className="bg-gradient-to-br from-blue-50 to-indigo-100 py-20">
+        <div className="container mx-auto px-4 text-center">
+          <h1 className="text-5xl font-bold text-gray-900 mb-6">Professional Reliability Engineering Tools</h1>
+          <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
+            Generate comprehensive FMEA reports, analyze failure data, and optimize maintenance strategies for
+            electrical transmission and distribution assets with AI-powered insights.
+          </p>
+          <HeroButtons />
+        </div>
+      </section>
+
+      {/* Features Section */}
+      <section className="py-20 bg-white">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl font-bold text-gray-900 mb-4">Comprehensive Reliability Analysis</h2>
+            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+              Everything you need to assess, analyze, and improve the reliability of your electrical assets
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <Card className="border-2 hover:border-blue-200 transition-colors">
+              <CardHeader>
+                <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-4">
+                  <Zap className="h-6 w-6 text-blue-600" />
+                </div>
+                <CardTitle>AI-Powered FMEA</CardTitle>
+                <CardDescription>
+                  Generate comprehensive Failure Mode and Effects Analysis reports using advanced AI
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ul className="text-sm text-gray-600 space-y-2">
+                  <li>• Asset-specific failure modes</li>
+                  <li>• RPN calculations</li>
+                  <li>• Maintenance recommendations</li>
+                  <li>• Professional PDF reports</li>
+                </ul>
+              </CardContent>
+            </Card>
+
+            <Card className="border-2 hover:border-green-200 transition-colors">
+              <CardHeader>
+                <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mb-4">
+                  <BarChart3 className="h-6 w-6 text-green-600" />
+                </div>
+                <CardTitle>Weibull Analysis</CardTitle>
+                <CardDescription>
+                  Analyze failure data with Weibull distribution modeling and reliability predictions
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ul className="text-sm text-gray-600 space-y-2">
+                  <li>• Statistical parameter estimation</li>
+                  <li>• Reliability curves</li>
+                  <li>• Hazard rate analysis</li>
+                  <li>• Interactive visualizations</li>
+                </ul>
+              </CardContent>
+            </Card>
+
+            <Card className="border-2 hover:border-purple-200 transition-colors">
+              <CardHeader>
+                <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mb-4">
+                  <FileText className="h-6 w-6 text-purple-600" />
+                </div>
+                <CardTitle>Professional Reports</CardTitle>
+                <CardDescription>Export detailed analysis results as professional PDF reports</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ul className="text-sm text-gray-600 space-y-2">
+                  <li>• Formatted PDF exports</li>
+                  <li>• Charts and visualizations</li>
+                  <li>• Executive summaries</li>
+                  <li>• Technical documentation</li>
+                </ul>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </section>
+
+      {/* Stats Section */}
+      <section className="py-16 bg-gray-50">
+        <div className="container mx-auto px-4">
+          <div className="grid md:grid-cols-3 gap-8 text-center">
+            <div>
+              <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Shield className="h-8 w-8 text-blue-600" />
               </div>
-              <HeroButtons />
+              <h3 className="text-2xl font-bold text-gray-900 mb-2">99.9%</h3>
+              <p className="text-gray-600">Reliability Accuracy</p>
+            </div>
+            <div>
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Clock className="h-8 w-8 text-green-600" />
+              </div>
+              <h3 className="text-2xl font-bold text-gray-900 mb-2">10x</h3>
+              <p className="text-gray-600">Faster Analysis</p>
+            </div>
+            <div>
+              <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Users className="h-8 w-8 text-purple-600" />
+              </div>
+              <h3 className="text-2xl font-bold text-gray-900 mb-2">500+</h3>
+              <p className="text-gray-600">Engineers Trust Us</p>
             </div>
           </div>
-        </section>
+        </div>
+      </section>
 
-        {/* Features Section */}
-        <section className="py-12 md:py-24 lg:py-32 bg-gray-50 dark:bg-gray-900">
-          <div className="container px-4 md:px-6">
-            <div className="grid gap-6 lg:grid-cols-3 lg:gap-12">
-              <Card>
-                <CardHeader>
-                  <FileText className="h-10 w-10 mb-2 text-primary" />
-                  <CardTitle>FMEA Generation</CardTitle>
-                  <CardDescription>
-                    Create comprehensive Failure Mode and Effects Analysis reports for electrical assets
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <ul className="space-y-2">
-                    <li className="flex items-center">
-                      <CheckCircle className="h-4 w-4 mr-2 text-green-500" />
-                      <span className="text-sm">AI-powered failure mode identification</span>
-                    </li>
-                    <li className="flex items-center">
-                      <CheckCircle className="h-4 w-4 mr-2 text-green-500" />
-                      <span className="text-sm">Risk Priority Number (RPN) calculation</span>
-                    </li>
-                    <li className="flex items-center">
-                      <CheckCircle className="h-4 w-4 mr-2 text-green-500" />
-                      <span className="text-sm">Maintenance recommendations</span>
-                    </li>
-                    <li className="flex items-center">
-                      <CheckCircle className="h-4 w-4 mr-2 text-green-500" />
-                      <span className="text-sm">PDF export capability</span>
-                    </li>
-                  </ul>
-                  <Button className="w-full mt-4" asChild>
-                    <Link href="/generate">
-                      Start FMEA Generation
-                      <ArrowRight className="ml-2 h-4 w-4" />
-                    </Link>
-                  </Button>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <BarChart3 className="h-10 w-10 mb-2 text-primary" />
-                  <CardTitle>Reliability Analysis</CardTitle>
-                  <CardDescription>Analyze failure data and generate Weibull distribution curves</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <ul className="space-y-2">
-                    <li className="flex items-center">
-                      <CheckCircle className="h-4 w-4 mr-2 text-green-500" />
-                      <span className="text-sm">Weibull parameter estimation</span>
-                    </li>
-                    <li className="flex items-center">
-                      <CheckCircle className="h-4 w-4 mr-2 text-green-500" />
-                      <span className="text-sm">Failure probability curves</span>
-                    </li>
-                    <li className="flex items-center">
-                      <CheckCircle className="h-4 w-4 mr-2 text-green-500" />
-                      <span className="text-sm">CSV data import</span>
-                    </li>
-                    <li className="flex items-center">
-                      <CheckCircle className="h-4 w-4 mr-2 text-green-500" />
-                      <span className="text-sm">Interactive visualizations</span>
-                    </li>
-                  </ul>
-                  <Button className="w-full mt-4 bg-transparent" variant="outline" asChild>
-                    <Link href="/analyze">
-                      Analyze Data
-                      <ArrowRight className="ml-2 h-4 w-4" />
-                    </Link>
-                  </Button>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <Shield className="h-10 w-10 mb-2 text-primary" />
-                  <CardTitle>Asset Coverage</CardTitle>
-                  <CardDescription>Comprehensive support for various electrical assets</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <ul className="space-y-2">
-                    <li className="flex items-center">
-                      <Zap className="h-4 w-4 mr-2 text-blue-500" />
-                      <span className="text-sm">Power Transformers</span>
-                    </li>
-                    <li className="flex items-center">
-                      <Zap className="h-4 w-4 mr-2 text-blue-500" />
-                      <span className="text-sm">Circuit Breakers</span>
-                    </li>
-                    <li className="flex items-center">
-                      <Zap className="h-4 w-4 mr-2 text-blue-500" />
-                      <span className="text-sm">Switchgear</span>
-                    </li>
-                    <li className="flex items-center">
-                      <Zap className="h-4 w-4 mr-2 text-blue-500" />
-                      <span className="text-sm">Protection Systems</span>
-                    </li>
-                  </ul>
-                  <Button className="w-full mt-4 bg-transparent" variant="outline" asChild>
-                    <Link href="/about">
-                      Learn More
-                      <ArrowRight className="ml-2 h-4 w-4" />
-                    </Link>
-                  </Button>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-        </section>
-
-        {/* Screenshots Section */}
-        
-
-        {/* CTA Section */}
-        
-      </main>
       <Footer />
     </div>
   )
