@@ -10,7 +10,7 @@ export const metadata: Metadata = {
   title: "assetx - reliability engineering with the power of AI",
   description: "Professional reliability engineering tools for electrical transmission and distribution assets",
   icons: {
-    icon: "/favicon.ico",
+    icon: "public/favicon.ico",
   },
     generator: 'v0.dev'
 }
