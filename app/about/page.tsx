@@ -17,7 +17,7 @@ export default function AboutPage() {
           <div className="max-w-3xl mx-auto">
             <h2 className="text-2xl font-semibold text-gray-800 mb-4">Our Mission</h2>
             <p className="text-lg text-gray-600 leading-relaxed">
-              AssetX.pro is dedicated to revolutionizing reliability engineering for electrical transmission and
+              assetx is dedicated to revolutionizing reliability engineering for electrical transmission and
               distribution assets. We combine advanced AI technology with proven engineering methodologies to provide
               comprehensive, accurate, and actionable reliability analysis tools that help engineers make informed
               decisions about asset management, maintenance strategies, and risk mitigation.
@@ -34,9 +34,9 @@ export default function AboutPage() {
                 <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
                   <Zap className="h-8 w-8 text-blue-600" />
                 </div>
-                <CardTitle className="text-xl">AI-Enabled FMEA Generation</CardTitle>
+                <CardTitle className="text-xl">AI-powered FMEA generation</CardTitle>
                 <CardDescription className="text-base">
-                  Generate comprehensive Failure Mode and Effects Analysis reports using advanced AI
+                  Generate comprehensive Failure Mode and Effects Analysis reports
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -131,7 +131,7 @@ export default function AboutPage() {
         <section className="text-center mt-16 py-12 bg-gray-50 rounded-lg">
           <h2 className="text-2xl font-bold text-gray-900 mb-4">Ready to Get Started?</h2>
           <p className="text-gray-600 mb-6 max-w-2xl mx-auto">
-            Begin your reliability analysis journey with our comprehensive suite of tools designed specifically for
+            Get started with our comprehensive suite of tools designed specifically for
             electrical transmission and distribution assets.
           </p>
           <Link href="/generate">

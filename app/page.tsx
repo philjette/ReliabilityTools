@@ -12,7 +12,7 @@ export default function HomePage() {
       {/* Hero Section */}
       <section className="bg-gradient-to-br from-blue-50 to-indigo-100 py-20">
         <div className="container mx-auto px-4 text-center">
-          <h1 className="text-5xl font-bold text-gray-900 mb-6">Professional Reliability Engineering Tools</h1>
+          <h1 className="text-5xl font-bold text-gray-900 mb-6">Professional reliability engineering tools</h1>
           <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
             Generate comprehensive FMEA reports, analyze failure data, and optimize maintenance strategies for
             electrical transmission and distribution assets with AI-powered insights.

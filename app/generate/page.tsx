@@ -157,7 +157,7 @@ export default function GenerateFMEA() {
               <div>
                 <h1 className="text-3xl font-bold tracking-tighter">Generate T&D Asset FMEA</h1>
                 <p className="text-muted-foreground mt-2">
-                  Configure electrical transmission and distribution asset details to generate an AI-powered FMEA report
+                  Configure electrical transmission and distribution asset details to generate an FMEA report
                 </p>
               </div>
 
