@@ -8,7 +8,6 @@ import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { useToast } from "@/components/ui/use-toast"
 import { estimateWeibullParameters } from "@/lib/weibull-mle"
-import { BarChart3, TrendingUp, Activity, Shield } from "lucide-react"
 
 interface AnalysisData {
   failureTimes: number[]
@@ -130,39 +129,6 @@ export default function AnalyzePage() {
           </p>
 
           {/* Feature highlights */}
-          <div className="grid md:grid-cols-4 gap-6 max-w-4xl mx-auto mt-12">
-            <div className="bg-white/80 backdrop-blur-sm rounded-lg p-4 border border-blue-200">
-              <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mx-auto mb-3">
-                <BarChart3 className="h-6 w-6 text-blue-600" />
-              </div>
-              <h3 className="font-semibold text-gray-900 mb-2">Weibull Analysis</h3>
-              <p className="text-sm text-gray-600">Maximum likelihood parameter estimation</p>
-            </div>
-
-            <div className="bg-white/80 backdrop-blur-sm rounded-lg p-4 border border-green-200">
-              <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mx-auto mb-3">
-                <TrendingUp className="h-6 w-6 text-green-600" />
-              </div>
-              <h3 className="font-semibold text-gray-900 mb-2">Reliability Curves</h3>
-              <p className="text-sm text-gray-600">Interactive probability distributions</p>
-            </div>
-
-            <div className="bg-white/80 backdrop-blur-sm rounded-lg p-4 border border-purple-200">
-              <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mx-auto mb-3">
-                <Activity className="h-6 w-6 text-purple-600" />
-              </div>
-              <h3 className="font-semibold text-gray-900 mb-2">Hazard Analysis</h3>
-              <p className="text-sm text-gray-600">Failure rate over time modeling</p>
-            </div>
-
-            <div className="bg-white/80 backdrop-blur-sm rounded-lg p-4 border border-orange-200">
-              <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center mx-auto mb-3">
-                <Shield className="h-6 w-6 text-orange-600" />
-              </div>
-              <h3 className="font-semibold text-gray-900 mb-2">Asset Insights</h3>
-              <p className="text-sm text-gray-600">MTTF and reliability metrics</p>
-            </div>
-          </div>
         </div>
       </section>
 
