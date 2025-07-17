@@ -1,19 +1,14 @@
 "use client"
 
-import type React from "react"
-
 import { useState } from "react"
+
+import type React from "react"
+import { AssetDataUpload } from "@/components/asset-data-upload"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { useToast } from "@/components/ui/use-toast"
-import { CSVTemplateButton } from "@/components/csv-template-button"
-import { WeibullChart } from "@/components/weibull-chart"
-import { WeibullParameters } from "@/components/weibull-parameters"
 import { estimateWeibullParameters } from "@/lib/weibull-mle"
-import { Upload, BarChart3, FileSpreadsheet, TrendingUp } from "lucide-react"
+import { BarChart3, TrendingUp, Activity, Shield } from "lucide-react"
 
 interface AnalysisData {
   failureTimes: number[]
@@ -122,117 +117,99 @@ export default function AnalyzePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Header />
+    <div className="min-h-screen bg-white">
+      <Header activePath="/analyze" />
 
-      <div className="container mx-auto px-4 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Reliability Data Analysis</h1>
-          <p className="text-gray-600">
-            Upload failure data to perform Weibull distribution analysis and reliability modeling
+      {/* Hero Section */}
+      <section className="bg-gradient-to-br from-blue-50 to-indigo-100 py-16">
+        <div className="container mx-auto px-4 text-center">
+          <h1 className="text-4xl font-bold text-gray-900 mb-4">Reliability Data Analysis</h1>
+          <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
+            Upload historical asset failure data to perform advanced Weibull distribution analysis using Maximum
+            Likelihood Estimation and generate comprehensive reliability insights.
           </p>
-        </div>
 
-        <div className="grid lg:grid-cols-3 gap-8">
-          {/* Upload Section */}
-          <div className="lg:col-span-1">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Upload className="h-5 w-5" />
-                  Data Upload
-                </CardTitle>
-                <CardDescription>Upload your failure time data for analysis</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <Label htmlFor="dataFile">CSV Data File</Label>
-                  <Input id="dataFile" type="file" accept=".csv" onChange={handleFileUpload} disabled={isAnalyzing} />
-                  <p className="text-xs text-gray-500 mt-1">Upload a CSV file with failure time data</p>
-                </div>
-
-                <div className="pt-4 border-t">
-                  <h4 className="font-semibold text-sm text-gray-700 mb-2">Need a template?</h4>
-                  <CSVTemplateButton />
-                  <p className="text-xs text-gray-500 mt-2">Download a sample CSV template with the correct format</p>
-                </div>
-
-                {analysisData && (
-                  <div className="pt-4 border-t">
-                    <h4 className="font-semibold text-sm text-gray-700 mb-2">Data Summary</h4>
-                    <div className="space-y-2 text-sm">
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Data Points:</span>
-                        <span className="font-medium">{analysisData.statistics.dataPoints}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Mean Time:</span>
-                        <span className="font-medium">{analysisData.statistics.meanTime.toFixed(1)} hrs</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Median Time:</span>
-                        <span className="font-medium">{analysisData.statistics.medianTime.toFixed(1)} hrs</span>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Results Section */}
-          <div className="lg:col-span-2">
-            {analysisData ? (
-              <div className="space-y-6">
-                {/* Weibull Parameters */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <TrendingUp className="h-5 w-5" />
-                      Weibull Parameters
-                    </CardTitle>
-                    <CardDescription>Estimated distribution parameters from your failure data</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <WeibullParameters
-                      shape={analysisData.weibullParams.shape}
-                      scale={analysisData.weibullParams.scale}
-                    />
-                  </CardContent>
-                </Card>
-
-                {/* Charts */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <BarChart3 className="h-5 w-5" />
-                      Reliability Analysis
-                    </CardTitle>
-                    <CardDescription>Reliability and hazard rate curves based on Weibull distribution</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <WeibullChart
-                      reliabilityData={analysisData.weibullParams.reliability}
-                      hazardRateData={analysisData.weibullParams.hazardRate}
-                    />
-                  </CardContent>
-                </Card>
+          {/* Feature highlights */}
+          <div className="grid md:grid-cols-4 gap-6 max-w-4xl mx-auto mt-12">
+            <div className="bg-white/80 backdrop-blur-sm rounded-lg p-4 border border-blue-200">
+              <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mx-auto mb-3">
+                <BarChart3 className="h-6 w-6 text-blue-600" />
               </div>
-            ) : (
-              <Card>
-                <CardContent className="flex flex-col items-center justify-center py-12">
-                  <FileSpreadsheet className="h-12 w-12 text-gray-400 mb-4" />
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">No Data Uploaded</h3>
-                  <p className="text-gray-600 text-center mb-4">
-                    Upload a CSV file with failure time data to begin your reliability analysis
-                  </p>
-                  <CSVTemplateButton />
-                </CardContent>
-              </Card>
-            )}
+              <h3 className="font-semibold text-gray-900 mb-2">Weibull Analysis</h3>
+              <p className="text-sm text-gray-600">Maximum likelihood parameter estimation</p>
+            </div>
+
+            <div className="bg-white/80 backdrop-blur-sm rounded-lg p-4 border border-green-200">
+              <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mx-auto mb-3">
+                <TrendingUp className="h-6 w-6 text-green-600" />
+              </div>
+              <h3 className="font-semibold text-gray-900 mb-2">Reliability Curves</h3>
+              <p className="text-sm text-gray-600">Interactive probability distributions</p>
+            </div>
+
+            <div className="bg-white/80 backdrop-blur-sm rounded-lg p-4 border border-purple-200">
+              <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mx-auto mb-3">
+                <Activity className="h-6 w-6 text-purple-600" />
+              </div>
+              <h3 className="font-semibold text-gray-900 mb-2">Hazard Analysis</h3>
+              <p className="text-sm text-gray-600">Failure rate over time modeling</p>
+            </div>
+
+            <div className="bg-white/80 backdrop-blur-sm rounded-lg p-4 border border-orange-200">
+              <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center mx-auto mb-3">
+                <Shield className="h-6 w-6 text-orange-600" />
+              </div>
+              <h3 className="font-semibold text-gray-900 mb-2">Asset Insights</h3>
+              <p className="text-sm text-gray-600">MTTF and reliability metrics</p>
+            </div>
           </div>
         </div>
-      </div>
+      </section>
+
+      {/* Main Content */}
+      <section className="py-16 bg-white">
+        <div className="container mx-auto px-4">
+          <div className="max-w-6xl mx-auto">
+            {/* Instructions Section */}
+            <div className="text-center mb-12">
+              <h2 className="text-3xl font-bold text-gray-900 mb-4">How It Works</h2>
+              <p className="text-lg text-gray-600 max-w-3xl mx-auto mb-8">
+                Upload your historical asset data and let our advanced algorithms analyze failure patterns, estimate
+                reliability parameters, and provide actionable insights for maintenance planning.
+              </p>
+
+              <div className="grid md:grid-cols-3 gap-8 max-w-4xl mx-auto">
+                <div className="text-center">
+                  <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <span className="text-2xl font-bold text-blue-600">1</span>
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Upload Data</h3>
+                  <p className="text-gray-600">Upload CSV file with asset installation and failure dates</p>
+                </div>
+
+                <div className="text-center">
+                  <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <span className="text-2xl font-bold text-green-600">2</span>
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Analyze</h3>
+                  <p className="text-gray-600">Our MLE algorithm fits Weibull parameters to your data</p>
+                </div>
+
+                <div className="text-center">
+                  <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <span className="text-2xl font-bold text-purple-600">3</span>
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Insights</h3>
+                  <p className="text-gray-600">Get reliability metrics and interactive visualizations</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Upload Component */}
+            <AssetDataUpload />
+          </div>
+        </div>
+      </section>
 
       <Footer />
     </div>
