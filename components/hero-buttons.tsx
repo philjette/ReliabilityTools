@@ -8,13 +8,13 @@ export function HeroButtons() {
       <Button asChild size="lg">
         <Link href="/generate">
           <FileText className="mr-2 h-5 w-5" />
-          Generate FMEA
+          FMEA Generation
         </Link>
       </Button>
       <Button asChild variant="outline" size="lg">
         <Link href="/analyze">
           <BarChart3 className="mr-2 h-5 w-5" />
-          Analyze Data
+          Weibull Analysis
         </Link>
       </Button>
     </div>

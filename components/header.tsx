@@ -47,7 +47,7 @@ export function Header({ activePath = "/" }: HeaderProps) {
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
                 <Link href="/analyze" className="w-full cursor-pointer">
-                  Failure Curve Analysis
+                  Weibull Analysis
                 </Link>
               </DropdownMenuItem>
             </DropdownMenuContent>
