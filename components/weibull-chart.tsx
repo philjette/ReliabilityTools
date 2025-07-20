@@ -28,21 +28,28 @@ interface WeibullChartProps {
 // Hours in a year (24 * 365 = 8760)
 const HOURS_IN_YEAR = 8760
 
-// Helper function to determine tick interval based on scale parameter
-function getTickInterval(scale: number) {
-  // Convert scale from hours to years for calculation
+// Helper function to generate exact tick positions based on scale parameter
+function generateTicks(scale: number, maxTime: number) {
   const scaleInYears = scale / HOURS_IN_YEAR
-  const maxTime = scaleInYears * 2 // This matches the maxTime calculation in generateWeibullData
+  const ticks = []
 
-  if (maxTime <= 10) {
-    return 0 // Show all ticks (every year)
-  } else if (maxTime <= 25) {
-    return 1 // Show every 2nd tick (every 2 years)
-  } else if (maxTime <= 50) {
-    return 4 // Show every 5th tick (every 5 years)
+  let step: number
+  if (scaleInYears < 10) {
+    step = 1 // Every 1 year
+  } else if (scaleInYears >= 10 && scaleInYears < 30) {
+    step = 5 // Every 5 years
   } else {
-    return 9 // Show every 10th tick (every 10 years)
+    step = 10 // Every 10 years
   }
+
+  // Generate ticks from 0 to maxTime with the determined step
+  for (let i = 0; i <= Math.ceil(maxTime / step) * step; i += step) {
+    if (i <= maxTime) {
+      ticks.push(i)
+    }
+  }
+
+  return ticks
 }
 
 export function WeibullChart({ type, shape, scale, failureModes = [], showCombined = false }: WeibullChartProps) {
@@ -130,8 +137,10 @@ export function WeibullChart({ type, shape, scale, failureModes = [], showCombin
             label={{ value: "Time (years)", position: "insideBottomRight", offset: -10 }}
             tickMargin={10}
             tickFormatter={(value) => Math.round(value).toString()}
-            interval={getTickInterval(scale)}
+            ticks={generateTicks(scale, (scale * 2) / HOURS_IN_YEAR)}
             domain={["dataMin", "dataMax"]}
+            type="number"
+            scale="linear"
           />
           <YAxis
             label={{ value: yAxisLabel, angle: -90, position: "insideLeft", offset: -5 }}
@@ -242,7 +251,7 @@ function generateMultiModeData(
           value = value * HOURS_IN_YEAR
           break
         case "hazard":
-          value = (mode.shape / scaleInHours) * Math.pow(timeInHours / scaleInHours, mode.shape - 1)
+          value = (mode.shape / scaleInHours) * Math.pow(timeInHours / mode.scale, mode.shape - 1)
           // Scale the hazard rate
           value = value * HOURS_IN_YEAR
           break
