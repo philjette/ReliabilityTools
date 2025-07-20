@@ -25,6 +25,26 @@ interface WeibullChartProps {
   showCombined?: boolean
 }
 
+// Hours in a year (24 * 365 = 8760)
+const HOURS_IN_YEAR = 8760
+
+// Helper function to determine tick interval based on scale parameter
+function getTickInterval(scale: number) {
+  // Convert scale from hours to years for calculation
+  const scaleInYears = scale / HOURS_IN_YEAR
+  const maxTime = scaleInYears * 2 // This matches the maxTime calculation in generateWeibullData
+
+  if (maxTime <= 10) {
+    return 0 // Show all ticks (every year)
+  } else if (maxTime <= 25) {
+    return 1 // Show every 2nd tick (every 2 years)
+  } else if (maxTime <= 50) {
+    return 4 // Show every 5th tick (every 5 years)
+  } else {
+    return 9 // Show every 10th tick (every 10 years)
+  }
+}
+
 export function WeibullChart({ type, shape, scale, failureModes = [], showCombined = false }: WeibullChartProps) {
   // Generate data points for the Weibull distribution
   const singleModeData = generateWeibullData(type, shape, scale)
@@ -109,6 +129,9 @@ export function WeibullChart({ type, shape, scale, failureModes = [], showCombin
             dataKey="time"
             label={{ value: "Time (years)", position: "insideBottomRight", offset: -10 }}
             tickMargin={10}
+            tickFormatter={(value) => Math.round(value).toString()}
+            interval={getTickInterval(scale)}
+            domain={["dataMin", "dataMax"]}
           />
           <YAxis
             label={{ value: yAxisLabel, angle: -90, position: "insideLeft", offset: -5 }}
@@ -125,9 +148,6 @@ export function WeibullChart({ type, shape, scale, failureModes = [], showCombin
     </div>
   )
 }
-
-// Hours in a year (24 * 365 = 8760)
-const HOURS_IN_YEAR = 8760
 
 // Generate data points for different Weibull distribution functions
 function generateWeibullData(type: "cdf" | "pdf" | "hazard", shape: number, scale: number) {

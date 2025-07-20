@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { AlertCircle, Download, FileText, Loader2, Calendar, Settings } from "lucide-react"
+import { AlertCircle, Download, FileText, Loader2, Calendar, Settings, ChevronDown, ChevronUp } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
@@ -54,6 +54,7 @@ export default function GenerateFMEA() {
   const [weibullParameters, setWeibullParameters] = useState<Record<string, { shape: number; scale: number }>>({})
   const [showCombined, setShowCombined] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [isConfigCollapsed, setIsConfigCollapsed] = useState(false)
 
   // Available operating environments based on asset type
   const [availableEnvironments, setAvailableEnvironments] = useState<any[]>([])
@@ -100,6 +101,7 @@ export default function GenerateFMEA() {
       setFailureModes(result.failureModes)
       setWeibullParameters(result.weibullParameters)
       setIsGenerated(true)
+      setIsConfigCollapsed(true) // Collapse the configuration when results are generated
     } catch (err) {
       console.error("Error generating FMEA:", err)
       setError("Failed to generate FMEA. Please try again.")
@@ -202,8 +204,8 @@ export default function GenerateFMEA() {
             </div>
 
             {/* Main Grid */}
-            <div className="grid gap-6 lg:grid-cols-2 lg:gap-12">
-              <div className="space-y-6">
+            <div className="space-y-8">
+              <div className="max-w-2xl mx-auto">
                 {error && (
                   <Alert variant="destructive">
                     <AlertCircle className="h-4 w-4" />
@@ -213,144 +215,161 @@ export default function GenerateFMEA() {
                 )}
 
                 <Card>
-                  <CardHeader>
-                    <CardTitle>Asset Configuration</CardTitle>
-                    <CardDescription>Select the asset type and operating characteristics</CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="asset-type">Asset Type</Label>
-                      <Select value={assetType} onValueChange={handleAssetTypeChange}>
-                        <SelectTrigger id="asset-type">
-                          <SelectValue placeholder="Select asset type" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {assetTypes.map((type) => (
-                            <SelectItem key={type.value} value={type.value}>
-                              {type.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    {assetType && (
-                      <>
-                        <div className="space-y-2">
-                          <Label htmlFor="voltage-rating">Voltage Rating</Label>
-                          <Select value={voltageRating} onValueChange={setVoltageRating}>
-                            <SelectTrigger id="voltage-rating">
-                              <SelectValue placeholder="Select voltage rating" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {getVoltageRatings(assetType).map((rating) => (
-                                <SelectItem key={rating.value} value={rating.value}>
-                                  {rating.label}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-
-                        <div className="space-y-2">
-                          <Label htmlFor="operating-environment">Operating Environment</Label>
-                          <Select value={operatingEnvironment} onValueChange={setOperatingEnvironment}>
-                            <SelectTrigger id="operating-environment">
-                              <SelectValue placeholder="Select operating environment" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {availableEnvironments.map((env) => (
-                                <SelectItem key={env.value} value={env.value}>
-                                  {env.label}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-
-                        <div className="space-y-2">
-                          <Label htmlFor="age-range">Asset Age</Label>
-                          <Select value={ageRange} onValueChange={setAgeRange}>
-                            <SelectTrigger id="age-range">
-                              <SelectValue placeholder="Select asset age range" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {getAgeRanges().map((age) => (
-                                <SelectItem key={age.value} value={age.value}>
-                                  {age.label}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-
-                        <div className="space-y-2">
-                          <Label htmlFor="load-profile">Load Profile</Label>
-                          <Select value={loadProfile} onValueChange={setLoadProfile}>
-                            <SelectTrigger id="load-profile">
-                              <SelectValue placeholder="Select load profile" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {getLoadProfiles(assetType).map((profile) => (
-                                <SelectItem key={profile.value} value={profile.value}>
-                                  {profile.label}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-
-                        <div className="space-y-2">
-                          <Label htmlFor="asset-criticality">Asset Criticality</Label>
-                          <Select value={assetCriticality} onValueChange={setAssetCriticality}>
-                            <SelectTrigger id="asset-criticality">
-                              <SelectValue placeholder="Select asset criticality" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {getAssetCriticality().map((criticality) => (
-                                <SelectItem key={criticality.value} value={criticality.value}>
-                                  {criticality.label}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </>
-                    )}
-
-                    <div className="space-y-2">
-                      <Label htmlFor="additional-notes">Additional Notes</Label>
-                      <Textarea
-                        id="additional-notes"
-                        placeholder="Enter any additional information about the asset or operating conditions"
-                        value={additionalNotes}
-                        onChange={(e) => setAdditionalNotes(e.target.value)}
-                      />
-                    </div>
-                  </CardContent>
-                  <CardFooter>
-                    <Button
-                      onClick={handleGenerate}
-                      disabled={
-                        isGenerating ||
-                        !assetType ||
-                        !voltageRating ||
-                        !operatingEnvironment ||
-                        !ageRange ||
-                        !loadProfile ||
-                        !assetCriticality
-                      }
-                    >
-                      {isGenerating ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Generating...
-                        </>
-                      ) : (
-                        "Generate FMEA"
+                  <CardHeader
+                    className={`${isGenerated ? "cursor-pointer hover:bg-gray-50" : ""}`}
+                    onClick={() => isGenerated && setIsConfigCollapsed(!isConfigCollapsed)}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <CardTitle>Asset Configuration</CardTitle>
+                        <CardDescription>Select the asset type and operating characteristics</CardDescription>
+                      </div>
+                      {isGenerated && (
+                        <Button variant="ghost" size="sm">
+                          {isConfigCollapsed ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
+                        </Button>
                       )}
-                    </Button>
-                  </CardFooter>
+                    </div>
+                  </CardHeader>
+
+                  {!isConfigCollapsed && (
+                    <>
+                      <CardContent className="space-y-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="asset-type">Asset Type</Label>
+                          <Select value={assetType} onValueChange={handleAssetTypeChange}>
+                            <SelectTrigger id="asset-type">
+                              <SelectValue placeholder="Select asset type" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {assetTypes.map((type) => (
+                                <SelectItem key={type.value} value={type.value}>
+                                  {type.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        {assetType && (
+                          <>
+                            <div className="space-y-2">
+                              <Label htmlFor="voltage-rating">Voltage Rating</Label>
+                              <Select value={voltageRating} onValueChange={setVoltageRating}>
+                                <SelectTrigger id="voltage-rating">
+                                  <SelectValue placeholder="Select voltage rating" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {getVoltageRatings(assetType).map((rating) => (
+                                    <SelectItem key={rating.value} value={rating.value}>
+                                      {rating.label}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+
+                            <div className="space-y-2">
+                              <Label htmlFor="operating-environment">Operating Environment</Label>
+                              <Select value={operatingEnvironment} onValueChange={setOperatingEnvironment}>
+                                <SelectTrigger id="operating-environment">
+                                  <SelectValue placeholder="Select operating environment" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {availableEnvironments.map((env) => (
+                                    <SelectItem key={env.value} value={env.value}>
+                                      {env.label}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+
+                            <div className="space-y-2">
+                              <Label htmlFor="age-range">Asset Age</Label>
+                              <Select value={ageRange} onValueChange={setAgeRange}>
+                                <SelectTrigger id="age-range">
+                                  <SelectValue placeholder="Select asset age range" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {getAgeRanges().map((age) => (
+                                    <SelectItem key={age.value} value={age.value}>
+                                      {age.label}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+
+                            <div className="space-y-2">
+                              <Label htmlFor="load-profile">Load Profile</Label>
+                              <Select value={loadProfile} onValueChange={setLoadProfile}>
+                                <SelectTrigger id="load-profile">
+                                  <SelectValue placeholder="Select load profile" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {getLoadProfiles(assetType).map((profile) => (
+                                    <SelectItem key={profile.value} value={profile.value}>
+                                      {profile.label}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+
+                            <div className="space-y-2">
+                              <Label htmlFor="asset-criticality">Asset Criticality</Label>
+                              <Select value={assetCriticality} onValueChange={setAssetCriticality}>
+                                <SelectTrigger id="asset-criticality">
+                                  <SelectValue placeholder="Select asset criticality" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {getAssetCriticality().map((criticality) => (
+                                    <SelectItem key={criticality.value} value={criticality.value}>
+                                      {criticality.label}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          </>
+                        )}
+
+                        <div className="space-y-2">
+                          <Label htmlFor="additional-notes">Additional Notes</Label>
+                          <Textarea
+                            id="additional-notes"
+                            placeholder="Enter any additional information about the asset or operating conditions"
+                            value={additionalNotes}
+                            onChange={(e) => setAdditionalNotes(e.target.value)}
+                          />
+                        </div>
+                      </CardContent>
+                      <CardFooter>
+                        <Button
+                          onClick={handleGenerate}
+                          disabled={
+                            isGenerating ||
+                            !assetType ||
+                            !voltageRating ||
+                            !operatingEnvironment ||
+                            !ageRange ||
+                            !loadProfile ||
+                            !assetCriticality
+                          }
+                        >
+                          {isGenerating ? (
+                            <>
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              Generating...
+                            </>
+                          ) : (
+                            "Generate FMEA"
+                          )}
+                        </Button>
+                      </CardFooter>
+                    </>
+                  )}
                 </Card>
               </div>
 
@@ -553,7 +572,7 @@ export default function GenerateFMEA() {
                   )}
                 </div>
               ) : (
-                <div className="flex items-center justify-center h-full">
+                <div className="flex items-center justify-center">
                   <div className="text-center space-y-4 p-8 border rounded-lg bg-muted/40">
                     <Settings className="h-12 w-12 mx-auto text-muted-foreground" />
                     <h2 className="text-xl font-medium">FMEA Results Preview</h2>
