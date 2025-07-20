@@ -124,8 +124,7 @@ export default function AnalyzePage() {
         <div className="container mx-auto px-4 text-center">
           <h1 className="text-4xl font-bold text-gray-900 mb-4">Reliability Data Analysis</h1>
           <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
-            Upload historical asset failure data to perform advanced Weibull distribution analysis using Maximum
-            Likelihood Estimation and generate comprehensive reliability insights.
+            Upload historical asset failure data to to fit end of life curves and generate comprehensive reliability insights.
           </p>
 
           {/* Feature highlights */}
@@ -140,8 +139,7 @@ export default function AnalyzePage() {
             <div className="text-center mb-12">
               <h2 className="text-3xl font-bold text-gray-900 mb-4">How It Works</h2>
               <p className="text-lg text-gray-600 max-w-3xl mx-auto mb-8">
-                Upload your historical asset data and let our advanced algorithms analyze failure patterns, estimate
-                reliability parameters, and provide actionable insights for maintenance planning.
+                Upload your historical asset data and we'll use Maximum Likelihood Estimation to fit Weibull paramters to your data, chart the results, and estimate reliability metrics.
               </p>
 
               <div className="grid md:grid-cols-3 gap-8 max-w-4xl mx-auto">

@@ -57,9 +57,9 @@ export default function HomePage() {
                 <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mb-4">
                   <BarChart3 className="h-6 w-6 text-green-600" />
                 </div>
-                <CardTitle>Weibull Analysis</CardTitle>
+                <CardTitle>End of life curves</CardTitle>
                 <CardDescription>
-                  Analyze failure data with Weibull distribution modeling and reliability predictions
+                  Fit Weibull paranaters to your failure data and analyze key reliability indicators
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -77,7 +77,7 @@ export default function HomePage() {
                 <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mb-4">
                   <FileText className="h-6 w-6 text-purple-600" />
                 </div>
-                <CardTitle>Professional Reports</CardTitle>
+                <CardTitle>Export Reports</CardTitle>
                 <CardDescription>Export detailed analysis results as professional PDF reports</CardDescription>
               </CardHeader>
               <CardContent>

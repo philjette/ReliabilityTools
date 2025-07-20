@@ -159,7 +159,7 @@ export default function GenerateFMEA() {
           <h1 className="text-4xl font-bold text-gray-900 mb-4">AI-Powered FMEA Generation</h1>
           <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
             Generate comprehensive Failure Mode and Effects Analysis reports for electrical transmission and
-            distribution assets using advanced AI technology and industry expertise.
+            distribution assets.
           </p>
         </div>
       </section>
@@ -172,8 +172,8 @@ export default function GenerateFMEA() {
             <div className="text-center mb-12">
               <h2 className="text-3xl font-bold text-gray-900 mb-4">How It Works</h2>
               <p className="text-lg text-gray-600 max-w-3xl mx-auto mb-8">
-                Configure your electrical asset parameters and let our AI generate a comprehensive FMEA with failure
-                modes, risk assessments, and maintenance recommendations.
+                Specify your asset parameters and let our algorithm generate a comprehensive FMEA with failure
+                modes, risk assessments, maintenance recommendations, and important reliability indicators.
               </p>
 
               <div className="grid md:grid-cols-3 gap-8 max-w-4xl mx-auto">
