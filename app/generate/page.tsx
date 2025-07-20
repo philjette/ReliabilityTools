@@ -383,6 +383,73 @@ export default function GenerateFMEA() {
                   </div>
                   <Card>
                     <CardHeader>
+                      <CardTitle>Key Reliability Metrics</CardTitle>
+                      <CardDescription>Calculated reliability metrics based on Weibull parameters</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        {failureModes.slice(0, 3).map((mode, index) => {
+                          const params = weibullParameters[mode.name] || { shape: 2.5, scale: 15000 }
+                          const shape = params.shape
+                          const scale = params.scale
+
+                          // Calculate MTBF using Gamma function approximation
+                          // MTBF = η * Γ(1 + 1/β)
+                          // For common β values, we can use approximations:
+                          let gammaValue = 1
+                          if (shape >= 0.5 && shape <= 4) {
+                            // Approximation for Gamma(1 + 1/β)
+                            gammaValue = shape <= 1 ? 1 : shape <= 2 ? 0.9 : shape <= 3 ? 0.89 : 0.91
+                          }
+                          const mtbf = scale * gammaValue
+
+                          // Calculate reliability at 1 year (8760 hours)
+                          const reliability1Year = Math.exp(-Math.pow(8760 / scale, shape))
+
+                          // Calculate failure rate (approximate for Weibull)
+                          const failureRate = (shape / scale) * Math.pow(8760 / scale, shape - 1)
+
+                          return (
+                            <div key={index} className="bg-muted/30 p-4 rounded-lg">
+                              <h4 className="font-medium text-sm mb-3 text-center">{mode.name}</h4>
+                              <div className="space-y-2 text-xs">
+                                <div className="flex justify-between">
+                                  <span className="text-muted-foreground">MTBF:</span>
+                                  <span className="font-medium">{(mtbf / 8760).toFixed(1)} years</span>
+                                </div>
+                                <div className="flex justify-between">
+                                  <span className="text-muted-foreground">R(1 year):</span>
+                                  <span className="font-medium">{(reliability1Year * 100).toFixed(1)}%</span>
+                                </div>
+                                <div className="flex justify-between">
+                                  <span className="text-muted-foreground">λ(t):</span>
+                                  <span className="font-medium">{(failureRate * 8760).toFixed(4)}/year</span>
+                                </div>
+                                <div className="flex justify-between">
+                                  <span className="text-muted-foreground">Shape (β):</span>
+                                  <span className="font-medium">{shape.toFixed(2)}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                  <span className="text-muted-foreground">Scale (η):</span>
+                                  <span className="font-medium">{(scale / 8760).toFixed(1)} years</span>
+                                </div>
+                              </div>
+                            </div>
+                          )
+                        })}
+                      </div>
+
+                      {failureModes.length > 3 && (
+                        <div className="mt-4 text-center">
+                          <p className="text-sm text-muted-foreground">
+                            Showing metrics for top 3 failure modes. View individual charts for complete analysis.
+                          </p>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardHeader>
                       <CardTitle>Failure Mode Analysis</CardTitle>
                       <CardDescription>
                         Potential failure modes for {assetTypes.find((a) => a.value === assetType)?.label} in{" "}
