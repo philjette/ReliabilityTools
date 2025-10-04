@@ -12,17 +12,12 @@ export function ClientDashboard() {
   const [fmeas, setFmeas] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [mounted, setMounted] = useState(false)
 
   const fetchFMEAs = async () => {
     try {
       setLoading(true)
       setError(null)
-      
-      // Only fetch on client side
-      if (typeof window === "undefined") {
-        setError("This component can only run on the client side")
-        return
-      }
       
       const { data, error } = await getUserFMEAsClient()
       
@@ -42,16 +37,18 @@ export function ClientDashboard() {
   }
 
   useEffect(() => {
-    // Only run on client side
-    if (typeof window !== "undefined") {
+    setMounted(true)
+  }, [])
+
+  useEffect(() => {
+    if (mounted) {
       fetchFMEAs()
     }
-  }, [])
+  }, [mounted])
 
   // Listen for storage events to refresh when FMEAs are saved
   useEffect(() => {
-    // Only run on client side
-    if (typeof window === "undefined") return
+    if (!mounted) return
 
     const handleStorageChange = () => {
       fetchFMEAs()
@@ -59,7 +56,7 @@ export function ClientDashboard() {
 
     window.addEventListener('storage', handleStorageChange)
     return () => window.removeEventListener('storage', handleStorageChange)
-  }, [])
+  }, [mounted])
 
   if (loading) {
     return (
