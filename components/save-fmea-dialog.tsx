@@ -140,8 +140,8 @@ export function SaveFMEADialog({ open, onOpenChange, fmeaData }: SaveFMEADialogP
           description: "FMEA saved successfully",
         })
         onOpenChange(false)
-        router.push("/dashboard")
-        router.refresh()
+        // Force a hard refresh to ensure the dashboard shows the new FMEA
+        window.location.href = "/dashboard"
       }
     } catch (error: any) {
       console.error("Exception in handleSave:", error)

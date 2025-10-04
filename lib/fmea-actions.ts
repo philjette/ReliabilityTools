@@ -111,6 +111,38 @@ export async function getUserFMEAs() {
   }
 }
 
+// Client-side version for use in components
+export async function getUserFMEAsClient() {
+  try {
+    const { createClient } = await import("@/lib/supabase-client")
+    const supabase = createClient()
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+
+    if (!user) {
+      return { data: [], error: null }
+    }
+
+    const { data, error } = await supabase
+      .from("fmeas")
+      .select("*")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false })
+
+    if (error) {
+      console.error("Error fetching FMEAs:", error)
+      return { data: [], error: error.message }
+    }
+
+    return { data: data || [], error: null }
+  } catch (error: any) {
+    console.error("Unexpected error fetching FMEAs:", error)
+    return { data: [], error: error.message }
+  }
+}
+
 export async function getFMEAById(id: string) {
   try {
     const cookieStore = cookies()
