@@ -1,14 +1,14 @@
 "use client"
 
-import type React from "react"
-
 import { createContext, useContext, useEffect, useState } from "react"
+import type { ReactNode } from "react"
 import type { User } from "@supabase/supabase-js"
 import { createClient } from "@/lib/supabase-client"
 
 interface AuthContextType {
   user: User | null
   loading: boolean
+  error: string | null
   signIn: (email: string, password: string) => Promise<{ error?: string }>
   signUp: (email: string, password: string) => Promise<{ error?: string }>
   signInWithGoogle: () => Promise<{ error?: string }>
@@ -17,81 +17,111 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
-export function AuthProvider({ children }: { children: React.ReactNode }) {
+export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [supabase, setSupabase] = useState<ReturnType<typeof createClient> | null>(null)
 
   useEffect(() => {
-    const supabase = createClient()
+    try {
+      const client = createClient()
+      setSupabase(client)
 
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null)
+      // Get initial session
+      client.auth
+        .getSession()
+        .then(({ data: { session }, error: sessionError }) => {
+          if (sessionError) {
+            console.error("Session error:", sessionError)
+            setError(sessionError.message)
+          }
+          setUser(session?.user ?? null)
+          setLoading(false)
+        })
+        .catch((err) => {
+          console.error("Error getting session:", err)
+          setError(err.message || "Failed to initialize authentication")
+          setLoading(false)
+        })
+
+      // Listen for auth changes
+      const {
+        data: { subscription },
+      } = client.auth.onAuthStateChange((_event, session) => {
+        setUser(session?.user ?? null)
+        setLoading(false)
+      })
+
+      return () => subscription.unsubscribe()
+    } catch (err: any) {
+      console.error("Error initializing auth:", err)
+      setError(err.message || "Failed to initialize authentication")
       setLoading(false)
-    })
-
-    // Listen for auth changes
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null)
-      setLoading(false)
-    })
-
-    return () => subscription.unsubscribe()
+    }
   }, [])
 
   const signIn = async (email: string, password: string) => {
     try {
-      const supabase = createClient()
-      const { error } = await supabase.auth.signInWithPassword({ email, password })
-      if (error) return { error: error.message }
+      if (!supabase) return { error: "Authentication not initialized" }
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      })
+      if (signInError) return { error: signInError.message }
       return {}
-    } catch (error) {
-      return { error: "An unexpected error occurred" }
+    } catch (err: any) {
+      console.error("Sign in error:", err)
+      return { error: err.message || "An unexpected error occurred" }
     }
   }
 
   const signUp = async (email: string, password: string) => {
     try {
-      const supabase = createClient()
-      const { error } = await supabase.auth.signUp({
+      if (!supabase) return { error: "Authentication not initialized" }
+      const { error: signUpError } = await supabase.auth.signUp({
         email,
         password,
         options: {
           emailRedirectTo: `${window.location.origin}/auth/callback`,
         },
       })
-      if (error) return { error: error.message }
+      if (signUpError) return { error: signUpError.message }
       return {}
-    } catch (error) {
-      return { error: "An unexpected error occurred" }
+    } catch (err: any) {
+      console.error("Sign up error:", err)
+      return { error: err.message || "An unexpected error occurred" }
     }
   }
 
   const signInWithGoogle = async () => {
     try {
-      const supabase = createClient()
-      const { error } = await supabase.auth.signInWithOAuth({
+      if (!supabase) return { error: "Authentication not initialized" }
+      const { error: oauthError } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
           redirectTo: `${window.location.origin}/auth/callback`,
         },
       })
-      if (error) return { error: error.message }
+      if (oauthError) return { error: oauthError.message }
       return {}
-    } catch (error) {
-      return { error: "An unexpected error occurred" }
+    } catch (err: any) {
+      console.error("Google sign in error:", err)
+      return { error: err.message || "An unexpected error occurred" }
     }
   }
 
   const signOut = async () => {
-    const supabase = createClient()
-    await supabase.auth.signOut()
+    try {
+      if (!supabase) return
+      await supabase.auth.signOut()
+    } catch (err: any) {
+      console.error("Sign out error:", err)
+    }
   }
 
   return (
-    <AuthContext.Provider value={{ user, loading, signIn, signUp, signInWithGoogle, signOut }}>
+    <AuthContext.Provider value={{ user, loading, error, signIn, signUp, signInWithGoogle, signOut }}>
       {children}
     </AuthContext.Provider>
   )

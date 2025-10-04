@@ -1,8 +1,7 @@
 "use client"
 
-import type React from "react"
-
 import { useState } from "react"
+import type { FormEvent } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { useAuth } from "@/contexts/auth-context"
@@ -13,38 +12,50 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
+import { Loader2 } from "lucide-react"
 
 export default function SignInPage() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
-  const [error, setError] = useState("")
+  const [formError, setFormError] = useState("")
   const [loading, setLoading] = useState(false)
   const { signIn, signInWithGoogle } = useAuth()
   const router = useRouter()
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
-    setError("")
+    setFormError("")
     setLoading(true)
 
-    const result = await signIn(email, password)
-    setLoading(false)
+    try {
+      const result = await signIn(email, password)
 
-    if (result.error) {
-      setError(result.error)
-    } else {
-      router.push("/dashboard")
+      if (result.error) {
+        setFormError(result.error)
+        setLoading(false)
+      } else {
+        router.push("/dashboard")
+      }
+    } catch (err: any) {
+      setFormError(err.message || "An unexpected error occurred")
+      setLoading(false)
     }
   }
 
   const handleGoogleSignIn = async () => {
-    setError("")
+    setFormError("")
     setLoading(true)
-    const result = await signInWithGoogle()
-    setLoading(false)
 
-    if (result.error) {
-      setError(result.error)
+    try {
+      const result = await signInWithGoogle()
+
+      if (result.error) {
+        setFormError(result.error)
+        setLoading(false)
+      }
+    } catch (err: any) {
+      setFormError(err.message || "An unexpected error occurred")
+      setLoading(false)
     }
   }
 
@@ -58,9 +69,9 @@ export default function SignInPage() {
             <CardDescription className="text-center">Enter your email and password to sign in</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            {error && (
+            {formError && (
               <Alert variant="destructive">
-                <AlertDescription>{error}</AlertDescription>
+                <AlertDescription>{formError}</AlertDescription>
               </Alert>
             )}
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -89,7 +100,14 @@ export default function SignInPage() {
                 />
               </div>
               <Button type="submit" className="w-full" disabled={loading}>
-                {loading ? "Signing in..." : "Sign in"}
+                {loading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Signing in...
+                  </>
+                ) : (
+                  "Sign in"
+                )}
               </Button>
             </form>
             <div className="relative">
@@ -120,15 +138,15 @@ export default function SignInPage() {
                 <path
                   fill="currentColor"
                   d="M488 261.8C488 403.3 391.1 504 248 504 110.8 504 0 393.2 0 256S110.8 8 248 8c66.8 0 123 24.5 166.3 64.9l-67.5 64.9C258.5 52.6 94.3 116.6 94.3 256c0 86.5 69.1 156.6 153.7 156.6 98.2 0 135-70.4 140.8-106.9H248v-85.3h236.1c2.3 12.7 3.9 24.9 3.9 41.4z"
-                ></path>
+                />
               </svg>
-              Sign in with Google
+              {loading ? "Signing in..." : "Sign in with Google"}
             </Button>
           </CardContent>
           <CardFooter className="flex justify-center">
             <p className="text-sm text-muted-foreground">
               Don't have an account?{" "}
-              <Link href="/auth/sign-up" className="text-primary hover:underline">
+              <Link href="/auth/sign-up" className="text-primary hover:underline font-medium">
                 Sign up
               </Link>
             </p>
