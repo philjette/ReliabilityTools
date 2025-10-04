@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Save, Loader2 } from "lucide-react"
 import {
@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { saveFMEA, type FMEAData } from "@/lib/fmea-actions"
+import { createClient } from "@/lib/supabase-client"
 import { useToast } from "@/hooks/use-toast"
 
 interface SaveFMEADialogProps {
@@ -29,11 +30,22 @@ export function SaveFMEADialog({ open, onOpenChange, fmeaData }: SaveFMEADialogP
   const router = useRouter()
   const { toast } = useToast()
 
+  // Update title when fmeaData changes
+  useEffect(() => {
+    if (fmeaData.title) {
+      setTitle(fmeaData.title)
+    }
+  }, [fmeaData.title])
+
   const handleSave = async () => {
-    console.log("handleSave called")
+    console.log("=== handleSave called ===")
     console.log("Title:", title)
+    console.log("Title trimmed:", title.trim())
+    console.log("FMEA Data:", fmeaData)
+    console.log("Button should be enabled:", !saving && title.trim().length > 0)
 
     if (!title.trim()) {
+      console.log("Title is empty, showing error")
       toast({
         title: "Error",
         description: "Please enter a title for the FMEA",
@@ -42,6 +54,7 @@ export function SaveFMEADialog({ open, onOpenChange, fmeaData }: SaveFMEADialogP
       return
     }
 
+    console.log("Starting save process...")
     setSaving(true)
 
     try {
@@ -51,18 +64,55 @@ export function SaveFMEADialog({ open, onOpenChange, fmeaData }: SaveFMEADialogP
       }
 
       console.log("Saving data:", dataToSave)
+      console.log("Calling saveFMEA...")
 
-      const result = await saveFMEA(dataToSave)
+      // Try client-side save first
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      
+      if (!user) {
+        console.error("No authenticated user found")
+        toast({
+          title: "Error",
+          description: "You must be signed in to save FMEAs",
+          variant: "destructive",
+        })
+        return
+      }
 
-      console.log("Save result:", result)
+      console.log("User authenticated:", user.id)
+
+      const { data, error } = await supabase
+        .from("fmeas")
+        .insert({
+          user_id: user.id,
+          title: dataToSave.title,
+          asset_type: dataToSave.asset_type,
+          voltage_rating: dataToSave.voltage_rating,
+          operating_environment: dataToSave.operating_environment,
+          age_range: dataToSave.age_range,
+          load_profile: dataToSave.load_profile,
+          asset_criticality: dataToSave.asset_criticality,
+          additional_notes: dataToSave.additional_notes,
+          failure_modes: dataToSave.failure_modes,
+          weibull_parameters: dataToSave.weibull_parameters || {},
+        })
+        .select()
+        .single()
+
+      const result = error ? { error: error.message } : { data }
+
+      console.log("Save result received:", result)
 
       if (result.error) {
+        console.error("Save failed with error:", result.error)
         toast({
           title: "Error",
           description: result.error,
           variant: "destructive",
         })
       } else {
+        console.log("Save successful!")
         toast({
           title: "Success",
           description: "FMEA saved successfully",
@@ -72,13 +122,14 @@ export function SaveFMEADialog({ open, onOpenChange, fmeaData }: SaveFMEADialogP
         router.refresh()
       }
     } catch (error: any) {
-      console.error("Error saving FMEA:", error)
+      console.error("Exception in handleSave:", error)
       toast({
         title: "Error",
         description: error.message || "Failed to save FMEA",
         variant: "destructive",
       })
     } finally {
+      console.log("Setting saving to false")
       setSaving(false)
     }
   }

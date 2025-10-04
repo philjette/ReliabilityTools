@@ -35,6 +35,7 @@ export interface FMEAData {
 
 export async function saveFMEA(fmeaData: FMEAData) {
   try {
+    console.log("saveFMEA called with data:", fmeaData)
     const cookieStore = cookies()
     const supabase = createServerComponentClient({ cookies: () => cookieStore })
 
@@ -66,6 +67,9 @@ export async function saveFMEA(fmeaData: FMEAData) {
 
     if (error) {
       console.error("Error saving FMEA:", error)
+      console.error("Error details:", error.details)
+      console.error("Error hint:", error.hint)
+      console.error("Error code:", error.code)
       return { error: error.message }
     }
 

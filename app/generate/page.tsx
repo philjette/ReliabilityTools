@@ -163,6 +163,7 @@ export default function GenerateFMEA() {
     console.log("Save button clicked")
     console.log("User:", user)
     console.log("FMEA Result:", fmeaResult)
+    console.log("Prepared FMEA Data:", prepareFMEADataForSave())
     setShowSaveDialog(true)
   }
 
@@ -230,9 +231,13 @@ export default function GenerateFMEA() {
   }
 
   const prepareFMEADataForSave = () => {
-    if (!fmeaResult) return null
+    if (!fmeaResult) {
+      console.log("prepareFMEADataForSave: fmeaResult is null")
+      return null
+    }
 
-    return {
+    console.log("prepareFMEADataForSave: fmeaResult:", fmeaResult)
+    const data = {
       title: `${getAssetTypeLabel(formData.assetType)} FMEA`,
       asset_type: formData.assetType,
       voltage_rating: formData.voltageRating,
@@ -252,6 +257,8 @@ export default function GenerateFMEA() {
       })),
       weibull_parameters: fmeaResult.weibullParameters || {},
     }
+    console.log("prepareFMEADataForSave: prepared data:", data)
+    return data
   }
 
   return (
