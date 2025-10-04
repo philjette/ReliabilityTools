@@ -1,37 +1,15 @@
 "use server"
 
+import { createServerComponentClient } from "@supabase/auth-helpers-nextjs"
+import { cookies } from "next/headers"
 import { generateText } from "ai"
 import { openai } from "@ai-sdk/openai"
 import { generateFmeaPdf } from "@/lib/pdf-export"
+import type { FailureMode } from "./actions"
 
-export interface FMEAConfig {
-  assetType: string
-  voltageRating: string
-  operatingEnvironment: string
-  ageRange: string
-  loadProfile: string
-  assetCriticality: string
-  additionalNotes?: string
-}
-
-export interface FailureMode {
-  name: string
-  description: string
-  severity: number
-  occurrence: number
-  detection: number
-  causes: string[]
-  effects: string[]
-  recommendations: string[]
-  maintenanceActions?: Array<{
-    action: string
-    frequency: string
-    description: string
-  }>
-}
-
-export interface FMEA {
+export interface SavedFMEA {
   id: string
+  user_id: string
   title: string
   asset_type: string
   voltage_rating: string
@@ -43,6 +21,7 @@ export interface FMEA {
   failure_modes: FailureMode[]
   weibull_parameters: Record<string, { shape: number; scale: number }>
   created_at: string
+  updated_at: string
 }
 
 interface SaveFMEAParams {
@@ -144,23 +123,108 @@ export async function generatePdf(params: SaveFMEAParams): Promise<Uint8Array> {
   return generateFmeaPdf(params)
 }
 
-export async function generatePdfFromSaved(id: string): Promise<Uint8Array> {
-  throw new Error("This functionality requires saved FMEAs which have been disabled.")
+export async function saveFMEA(params: SaveFMEAParams): Promise<SavedFMEA> {
+  const cookieStore = cookies()
+  const supabase = createServerComponentClient({ cookies: () => cookieStore })
+
+  const {
+    data: { session },
+  } = await supabase.auth.getSession()
+
+  if (!session) {
+    throw new Error("You must be signed in to save FMEAs")
+  }
+
+  const { data, error } = await supabase
+    .from("fmeas")
+    .insert({
+      user_id: session.user.id,
+      title: params.title,
+      asset_type: params.assetType,
+      voltage_rating: params.voltageRating,
+      operating_environment: params.operatingEnvironment,
+      age_range: params.ageRange,
+      load_profile: params.loadProfile,
+      asset_criticality: params.assetCriticality,
+      additional_notes: params.additionalNotes,
+      failure_modes: params.failureModes,
+      weibull_parameters: params.weibullParameters,
+    })
+    .select()
+    .single()
+
+  if (error) {
+    console.error("Error saving FMEA:", error)
+    throw new Error(error.message)
+  }
+
+  return data
 }
 
-// Placeholder functions for removed database functionality
-export async function saveFMEA(params: SaveFMEAParams) {
-  throw new Error("Save functionality has been disabled. Use PDF export instead.")
+export async function getUserFMEAs(): Promise<SavedFMEA[]> {
+  const cookieStore = cookies()
+  const supabase = createServerComponentClient({ cookies: () => cookieStore })
+
+  const {
+    data: { session },
+  } = await supabase.auth.getSession()
+
+  if (!session) {
+    return []
+  }
+
+  const { data, error } = await supabase
+    .from("fmeas")
+    .select("*")
+    .eq("user_id", session.user.id)
+    .order("created_at", { ascending: false })
+
+  if (error) {
+    console.error("Error fetching FMEAs:", error)
+    return []
+  }
+
+  return data || []
 }
 
-export async function getUserFMEAs() {
-  return []
+export async function getFMEAById(id: string): Promise<SavedFMEA | null> {
+  const cookieStore = cookies()
+  const supabase = createServerComponentClient({ cookies: () => cookieStore })
+
+  const {
+    data: { session },
+  } = await supabase.auth.getSession()
+
+  if (!session) {
+    return null
+  }
+
+  const { data, error } = await supabase.from("fmeas").select("*").eq("id", id).eq("user_id", session.user.id).single()
+
+  if (error) {
+    console.error("Error fetching FMEA:", error)
+    return null
+  }
+
+  return data
 }
 
-export async function getFMEAById(id: string) {
-  return null
-}
+export async function deleteFMEA(id: string): Promise<void> {
+  const cookieStore = cookies()
+  const supabase = createServerComponentClient({ cookies: () => cookieStore })
 
-export async function deleteFMEA(id: string) {
-  throw new Error("Delete functionality has been disabled.")
+  const {
+    data: { session },
+  } = await supabase.auth.getSession()
+
+  if (!session) {
+    throw new Error("You must be signed in to delete FMEAs")
+  }
+
+  const { error } = await supabase.from("fmeas").delete().eq("id", id).eq("user_id", session.user.id)
+
+  if (error) {
+    console.error("Error deleting FMEA:", error)
+    throw new Error(error.message)
+  }
 }

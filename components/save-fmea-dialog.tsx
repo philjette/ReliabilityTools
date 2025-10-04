@@ -16,108 +16,137 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useAuth } from "@/contexts/auth-context"
 import { saveFMEA } from "@/lib/fmea-actions"
+import { useRouter } from "next/navigation"
 import type { FailureMode } from "@/lib/actions"
 
 interface SaveFMEADialogProps {
-  fmeaData: {
-    title: string
-    assetType: string
-    voltageRating: string
-    operatingEnvironment: string
-    ageRange: string
-    loadProfile: string
-    assetCriticality: string
-    additionalNotes: string
-    failureModes: FailureMode[]
-    weibullParameters: Record<string, { shape: number; scale: number }>
-  }
+  assetType: string
+  voltageRating: string
+  operatingEnvironment: string
+  ageRange: string
+  loadProfile: string
+  assetCriticality: string
+  additionalNotes: string
+  failureModes: FailureMode[]
+  weibullParameters: Record<string, { shape: number; scale: number }>
 }
 
-export function SaveFMEADialog({ fmeaData }: SaveFMEADialogProps) {
-  const [isOpen, setIsOpen] = useState(false)
-  const [title, setTitle] = useState(fmeaData.title)
+export function SaveFMEADialog({
+  assetType,
+  voltageRating,
+  operatingEnvironment,
+  ageRange,
+  loadProfile,
+  assetCriticality,
+  additionalNotes,
+  failureModes,
+  weibullParameters,
+}: SaveFMEADialogProps) {
+  const { user } = useAuth()
+  const [title, setTitle] = useState("")
   const [isSaving, setIsSaving] = useState(false)
-  const { user, signIn } = useAuth()
+  const [isOpen, setIsOpen] = useState(false)
+  const [error, setError] = useState("")
+  const router = useRouter()
 
   const handleSave = async () => {
-    if (!user) {
-      await signIn()
+    if (!title.trim()) {
+      setError("Please enter a title")
       return
     }
 
     setIsSaving(true)
+    setError("")
+
     try {
       await saveFMEA({
-        ...fmeaData,
-        title,
+        title: title.trim(),
+        assetType,
+        voltageRating,
+        operatingEnvironment,
+        ageRange,
+        loadProfile,
+        assetCriticality,
+        additionalNotes,
+        failureModes,
+        weibullParameters,
       })
+
       setIsOpen(false)
-    } catch (error) {
-      console.error("Error saving FMEA:", error)
+      setTitle("")
+      router.push("/dashboard")
+    } catch (err: any) {
+      setError(err.message || "Failed to save FMEA")
     } finally {
       setIsSaving(false)
     }
   }
 
+  if (!user) {
+    return (
+      <Button variant="outline" onClick={() => router.push("/auth/sign-in")}>
+        <Save className="h-4 w-4 mr-2" />
+        Sign in to Save
+      </Button>
+    )
+  }
+
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button variant="default">
-          <Save className="mr-2 h-4 w-4" />
+        <Button variant="outline">
+          <Save className="h-4 w-4 mr-2" />
           Save FMEA
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent>
         <DialogHeader>
-          <DialogTitle>Save FMEA Report</DialogTitle>
-          <DialogDescription>
-            {user
-              ? "Save this FMEA analysis to your dashboard for future reference."
-              : "Sign in to save this FMEA analysis to your dashboard."}
-          </DialogDescription>
+          <DialogTitle>Save FMEA</DialogTitle>
+          <DialogDescription>Save this FMEA analysis to your dashboard for future reference.</DialogDescription>
         </DialogHeader>
-        {user ? (
-          <>
-            <div className="grid gap-4 py-4">
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="title" className="text-right">
-                  Title
-                </Label>
-                <Input
-                  id="title"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  className="col-span-3"
-                  placeholder="Enter FMEA title"
-                />
-              </div>
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setIsOpen(false)}>
-                Cancel
-              </Button>
-              <Button onClick={handleSave} disabled={isSaving}>
-                {isSaving ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Saving...
-                  </>
-                ) : (
-                  <>
-                    <Save className="mr-2 h-4 w-4" />
-                    Save
-                  </>
-                )}
-              </Button>
-            </DialogFooter>
-          </>
-        ) : (
-          <div className="py-4">
-            <Button onClick={handleSave} className="w-full">
-              Sign In to Save
-            </Button>
+        <div className="space-y-4 py-4">
+          <div className="space-y-2">
+            <Label htmlFor="title">FMEA Title *</Label>
+            <Input
+              id="title"
+              placeholder="e.g., Power Transformer Analysis - Site A"
+              value={title}
+              onChange={(e) => {
+                setTitle(e.target.value)
+                setError("")
+              }}
+              disabled={isSaving}
+            />
+            {error && <p className="text-sm text-red-600">{error}</p>}
           </div>
-        )}
+          <div className="text-sm text-muted-foreground">
+            <p>This FMEA will include:</p>
+            <ul className="list-disc list-inside mt-1 space-y-1">
+              <li>{failureModes?.length || 0} failure mode(s)</li>
+              <li>Asset type: {assetType || "Not specified"}</li>
+              <li>Voltage rating: {voltageRating || "Not specified"}</li>
+              <li>Weibull parameters for reliability analysis</li>
+            </ul>
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setIsOpen(false)} disabled={isSaving}>
+            Cancel
+          </Button>
+          <Button onClick={handleSave} disabled={isSaving || !title.trim()}>
+            {isSaving ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Saving...
+              </>
+            ) : (
+              <>
+                <Save className="mr-2 h-4 w-4" />
+                Save FMEA
+              </>
+            )}
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   )
