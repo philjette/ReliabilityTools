@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Loader2, AlertCircle, CheckCircle2 } from "lucide-react"
+import { Loader2, AlertCircle, CheckCircle2, Save } from "lucide-react"
 import { generateFMEA, type FailureMode, type FMEAResult } from "@/lib/actions"
 import {
   assetTypes,
@@ -29,6 +29,8 @@ import { featureFlags } from "@/lib/feature-flags"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
+import { useAuth } from "@/contexts/auth-context"
+import { useRouter } from "next/navigation"
 
 interface FormData {
   assetType: string
@@ -52,6 +54,8 @@ interface ProcessedFailureMode {
 }
 
 export default function GenerateFMEA() {
+  const { user } = useAuth()
+  const router = useRouter()
   const [formData, setFormData] = useState<FormData>({
     assetType: "",
     voltageRating: "",
@@ -68,6 +72,7 @@ export default function GenerateFMEA() {
   const [fmeaResult, setFmeaResult] = useState<FMEAResult | null>(null)
   const [processedFailureModes, setProcessedFailureModes] = useState<ProcessedFailureMode[]>([])
   const [timeUnit, setTimeUnit] = useState<"hours" | "years">("years")
+  const [showSaveDialog, setShowSaveDialog] = useState(false)
 
   const handleInputChange = (field: keyof FormData, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
@@ -204,7 +209,6 @@ export default function GenerateFMEA() {
     return criticalityLevels.find((level) => level.value === value)?.label || value
   }
 
-  // Prepare failure mode data for the combined Weibull chart
   const prepareWeibullFailureModes = () => {
     if (!fmeaResult?.weibullParameters) return []
 
@@ -216,6 +220,31 @@ export default function GenerateFMEA() {
       scale: params.scale,
       color: colors[index % colors.length],
     }))
+  }
+
+  const prepareFMEADataForSave = () => {
+    if (!fmeaResult) return null
+
+    return {
+      title: `${getAssetTypeLabel(formData.assetType)} FMEA`,
+      asset_type: formData.assetType,
+      voltage_rating: formData.voltageRating,
+      operating_environment: formData.operatingEnvironment,
+      age_range: formData.ageRange,
+      load_profile: formData.loadProfile,
+      asset_criticality: formData.assetCriticality,
+      additional_notes: formData.additionalNotes,
+      failure_modes: fmeaResult.failureModes.map((mode) => ({
+        name: mode.name,
+        severity: mode.severity,
+        occurrence: mode.occurrence,
+        detection: mode.detection,
+        causes: mode.causes || [mode.description || ""],
+        effects: mode.effects || ["System impact"],
+        maintenanceActions: mode.maintenanceActions || [],
+      })),
+      weibull_parameters: fmeaResult.weibullParameters || {},
+    }
   }
 
   return (
@@ -495,20 +524,17 @@ export default function GenerateFMEA() {
 
                 {/* Action Buttons */}
                 <div className="flex flex-wrap gap-4">
-                  <SaveFMEADialog
-                    fmeaData={{
-                      title: `${getAssetTypeLabel(formData.assetType)} FMEA`,
-                      assetType: formData.assetType,
-                      voltageRating: formData.voltageRating,
-                      operatingEnvironment: formData.operatingEnvironment,
-                      ageRange: formData.ageRange,
-                      loadProfile: formData.loadProfile,
-                      assetCriticality: formData.assetCriticality,
-                      additionalNotes: formData.additionalNotes,
-                      failureModes: fmeaResult?.failureModes || [],
-                      weibullParameters: fmeaResult?.weibullParameters || {},
-                    }}
-                  />
+                  {user ? (
+                    <Button variant="outline" onClick={() => setShowSaveDialog(true)}>
+                      <Save className="h-4 w-4 mr-2" />
+                      Save FMEA
+                    </Button>
+                  ) : (
+                    <Button variant="outline" onClick={() => router.push("/auth/sign-in")}>
+                      <Save className="h-4 w-4 mr-2" />
+                      Sign in to Save
+                    </Button>
+                  )}
                   <DownloadPdfButton
                     assetType={formData.assetType}
                     voltageRating={formData.voltageRating}
@@ -524,6 +550,15 @@ export default function GenerateFMEA() {
                     Generate New FMEA
                   </Button>
                 </div>
+
+                {/* Save Dialog */}
+                {fmeaResult && prepareFMEADataForSave() && (
+                  <SaveFMEADialog
+                    open={showSaveDialog}
+                    onOpenChange={setShowSaveDialog}
+                    fmeaData={prepareFMEADataForSave()!}
+                  />
+                )}
 
                 {/* Collapsible Results Sections */}
                 <Accordion

@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
+import { Save, Loader2 } from "lucide-react"
 import {
   Dialog,
   DialogContent,
@@ -93,13 +94,32 @@ export function SaveFMEADialog({ open, onOpenChange, fmeaData }: SaveFMEADialogP
               disabled={saving}
             />
           </div>
+          <div className="text-sm text-muted-foreground">
+            <p>This FMEA will include:</p>
+            <ul className="list-disc list-inside mt-1 space-y-1">
+              <li>{fmeaData.failure_modes?.length || 0} failure mode(s)</li>
+              <li>Asset type: {fmeaData.asset_type}</li>
+              <li>Voltage rating: {fmeaData.voltage_rating}</li>
+              <li>Weibull parameters for reliability analysis</li>
+            </ul>
+          </div>
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>
             Cancel
           </Button>
-          <Button onClick={handleSave} disabled={saving}>
-            {saving ? "Saving..." : "Save"}
+          <Button onClick={handleSave} disabled={saving || !title.trim()}>
+            {saving ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Saving...
+              </>
+            ) : (
+              <>
+                <Save className="mr-2 h-4 w-4" />
+                Save FMEA
+              </>
+            )}
           </Button>
         </DialogFooter>
       </DialogContent>
