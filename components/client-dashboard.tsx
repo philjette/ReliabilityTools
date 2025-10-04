@@ -1,62 +1,25 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useEffect } from "react"
 import { SavedFMEAsList } from "@/components/saved-fmeas-list"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Plus, Loader2 } from "lucide-react"
 import Link from "next/link"
-import { getUserFMEAsClient } from "@/lib/fmea-actions"
+import { useFMEAs } from "@/hooks/use-fmeas"
 
 export function ClientDashboard() {
-  const [fmeas, setFmeas] = useState<any[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [mounted, setMounted] = useState(false)
-
-  const fetchFMEAs = async () => {
-    try {
-      setLoading(true)
-      setError(null)
-      
-      const { data, error } = await getUserFMEAsClient()
-      
-      if (error) {
-        setError(error)
-        console.error("Error fetching FMEAs:", error)
-      } else {
-        setFmeas(data || [])
-        console.log("Fetched FMEAs:", data)
-      }
-    } catch (err: any) {
-      setError(err.message || "Failed to fetch FMEAs")
-      console.error("Error fetching FMEAs:", err)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  useEffect(() => {
-    setMounted(true)
-  }, [])
-
-  useEffect(() => {
-    if (mounted) {
-      fetchFMEAs()
-    }
-  }, [mounted])
+  const { fmeas, loading, error, refetch } = useFMEAs()
 
   // Listen for storage events to refresh when FMEAs are saved
   useEffect(() => {
-    if (!mounted) return
-
     const handleStorageChange = () => {
-      fetchFMEAs()
+      refetch()
     }
 
     window.addEventListener('storage', handleStorageChange)
     return () => window.removeEventListener('storage', handleStorageChange)
-  }, [mounted])
+  }, [refetch])
 
   if (loading) {
     return (
