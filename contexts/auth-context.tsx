@@ -2,15 +2,20 @@
 
 import { createContext, useContext, useEffect, useState } from "react"
 import type { ReactNode } from "react"
-import type { User } from "@supabase/supabase-js"
+import type { User, AuthResponse } from "@supabase/supabase-js"
 import { createClient } from "@/lib/supabase-client"
+
+interface SignUpResult {
+  error?: string
+  data?: AuthResponse["data"]
+}
 
 interface AuthContextType {
   user: User | null
   loading: boolean
   error: string | null
   signIn: (email: string, password: string) => Promise<{ error?: string }>
-  signUp: (email: string, password: string) => Promise<{ error?: string }>
+  signUp: (email: string, password: string) => Promise<SignUpResult>
   signInWithGoogle: () => Promise<{ error?: string }>
   signOut: () => Promise<void>
 }
@@ -76,18 +81,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  const signUp = async (email: string, password: string) => {
+  const signUp = async (email: string, password: string): Promise<SignUpResult> => {
     try {
       if (!supabase) return { error: "Authentication not initialized" }
-      const { error: signUpError } = await supabase.auth.signUp({
+
+      const { data, error: signUpError } = await supabase.auth.signUp({
         email,
         password,
         options: {
           emailRedirectTo: `${window.location.origin}/auth/callback`,
         },
       })
-      if (signUpError) return { error: signUpError.message }
-      return {}
+
+      if (signUpError) {
+        console.error("Sign up error:", signUpError)
+        return { error: signUpError.message }
+      }
+
+      // Return the full response data so we can check if email confirmation is needed
+      return { data }
     } catch (err: any) {
       console.error("Sign up error:", err)
       return { error: err.message || "An unexpected error occurred" }

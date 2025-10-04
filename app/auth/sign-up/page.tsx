@@ -12,7 +12,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
-import { Loader2, AlertCircle, CheckCircle2 } from "lucide-react"
+import { Loader2, AlertCircle, CheckCircle2, Mail, Info } from "lucide-react"
 
 export default function SignUpPage() {
   const [email, setEmail] = useState("")
@@ -21,6 +21,7 @@ export default function SignUpPage() {
   const [formError, setFormError] = useState("")
   const [success, setSuccess] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [signUpData, setSignUpData] = useState<any>(null)
   const { signUp, signInWithGoogle, error: authError } = useAuth()
   const router = useRouter()
 
@@ -57,6 +58,10 @@ export default function SignUpPage() {
       if (result.error) {
         setFormError(result.error)
         setLoading(false)
+      } else if (result.data) {
+        setSignUpData(result.data)
+        setSuccess(true)
+        setLoading(false)
       } else {
         setSuccess(true)
         setLoading(false)
@@ -88,6 +93,11 @@ export default function SignUpPage() {
       setFormError(err.message || "An unexpected error occurred")
       setLoading(false)
     }
+  }
+
+  const handleSkipVerification = () => {
+    // For development: redirect to sign-in
+    router.push("/auth/sign-in")
   }
 
   if (!hasSupabaseConfig) {
@@ -124,6 +134,9 @@ export default function SignUpPage() {
   }
 
   if (success) {
+    // Check if user was created but needs email confirmation
+    const needsEmailConfirmation = signUpData?.user && !signUpData?.session
+
     return (
       <div className="min-h-screen flex flex-col">
         <Header />
@@ -131,22 +144,67 @@ export default function SignUpPage() {
           <Card className="w-full max-w-md">
             <CardHeader className="space-y-1 text-center">
               <div className="flex justify-center mb-4">
-                <CheckCircle2 className="h-12 w-12 text-green-500" />
+                {needsEmailConfirmation ? (
+                  <Mail className="h-12 w-12 text-blue-500" />
+                ) : (
+                  <CheckCircle2 className="h-12 w-12 text-green-500" />
+                )}
               </div>
-              <CardTitle className="text-2xl font-bold">Check your email</CardTitle>
+              <CardTitle className="text-2xl font-bold">
+                {needsEmailConfirmation ? "Check your email" : "Account created!"}
+              </CardTitle>
               <CardDescription>
-                We've sent a confirmation link to <strong>{email}</strong>
+                {needsEmailConfirmation ? (
+                  <>
+                    We've sent a confirmation link to <strong>{email}</strong>
+                  </>
+                ) : (
+                  "Your account has been created successfully"
+                )}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <Alert>
-                <AlertDescription>
-                  Click the link in the email to verify your account and complete the sign-up process.
-                </AlertDescription>
-              </Alert>
-              <Button onClick={() => router.push("/auth/sign-in")} className="w-full">
-                Go to Sign In
-              </Button>
+              {needsEmailConfirmation ? (
+                <>
+                  <Alert>
+                    <Mail className="h-4 w-4" />
+                    <AlertDescription>
+                      Click the link in the email to verify your account and complete the sign-up process.
+                    </AlertDescription>
+                  </Alert>
+
+                  <Alert variant="default" className="border-blue-200 bg-blue-50">
+                    <Info className="h-4 w-4 text-blue-600" />
+                    <AlertDescription className="text-blue-900">
+                      <strong>Not receiving emails?</strong>
+                      <ul className="mt-2 ml-4 list-disc space-y-1 text-sm">
+                        <li>Check your spam/junk folder</li>
+                        <li>Verify Supabase email settings in your dashboard</li>
+                        <li>For development, you can disable email confirmation in Supabase</li>
+                      </ul>
+                    </AlertDescription>
+                  </Alert>
+
+                  <div className="space-y-2">
+                    <Button onClick={() => router.push("/auth/sign-in")} className="w-full">
+                      Go to Sign In
+                    </Button>
+                    <Button onClick={handleSkipVerification} variant="outline" className="w-full bg-transparent">
+                      Continue Without Verification (Dev Only)
+                    </Button>
+                  </div>
+                </>
+              ) : (
+                <Button onClick={() => router.push("/dashboard")} className="w-full">
+                  Go to Dashboard
+                </Button>
+              )}
+
+              <div className="text-center">
+                <Link href="/auth/sign-up" className="text-sm text-primary hover:underline">
+                  Try signing up again
+                </Link>
+              </div>
             </CardContent>
           </Card>
         </div>
