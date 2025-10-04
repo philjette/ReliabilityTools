@@ -1,13 +1,11 @@
-// Feature flags for the application
 export const featureFlags = {
   showRiskMatrix: true,
-  showWeibullCharts: true,
-  showMaintenanceRecommendations: true,
-  allowCustomAssetTypes: true,
-} as const
+  enableAdvancedFiltering: false,
+  enableRULPrediction: false,
+  enableUserRoles: false,
+  enableCustomReports: false,
+}
 
-export type FeatureFlagKey = keyof typeof featureFlags
-
-export function isFeatureEnabled(flag: FeatureFlagKey): boolean {
-  return featureFlags[flag] ?? false
+export function isFeatureEnabled(feature: keyof typeof featureFlags): boolean {
+  return featureFlags[feature]
 }

@@ -1,130 +1,88 @@
+import { gamma } from "./gamma"
+
+export interface WeibullParameters {
+  shape: number
+  scale: number
+}
+
 /**
- * Estimate Weibull parameters using Maximum Likelihood Estimation (MLE)
+ * Estimates Weibull parameters using Maximum Likelihood Estimation
  */
-export function estimateWeibullParameters(failureTimes: number[]): { shape: number; scale: number } {
-  if (failureTimes.length === 0) {
-    throw new Error("No failure times provided")
+export function estimateWeibullParameters(failureTimes: number[]): WeibullParameters {
+  if (!failureTimes || failureTimes.length === 0) {
+    throw new Error("Failure times array cannot be empty")
   }
 
   // Sort failure times
   const sortedTimes = [...failureTimes].sort((a, b) => a - b)
-
-  // Initial guess for shape parameter using method of moments
   const n = sortedTimes.length
-  const sumT = sortedTimes.reduce((sum, t) => sum + t, 0)
-  const sumT2 = sortedTimes.reduce((sum, t) => sum + t * t, 0)
-  const meanT = sumT / n
-  const varT = sumT2 / n - meanT * meanT
 
-  // Initial shape estimate
-  let shape = Math.pow(meanT, 2) / varT
+  // Initial guess for shape parameter (beta)
+  let beta = 1.0
 
-  // Newton-Raphson iteration to find MLE of shape parameter
+  // Newton-Raphson iteration for MLE
   const maxIterations = 100
   const tolerance = 1e-6
 
   for (let iter = 0; iter < maxIterations; iter++) {
-    const sumLnT = sortedTimes.reduce((sum, t) => sum + Math.log(t), 0)
-    const sumTBeta = sortedTimes.reduce((sum, t) => sum + Math.pow(t, shape), 0)
-    const sumTBetaLnT = sortedTimes.reduce((sum, t) => sum + Math.pow(t, shape) * Math.log(t), 0)
+    const sumLogT = sortedTimes.reduce((sum, t) => sum + Math.log(t), 0)
+    const sumTBeta = sortedTimes.reduce((sum, t) => sum + Math.pow(t, beta), 0)
+    const sumTBetaLogT = sortedTimes.reduce((sum, t) => sum + Math.pow(t, beta) * Math.log(t), 0)
 
-    // First derivative
-    const f = n / shape + sumLnT - (n * sumTBetaLnT) / sumTBeta
+    const f = sumLogT / n + 1 / beta - sumTBetaLogT / sumTBeta
+    const fPrime = -1 / (beta * beta) - (sumTBetaLogT * sumTBetaLogT) / (sumTBeta * sumTBeta)
 
-    // Second derivative
-    const sumTBetaLnT2 = sortedTimes.reduce((sum, t) => sum + Math.pow(t, shape) * Math.pow(Math.log(t), 2), 0)
-    const fPrime = -n / (shape * shape) + n * (sumTBetaLnT2 / sumTBeta - Math.pow(sumTBetaLnT / sumTBeta, 2))
+    const betaNew = beta - f / fPrime
 
-    // Newton-Raphson update
-    const shapeNew = shape - f / fPrime
-
-    if (Math.abs(shapeNew - shape) < tolerance) {
-      shape = shapeNew
+    if (Math.abs(betaNew - beta) < tolerance) {
+      beta = betaNew
       break
     }
 
-    shape = shapeNew
-
-    // Ensure shape stays positive
-    if (shape <= 0) {
-      shape = 0.5
-    }
+    beta = betaNew
   }
 
-  // Calculate scale parameter
-  const sumTBeta = sortedTimes.reduce((sum, t) => sum + Math.pow(t, shape), 0)
-  const scale = Math.pow(sumTBeta / n, 1 / shape)
-
-  return { shape, scale }
-}
-
-/**
- * Generate synthetic failure times from a Weibull distribution
- * Useful for testing and simulation
- */
-export function generateWeibullSamples(shape: number, scale: number, count: number): number[] {
-  const samples: number[] = []
-
-  for (let i = 0; i < count; i++) {
-    // Inverse transform sampling
-    const u = Math.random()
-    const t = scale * Math.pow(-Math.log(1 - u), 1 / shape)
-    samples.push(t)
-  }
-
-  return samples
-}
-
-/**
- * Calculate confidence intervals for Weibull parameters
- * Uses Fisher Information Matrix
- */
-export function weibullConfidenceIntervals(
-  failureTimes: number[],
-  confidenceLevel = 0.95,
-): {
-  shape: { lower: number; upper: number }
-  scale: { lower: number; upper: number }
-} {
-  const { shape, scale } = estimateWeibullParameters(failureTimes)
-  const n = failureTimes.length
-
-  // Standard error approximations
-  const shapeStdError = shape / Math.sqrt(n)
-  const scaleStdError = scale / Math.sqrt(n)
-
-  // Z-score for confidence level
-  const z = 1.96 // For 95% confidence
+  // Calculate scale parameter (eta)
+  const sumTBeta = sortedTimes.reduce((sum, t) => sum + Math.pow(t, beta), 0)
+  const eta = Math.pow(sumTBeta / n, 1 / beta)
 
   return {
-    shape: {
-      lower: Math.max(0.1, shape - z * shapeStdError),
-      upper: shape + z * shapeStdError,
-    },
-    scale: {
-      lower: Math.max(0, scale - z * scaleStdError),
-      upper: scale + z * scaleStdError,
-    },
+    shape: beta,
+    scale: eta,
   }
 }
 
 /**
- * Perform goodness-of-fit test for Weibull distribution
- * Returns Kolmogorov-Smirnov statistic
+ * Calculate Weibull reliability function R(t)
  */
-export function weibullGoodnessOfFit(failureTimes: number[]): number {
-  const { shape, scale } = estimateWeibullParameters(failureTimes)
-  const n = failureTimes.length
-  const sortedTimes = [...failureTimes].sort((a, b) => a - b)
+export function weibullReliability(t: number, shape: number, scale: number): number {
+  return Math.exp(-Math.pow(t / scale, shape))
+}
 
-  let maxDifference = 0
+/**
+ * Calculate Weibull failure rate (hazard function) h(t)
+ */
+export function weibullFailureRate(t: number, shape: number, scale: number): number {
+  return (shape / scale) * Math.pow(t / scale, shape - 1)
+}
 
-  for (let i = 0; i < n; i++) {
-    const empiricalCDF = (i + 1) / n
-    const theoreticalCDF = 1 - Math.exp(-Math.pow(sortedTimes[i] / scale, shape))
-    const difference = Math.abs(empiricalCDF - theoreticalCDF)
-    maxDifference = Math.max(maxDifference, difference)
-  }
+/**
+ * Calculate Weibull probability density function f(t)
+ */
+export function weibullPDF(t: number, shape: number, scale: number): number {
+  return (shape / scale) * Math.pow(t / scale, shape - 1) * Math.exp(-Math.pow(t / scale, shape))
+}
 
-  return maxDifference
+/**
+ * Calculate Weibull cumulative distribution function F(t)
+ */
+export function weibullCDF(t: number, shape: number, scale: number): number {
+  return 1 - Math.exp(-Math.pow(t / scale, shape))
+}
+
+/**
+ * Calculate Mean Time To Failure
+ */
+export function calculateMTTF(shape: number, scale: number): number {
+  return scale * gamma(1 + 1 / shape)
 }
