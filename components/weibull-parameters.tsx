@@ -1,97 +1,147 @@
 "use client"
 
-import type React from "react"
-
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Slider } from "@/components/ui/slider"
-
-// Hours in a year for conversion
-const HOURS_IN_YEAR = 8760
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
+import { Info } from "lucide-react"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { weibullMTTF, weibullTimeAtReliability } from "@/lib/gamma"
 
 interface WeibullParametersProps {
-  shape: number
-  scale: number
-  onShapeChange: (value: number) => void
-  onScaleChange: (value: number) => void
+  weibullParameters: {
+    [key: string]: {
+      shape: number
+      scale: number
+    }
+  }
 }
 
-export function WeibullParameters({ shape, scale, onShapeChange, onScaleChange }: WeibullParametersProps) {
-  // Convert scale from hours to years for display and round to integer
-  const scaleInYears = Math.round(scale / HOURS_IN_YEAR)
-
-  const handleShapeInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = Number.parseFloat(e.target.value)
-    if (!isNaN(value) && value > 0) {
-      onShapeChange(value)
+export function WeibullParameters({ weibullParameters }: WeibullParametersProps) {
+  const getFailurePattern = (shape: number): { label: string; color: string; description: string } => {
+    if (shape < 1) {
+      return {
+        label: "Early Life Failures",
+        color: "bg-blue-100 text-blue-800",
+        description: "Decreasing failure rate - failures occur early in life (infant mortality)",
+      }
+    } else if (shape === 1) {
+      return {
+        label: "Random Failures",
+        color: "bg-yellow-100 text-yellow-800",
+        description: "Constant failure rate - failures occur randomly over time",
+      }
+    } else {
+      return {
+        label: "Wear-out Failures",
+        color: "bg-red-100 text-red-800",
+        description: "Increasing failure rate - failures increase with age (wear-out)",
+      }
     }
-  }
-
-  const handleScaleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = Number.parseInt(e.target.value, 10)
-    if (!isNaN(value) && value >= 0 && value <= 200) {
-      // Convert years to hours when updating
-      onScaleChange(value * HOURS_IN_YEAR)
-    }
-  }
-
-  const handleScaleSliderChange = (values: number[]) => {
-    // Convert years to hours when updating
-    onScaleChange(values[0] * HOURS_IN_YEAR)
   }
 
   return (
-    <div className="space-y-4">
-      <div className="space-y-2">
-        <div className="flex justify-between">
-          <Label htmlFor="shape-parameter">Shape Parameter (β)</Label>
-          <span className="text-sm text-muted-foreground">{shape.toFixed(2)}</span>
+    <Card>
+      <CardHeader>
+        <CardTitle>Weibull Distribution Parameters</CardTitle>
+        <CardDescription>
+          Statistical parameters for reliability modeling and failure prediction based on the generated failure modes.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-6">
+          {Object.entries(weibullParameters).map(([failureMode, params]) => {
+            const pattern = getFailurePattern(params.shape)
+            const mttf = weibullMTTF(params.shape, params.scale)
+            const time10Percent = weibullTimeAtReliability(params.shape, params.scale, 0.9)
+            const time90Percent = weibullTimeAtReliability(params.shape, params.scale, 0.1)
+
+            return (
+              <div key={failureMode} className="border rounded-lg p-4 space-y-4">
+                <div className="flex items-start justify-between">
+                  <h4 className="font-medium">{failureMode}</h4>
+                  <Badge className={pattern.color}>{pattern.label}</Badge>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium">Shape Parameter (β):</span>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger>
+                            <Info className="h-4 w-4 text-muted-foreground" />
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p className="max-w-xs">{pattern.description}</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </div>
+                    <p className="text-2xl font-bold">{params.shape.toFixed(2)}</p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium">Scale Parameter (η):</span>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger>
+                            <Info className="h-4 w-4 text-muted-foreground" />
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p className="max-w-xs">
+                              Characteristic life - the time at which 63.2% of units are expected to fail
+                            </p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </div>
+                    <p className="text-2xl font-bold">{params.scale.toLocaleString()} hours</p>
+                    <p className="text-sm text-muted-foreground">({(params.scale / 8760).toFixed(1)} years)</p>
+                  </div>
+                </div>
+
+                <div className="pt-2 border-t">
+                  <h5 className="text-sm font-medium mb-2">Reliability Metrics</h5>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
+                    <div>
+                      <p className="text-muted-foreground">Mean Time to Failure</p>
+                      <p className="font-medium">
+                        {mttf.toLocaleString(undefined, { maximumFractionDigits: 0 })} hours
+                      </p>
+                      <p className="text-xs text-muted-foreground">({(mttf / 8760).toFixed(1)} years)</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">10% Failure Time</p>
+                      <p className="font-medium">
+                        {time10Percent.toLocaleString(undefined, { maximumFractionDigits: 0 })} hours
+                      </p>
+                      <p className="text-xs text-muted-foreground">({(time10Percent / 8760).toFixed(1)} years)</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">90% Failure Time</p>
+                      <p className="font-medium">
+                        {time90Percent.toLocaleString(undefined, { maximumFractionDigits: 0 })} hours
+                      </p>
+                      <p className="text-xs text-muted-foreground">({(time90Percent / 8760).toFixed(1)} years)</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )
+          })}
         </div>
-        <div className="flex gap-2">
-          <Slider
-            id="shape-parameter"
-            min={0.5}
-            max={5}
-            step={0.1}
-            value={[shape]}
-            onValueChange={(values) => onShapeChange(values[0])}
-          />
-          <Input type="number" min={0.1} step={0.1} value={shape} onChange={handleShapeInputChange} className="w-20" />
+
+        <div className="mt-6 p-4 bg-muted/50 rounded-lg">
+          <h5 className="text-sm font-medium mb-2">Understanding Weibull Parameters</h5>
+          <ul className="text-sm text-muted-foreground space-y-1">
+            <li>• Shape Parameter (β) determines the failure pattern over time</li>
+            <li>• Scale Parameter (η) represents the characteristic life of the component</li>
+            <li>• MTTF is the average time until failure across all units</li>
+            <li>• 10% Failure Time indicates when the first 10% of units are expected to fail</li>
+            <li>• 90% Failure Time indicates when 90% of units are expected to have failed</li>
+          </ul>
         </div>
-        <p className="text-xs text-muted-foreground">
-          {shape < 1
-            ? "Decreasing failure rate (early failures)"
-            : shape === 1
-              ? "Constant failure rate (random failures)"
-              : "Increasing failure rate (wear-out failures)"}
-        </p>
-      </div>
-      <div className="space-y-2">
-        <div className="flex justify-between">
-          <Label htmlFor="scale-parameter">Scale Parameter (η)</Label>
-          <span className="text-sm text-muted-foreground">{scaleInYears} years</span>
-        </div>
-        <div className="flex gap-2">
-          <Slider
-            id="scale-parameter"
-            min={1}
-            max={200}
-            step={1}
-            value={[scaleInYears]}
-            onValueChange={handleScaleSliderChange}
-          />
-          <Input
-            type="number"
-            min={0}
-            max={200}
-            step={1}
-            value={scaleInYears}
-            onChange={handleScaleInputChange}
-            className="w-20"
-          />
-        </div>
-        <p className="text-xs text-muted-foreground">Characteristic life (63.2% of units will fail by this time)</p>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   )
 }

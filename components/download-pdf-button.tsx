@@ -1,100 +1,163 @@
 "use client"
 
 import { useState } from "react"
-import { FileText, Loader2 } from "lucide-react"
-import { Button, type ButtonProps } from "@/components/ui/button"
-import { generatePdf, generatePdfFromSaved } from "@/lib/fmea-actions"
-import type { FailureMode } from "@/lib/actions"
+import { Download, Loader2 } from "lucide-react"
+import { Button } from "@/components/ui/button"
 
-interface DownloadPdfButtonProps extends Omit<ButtonProps, "onClick"> {
-  variant?: "default" | "outline" | "secondary" | "ghost" | "link" | "destructive"
-  size?: "default" | "sm" | "lg" | "icon"
-  // For generated but not saved FMEAs
-  fmeaData?: {
-    title: string
-    assetType: string
-    voltageRating: string
-    operatingEnvironment: string
-    ageRange: string
-    loadProfile: string
-    assetCriticality: string
-    additionalNotes: string
-    failureModes: FailureMode[]
-    weibullParameters: Record<string, { shape: number; scale: number }>
-  }
-  // For saved FMEAs
-  fmeaId?: string
-  fileName?: string
+interface ProcessedFailureMode {
+  failureMode: string
+  cause: string
+  effect: string
+  severity: number
+  occurrence: number
+  detection: number
+  rpn: number
+  recommendation?: string
+}
+
+interface DownloadPdfButtonProps {
+  assetType: string
+  voltageRating: string
+  operatingEnvironment: string
+  ageRange: string
+  loadProfile: string
+  assetCriticality: string
+  additionalNotes: string
+  failureModes: ProcessedFailureMode[]
+  weibullParameters: Record<string, { shape: number; scale: number }>
 }
 
 export function DownloadPdfButton({
-  variant = "outline",
-  size = "sm",
-  fmeaData,
-  fmeaId,
-  fileName,
-  children,
-  ...props
+  assetType,
+  voltageRating,
+  operatingEnvironment,
+  ageRange,
+  loadProfile,
+  assetCriticality,
+  additionalNotes,
+  failureModes,
+  weibullParameters,
 }: DownloadPdfButtonProps) {
   const [isGenerating, setIsGenerating] = useState(false)
 
   const handleDownload = async () => {
+    setIsGenerating(true)
+
     try {
-      setIsGenerating(true)
+      // Generate text report content
+      const reportContent = generateTextReport({
+        assetType,
+        voltageRating,
+        operatingEnvironment,
+        ageRange,
+        loadProfile,
+        assetCriticality,
+        additionalNotes,
+        failureModes,
+        weibullParameters,
+      })
 
-      let pdfData: Uint8Array
-
-      if (fmeaId) {
-        // Generate PDF from saved FMEA
-        pdfData = await generatePdfFromSaved(fmeaId)
-      } else if (fmeaData) {
-        // Generate PDF from unsaved FMEA data
-        pdfData = await generatePdf(fmeaData)
-      } else {
-        throw new Error("Either fmeaId or fmeaData must be provided")
-      }
-
-      // Convert the Uint8Array to a Blob
-      const blob = new Blob([pdfData], { type: "application/pdf" })
-
-      // Create a URL for the Blob
+      // Create and download the file
+      const blob = new Blob([reportContent], { type: "text/plain" })
       const url = URL.createObjectURL(blob)
-
-      // Create a link element and trigger the download
-      const link = document.createElement("a")
-      link.href = url
-      link.download = fileName || `FMEA_Report_${new Date().toISOString().split("T")[0]}.pdf`
-      document.body.appendChild(link)
-      link.click()
-
-      // Clean up
-      document.body.removeChild(link)
+      const a = document.createElement("a")
+      a.href = url
+      a.download = `FMEA_${assetType}_${new Date().toISOString().split("T")[0]}.txt`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
       URL.revokeObjectURL(url)
     } catch (error) {
-      console.error("Error generating PDF:", error)
-      alert("Failed to generate PDF. Please try again.")
+      console.error("Error generating report:", error)
     } finally {
       setIsGenerating(false)
     }
   }
 
   return (
-    <Button variant={variant} size={size} onClick={handleDownload} disabled={isGenerating} {...props}>
+    <Button onClick={handleDownload} disabled={isGenerating} variant="outline">
       {isGenerating ? (
         <>
-          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
           Generating...
         </>
       ) : (
         <>
-          {children || (
-            <>
-              <FileText className="mr-2 h-4 w-4" />
-              Download PDF
-            </>
-          )}
+          <Download className="h-4 w-4 mr-2" />
+          Download Report
         </>
       )}
     </Button>
   )
+}
+
+function generateTextReport(data: DownloadPdfButtonProps): string {
+  const {
+    assetType,
+    voltageRating,
+    operatingEnvironment,
+    ageRange,
+    loadProfile,
+    assetCriticality,
+    additionalNotes,
+    failureModes,
+    weibullParameters,
+  } = data
+
+  let report = `FAILURE MODE AND EFFECTS ANALYSIS (FMEA) REPORT
+Generated on: ${new Date().toLocaleDateString()}
+
+ASSET INFORMATION
+================
+Asset Type: ${assetType}
+Voltage Rating: ${voltageRating}
+Operating Environment: ${operatingEnvironment}
+Asset Age: ${ageRange}
+Load Profile: ${loadProfile}
+Asset Criticality: ${assetCriticality}
+Additional Notes: ${additionalNotes || "None"}
+
+FAILURE MODES ANALYSIS
+=====================
+Total Failure Modes Identified: ${failureModes.length}
+
+`
+
+  failureModes.forEach((mode, index) => {
+    report += `${index + 1}. ${mode.failureMode}
+   Cause: ${mode.cause}
+   Effect: ${mode.effect}
+   Severity: ${mode.severity}
+   Occurrence: ${mode.occurrence}
+   Detection: ${mode.detection}
+   RPN: ${mode.rpn}
+   Risk Level: ${mode.rpn >= 200 ? "Critical" : mode.rpn >= 100 ? "High" : mode.rpn >= 50 ? "Medium" : "Low"}
+
+`
+  })
+
+  if (Object.keys(weibullParameters).length > 0) {
+    report += `WEIBULL PARAMETERS
+==================
+`
+    Object.entries(weibullParameters).forEach(([mode, params]) => {
+      report += `${mode}:
+   Shape Parameter (β): ${params.shape.toFixed(2)}
+   Scale Parameter (η): ${params.scale.toFixed(2)}
+
+`
+    })
+  }
+
+  report += `SUMMARY
+=======
+Critical Risk Items (RPN ≥ 200): ${failureModes.filter((fm) => fm.rpn >= 200).length}
+High Risk Items (RPN 100-199): ${failureModes.filter((fm) => fm.rpn >= 100 && fm.rpn < 200).length}
+Medium Risk Items (RPN 50-99): ${failureModes.filter((fm) => fm.rpn >= 50 && fm.rpn < 100).length}
+Low Risk Items (RPN < 50): ${failureModes.filter((fm) => fm.rpn < 50).length}
+
+This report was generated by the ReliabilityTools.ai Platform.
+`
+
+  return report
 }
