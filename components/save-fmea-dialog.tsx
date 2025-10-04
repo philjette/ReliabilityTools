@@ -30,6 +30,9 @@ export function SaveFMEADialog({ open, onOpenChange, fmeaData }: SaveFMEADialogP
   const { toast } = useToast()
 
   const handleSave = async () => {
+    console.log("handleSave called")
+    console.log("Title:", title)
+
     if (!title.trim()) {
       toast({
         title: "Error",
@@ -47,7 +50,11 @@ export function SaveFMEADialog({ open, onOpenChange, fmeaData }: SaveFMEADialogP
         title: title.trim(),
       }
 
+      console.log("Saving data:", dataToSave)
+
       const result = await saveFMEA(dataToSave)
+
+      console.log("Save result:", result)
 
       if (result.error) {
         toast({

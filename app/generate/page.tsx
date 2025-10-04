@@ -159,6 +159,13 @@ export default function GenerateFMEA() {
     setError(null)
   }
 
+  const handleSaveClick = () => {
+    console.log("Save button clicked")
+    console.log("User:", user)
+    console.log("FMEA Result:", fmeaResult)
+    setShowSaveDialog(true)
+  }
+
   const getRiskLevel = (rpn: number): { level: string; color: string } => {
     if (rpn >= 200) return { level: "Critical", color: "text-red-600 bg-red-50" }
     if (rpn >= 100) return { level: "High", color: "text-orange-600 bg-orange-50" }
@@ -525,7 +532,7 @@ export default function GenerateFMEA() {
                 {/* Action Buttons */}
                 <div className="flex flex-wrap gap-4">
                   {user ? (
-                    <Button variant="outline" onClick={() => setShowSaveDialog(true)}>
+                    <Button variant="outline" onClick={handleSaveClick}>
                       <Save className="h-4 w-4 mr-2" />
                       Save FMEA
                     </Button>
