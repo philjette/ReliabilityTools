@@ -2,7 +2,7 @@ import { createBrowserClient } from "@supabase/ssr"
 
 let supabaseClient: ReturnType<typeof createBrowserClient> | null = null
 
-export function getSupabaseClient() {
+export function createClient() {
   if (supabaseClient) {
     return supabaseClient
   }
@@ -11,7 +11,8 @@ export function getSupabaseClient() {
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
   if (!supabaseUrl || !supabaseAnonKey) {
-    throw new Error("Missing Supabase environment variables")
+    console.error("Missing Supabase environment variables")
+    throw new Error("Missing Supabase configuration")
   }
 
   supabaseClient = createBrowserClient(supabaseUrl, supabaseAnonKey)

@@ -44,9 +44,6 @@ export function Header() {
           <Link href="/about" className="text-gray-600 hover:text-gray-900 transition-colors">
             About
           </Link>
-          <Link href="/setup" className="text-gray-600 hover:text-gray-900 transition-colors">
-            Setup
-          </Link>
 
           {!loading && (
             <>
@@ -111,9 +108,6 @@ export function Header() {
           </Link>
           <Link href="/about" className="block text-gray-600 hover:text-gray-900" onClick={() => setIsMenuOpen(false)}>
             About
-          </Link>
-          <Link href="/setup" className="block text-gray-600 hover:text-gray-900" onClick={() => setIsMenuOpen(false)}>
-            Setup
           </Link>
           {!loading && (
             <>
