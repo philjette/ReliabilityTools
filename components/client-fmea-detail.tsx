@@ -10,6 +10,7 @@ import { Loader2, ArrowLeft } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { useSupabase } from "@/hooks/use-supabase"
+import { useAuth } from "@/contexts/auth-context"
 
 interface ClientFMEADetailProps {
   fmeaId: string
@@ -20,7 +21,11 @@ export function ClientFMEADetail({ fmeaId }: ClientFMEADetailProps) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const { supabase, loading: supabaseLoading } = useSupabase()
+  const { user: authUser, loading: authLoading } = useAuth()
   const router = useRouter()
+
+  console.log("ClientFMEADetail mounted with fmeaId:", fmeaId)
+  console.log("Auth status:", { authUser: !!authUser, authLoading, supabaseLoading })
 
   useEffect(() => {
     const fetchFMEA = async () => {
@@ -30,14 +35,19 @@ export function ClientFMEADetail({ fmeaId }: ClientFMEADetailProps) {
         setLoading(true)
         setError(null)
 
+        console.log("Fetching FMEA with auth user:", authUser?.id)
+
         const {
           data: { user },
         } = await supabase.auth.getUser()
 
         if (!user) {
+          console.log("No user found in Supabase session")
           setError("You must be signed in to view FMEAs")
           return
         }
+
+        console.log("Supabase user found:", user.id)
 
         const { data, error } = await supabase
           .from("fmeas")
@@ -63,12 +73,17 @@ export function ClientFMEADetail({ fmeaId }: ClientFMEADetailProps) {
       }
     }
 
-    if (!supabaseLoading && supabase) {
+    // Wait for both Supabase and auth context to be ready
+    if (!supabaseLoading && !authLoading && supabase && authUser) {
       fetchFMEA()
+    } else if (!authLoading && !authUser) {
+      // If auth is loaded but no user, show error
+      setError("You must be signed in to view FMEAs")
+      setLoading(false)
     }
-  }, [supabase, supabaseLoading, fmeaId])
+  }, [supabase, supabaseLoading, authUser, authLoading, fmeaId])
 
-  if (supabaseLoading || loading) {
+  if (supabaseLoading || authLoading || loading) {
     return (
       <div className="min-h-screen bg-white">
         <Header />

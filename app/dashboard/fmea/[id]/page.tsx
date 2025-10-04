@@ -1,3 +1,5 @@
+"use client"
+
 import { ClientFMEADetail } from "@/components/client-fmea-detail"
 
 export const dynamic = "force-dynamic"
