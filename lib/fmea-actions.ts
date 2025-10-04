@@ -28,7 +28,7 @@ export interface FMEAData {
       description: string
     }>
   }>
-  weibull_parameters: Record<string, { shape: number; scale: number }>
+  weibull_parameters?: Record<string, { shape: number; scale: number }>
   created_at?: string
   updated_at?: string
 }
@@ -59,7 +59,7 @@ export async function saveFMEA(fmeaData: FMEAData) {
         asset_criticality: fmeaData.asset_criticality,
         additional_notes: fmeaData.additional_notes,
         failure_modes: fmeaData.failure_modes,
-        weibull_parameters: fmeaData.weibull_parameters,
+        weibull_parameters: fmeaData.weibull_parameters || {},
       })
       .select()
       .single()
