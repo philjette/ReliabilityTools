@@ -114,6 +114,11 @@ export async function getUserFMEAs() {
 // Client-side version for use in components
 export async function getUserFMEAsClient() {
   try {
+    // Only run on client side
+    if (typeof window === "undefined") {
+      return { data: [], error: "This function can only be called on the client side" }
+    }
+
     const { createClient } = await import("@/lib/supabase-client")
     const supabase = createClient()
 

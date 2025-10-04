@@ -17,6 +17,13 @@ export function ClientDashboard() {
     try {
       setLoading(true)
       setError(null)
+      
+      // Only fetch on client side
+      if (typeof window === "undefined") {
+        setError("This component can only run on the client side")
+        return
+      }
+      
       const { data, error } = await getUserFMEAsClient()
       
       if (error) {
@@ -35,11 +42,17 @@ export function ClientDashboard() {
   }
 
   useEffect(() => {
-    fetchFMEAs()
+    // Only run on client side
+    if (typeof window !== "undefined") {
+      fetchFMEAs()
+    }
   }, [])
 
   // Listen for storage events to refresh when FMEAs are saved
   useEffect(() => {
+    // Only run on client side
+    if (typeof window === "undefined") return
+
     const handleStorageChange = () => {
       fetchFMEAs()
     }
