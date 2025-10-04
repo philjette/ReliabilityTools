@@ -17,6 +17,7 @@ import { Label } from "@/components/ui/label"
 import { saveFMEA, type FMEAData } from "@/lib/fmea-actions"
 import { createClient } from "@/lib/supabase-client"
 import { useToast } from "@/hooks/use-toast"
+import { useAuth } from "@/contexts/auth-context"
 
 interface SaveFMEADialogProps {
   open: boolean
@@ -29,6 +30,7 @@ export function SaveFMEADialog({ open, onOpenChange, fmeaData }: SaveFMEADialogP
   const [saving, setSaving] = useState(false)
   const router = useRouter()
   const { toast } = useToast()
+  const { user: authUser } = useAuth()
 
   // Update title when fmeaData changes
   useEffect(() => {
@@ -43,12 +45,23 @@ export function SaveFMEADialog({ open, onOpenChange, fmeaData }: SaveFMEADialogP
     console.log("Title trimmed:", title.trim())
     console.log("FMEA Data:", fmeaData)
     console.log("Button should be enabled:", !saving && title.trim().length > 0)
+    console.log("Auth user from context:", authUser)
 
     if (!title.trim()) {
       console.log("Title is empty, showing error")
       toast({
         title: "Error",
         description: "Please enter a title for the FMEA",
+        variant: "destructive",
+      })
+      return
+    }
+
+    if (!authUser) {
+      console.log("No user in auth context")
+      toast({
+        title: "Error",
+        description: "You must be signed in to save FMEAs. Please sign in and try again.",
         variant: "destructive",
       })
       return
@@ -68,13 +81,22 @@ export function SaveFMEADialog({ open, onOpenChange, fmeaData }: SaveFMEADialogP
 
       // Try client-side save first
       const supabase = createClient()
-      const { data: { user } } = await supabase.auth.getUser()
+      console.log("Supabase client created:", !!supabase)
+      
+      // Check current session
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+      console.log("Session check:", { session: !!session, error: sessionError })
+      
+      const { data: { user }, error: userError } = await supabase.auth.getUser()
+      console.log("User check:", { user: !!user, error: userError })
       
       if (!user) {
         console.error("No authenticated user found")
+        console.error("Session:", session)
+        console.error("User error:", userError)
         toast({
           title: "Error",
-          description: "You must be signed in to save FMEAs",
+          description: "You must be signed in to save FMEAs. Please sign in and try again.",
           variant: "destructive",
         })
         return
