@@ -14,48 +14,20 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
-import { deleteFMEAClient } from "@/lib/fmea-actions"
-import { useToast } from "@/hooks/use-toast"
+import { useDeleteFMEA } from "@/hooks/use-delete-fmea"
 
 interface DeleteFMEAButtonProps {
   id: string
 }
 
 export function DeleteFMEAButton({ id }: DeleteFMEAButtonProps) {
-  const [isDeleting, setIsDeleting] = useState(false)
   const [isOpen, setIsOpen] = useState(false)
-  const { toast } = useToast()
+  const { deleteFMEA, deleting } = useDeleteFMEA()
 
   const handleDelete = async () => {
-    try {
-      setIsDeleting(true)
-      console.log("Deleting FMEA with ID:", id)
-      
-      const result = await deleteFMEAClient(id)
-      
-      if (result.error) {
-        console.error("Error deleting FMEA:", result.error)
-        toast({
-          title: "Error",
-          description: result.error,
-          variant: "destructive",
-        })
-      } else {
-        console.log("FMEA deleted successfully")
-        toast({
-          title: "Success",
-          description: "FMEA deleted successfully",
-        })
-      }
-    } catch (error) {
-      console.error("Error deleting FMEA:", error)
-      toast({
-        title: "Error",
-        description: "Failed to delete FMEA",
-        variant: "destructive",
-      })
-    } finally {
-      setIsDeleting(false)
+    const result = await deleteFMEA(id)
+    
+    if (!result.error) {
       setIsOpen(false)
     }
   }
@@ -76,8 +48,8 @@ export function DeleteFMEAButton({ id }: DeleteFMEAButtonProps) {
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>Cancel</AlertDialogCancel>
-          <AlertDialogAction onClick={handleDelete} disabled={isDeleting} className="bg-red-500 hover:bg-red-600">
-            {isDeleting ? "Deleting..." : "Delete"}
+          <AlertDialogAction onClick={handleDelete} disabled={deleting} className="bg-red-500 hover:bg-red-600">
+            {deleting ? "Deleting..." : "Delete"}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
