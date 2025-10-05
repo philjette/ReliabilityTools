@@ -29,6 +29,7 @@ export function AssetDataUpload() {
     assetName: string
   } | null>(null)
   const [timeUnit, setTimeUnit] = useState<"hours" | "years">("hours")
+  const [chartType, setChartType] = useState<"cdf" | "pdf" | "hazard">("cdf")
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = event.target.files?.[0]
@@ -166,23 +167,52 @@ export function AssetDataUpload() {
           <Card>
             <CardHeader>
               <CardTitle>Display Settings</CardTitle>
-              <CardDescription>Choose how to display time values in the analysis</CardDescription>
+              <CardDescription>Choose how to display time values and chart type in the analysis</CardDescription>
             </CardHeader>
             <CardContent>
-              <RadioGroup value={timeUnit} onValueChange={(value: "hours" | "years") => setTimeUnit(value)}>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="hours" id="hours" />
-                  <Label htmlFor="hours" className="cursor-pointer">
-                    Hours
-                  </Label>
+              <div className="space-y-6">
+                <div>
+                  <Label className="text-sm font-medium mb-3 block">Time Unit</Label>
+                  <RadioGroup value={timeUnit} onValueChange={(value: "hours" | "years") => setTimeUnit(value)}>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="hours" id="hours" />
+                      <Label htmlFor="hours" className="cursor-pointer">
+                        Hours
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="years" id="years" />
+                      <Label htmlFor="years" className="cursor-pointer">
+                        Years (1 year = 8,760 hours)
+                      </Label>
+                    </div>
+                  </RadioGroup>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="years" id="years" />
-                  <Label htmlFor="years" className="cursor-pointer">
-                    Years (1 year = 8,760 hours)
-                  </Label>
+                
+                <div>
+                  <Label className="text-sm font-medium mb-3 block">Chart Type</Label>
+                  <RadioGroup value={chartType} onValueChange={(value: "cdf" | "pdf" | "hazard") => setChartType(value)}>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="cdf" id="cdf" />
+                      <Label htmlFor="cdf" className="cursor-pointer">
+                        CDF (Cumulative Distribution)
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="pdf" id="pdf" />
+                      <Label htmlFor="pdf" className="cursor-pointer">
+                        PDF (Probability Density)
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="hazard" id="hazard" />
+                      <Label htmlFor="hazard" className="cursor-pointer">
+                        Hazard Rate
+                      </Label>
+                    </div>
+                  </RadioGroup>
                 </div>
-              </RadioGroup>
+              </div>
             </CardContent>
           </Card>
 
@@ -193,7 +223,12 @@ export function AssetDataUpload() {
             </AlertDescription>
           </Alert>
 
-          <WeibullChart shape={results.shape} scale={results.scale} assetName={results.assetName} timeUnit={timeUnit} />
+          <WeibullChart 
+            type={chartType} 
+            shape={results.shape} 
+            scale={results.scale} 
+            timeUnit={timeUnit} 
+          />
         </>
       )}
     </div>
