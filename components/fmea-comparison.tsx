@@ -213,15 +213,48 @@ export function FMEAComparison({ fmea1Id, fmea2Id }: FMEAComparisonProps) {
 
 // Weibull analysis helper functions
 function calculateMTTF(shape: number, scale: number): number {
-  return scale * Math.exp(-1 / shape) * Math.gamma(1 + 1 / shape)
+  try {
+    // Use approximation for gamma function if Math.gamma is not available
+    const gamma = (x: number) => {
+      if (x < 0.5) return Math.PI / (Math.sin(Math.PI * x) * gamma(1 - x))
+      x -= 1
+      let a = 0.99999999999980993
+      const p = [
+        676.5203681218851, -1259.1392167224028, 771.32342877765313,
+        -176.61502916214059, 12.507343278686905, -0.13857109526572012,
+        9.9843695780195716e-6, 1.5056327351493116e-7
+      ]
+      for (let i = 0; i < p.length; i++) {
+        a += p[i] / (x + i + 1)
+      }
+      const t = x + p.length - 0.5
+      return Math.sqrt(2 * Math.PI) * Math.pow(t, x + 0.5) * Math.exp(-t) * a
+    }
+    return scale * Math.exp(-1 / shape) * gamma(1 + 1 / shape)
+  } catch (error) {
+    console.error("Error calculating MTTF:", error)
+    return scale // Fallback to scale parameter
+  }
 }
 
 function weibullReliability(t: number, shape: number, scale: number): number {
-  return Math.exp(-Math.pow(t / scale, shape))
+  try {
+    if (t < 0 || shape <= 0 || scale <= 0) return 0
+    return Math.exp(-Math.pow(t / scale, shape))
+  } catch (error) {
+    console.error("Error calculating reliability:", error)
+    return 0
+  }
 }
 
 function weibullFailureRate(t: number, shape: number, scale: number): number {
-  return (shape / scale) * Math.pow(t / scale, shape - 1)
+  try {
+    if (t < 0 || shape <= 0 || scale <= 0) return 0
+    return (shape / scale) * Math.pow(t / scale, shape - 1)
+  } catch (error) {
+    console.error("Error calculating failure rate:", error)
+    return 0
+  }
 }
 
 function getWeibullInterpretation(shape: number): string {
@@ -234,7 +267,9 @@ function getWeibullInterpretation(shape: number): string {
 function FMEAComparisonView({ fmea1, fmea2 }: { fmea1: SavedFMEA; fmea2: SavedFMEA }) {
   const router = useRouter()
 
-  const getAssetTypeLabel = (type: string) => {
+  // Add error boundary for the entire comparison
+  try {
+    const getAssetTypeLabel = (type: string) => {
     const labels: Record<string, string> = {
       transformer: "Power Transformer",
       switchgear: "Switchgear",
@@ -463,8 +498,15 @@ function FMEAComparisonView({ fmea1, fmea2 }: { fmea1: SavedFMEA; fmea2: SavedFM
                       
                       if (!weibull1 && !weibull2) return null
                       
-                      const mttf1 = weibull1 ? calculateMTTF(weibull1.shape, weibull1.scale) : 0
-                      const mttf2 = weibull2 ? calculateMTTF(weibull2.shape, weibull2.scale) : 0
+                      let mttf1 = 0
+                      let mttf2 = 0
+                      
+                      try {
+                        mttf1 = weibull1 ? calculateMTTF(weibull1.shape, weibull1.scale) : 0
+                        mttf2 = weibull2 ? calculateMTTF(weibull2.shape, weibull2.scale) : 0
+                      } catch (error) {
+                        console.error("Error calculating MTTF for comparison:", error)
+                      }
                       
                       return (
                         <tr key={index} className="border-b">
@@ -572,9 +614,25 @@ function FMEAComparisonView({ fmea1, fmea2 }: { fmea1: SavedFMEA; fmea2: SavedFM
                               )}
                             </div>
                             <div className="text-xs text-gray-500">
-                              {weibull1 && `FMEA 1: R(1000h) = ${(weibullReliability(1000, weibull1.shape, weibull1.scale) * 100).toFixed(1)}%`}
+                              {weibull1 && (() => {
+                                try {
+                                  const reliability = weibullReliability(1000, weibull1.shape, weibull1.scale) * 100
+                                  return `FMEA 1: R(1000h) = ${reliability.toFixed(1)}%`
+                                } catch (error) {
+                                  console.error("Error calculating reliability for FMEA 1:", error)
+                                  return "FMEA 1: Error calculating reliability"
+                                }
+                              })()}
                               {weibull1 && weibull2 && ' | '}
-                              {weibull2 && `FMEA 2: R(1000h) = ${(weibullReliability(1000, weibull2.shape, weibull2.scale) * 100).toFixed(1)}%`}
+                              {weibull2 && (() => {
+                                try {
+                                  const reliability = weibullReliability(1000, weibull2.shape, weibull2.scale) * 100
+                                  return `FMEA 2: R(1000h) = ${reliability.toFixed(1)}%`
+                                } catch (error) {
+                                  console.error("Error calculating reliability for FMEA 2:", error)
+                                  return "FMEA 2: Error calculating reliability"
+                                }
+                              })()}
                             </div>
                           </div>
                         )
@@ -694,4 +752,21 @@ function FMEAComparisonView({ fmea1, fmea2 }: { fmea1: SavedFMEA; fmea2: SavedFM
       </div>
     </div>
   )
+  } catch (error) {
+    console.error("Error in FMEA comparison view:", error)
+    return (
+      <div className="space-y-6">
+        <Alert>
+          <AlertTriangle className="h-4 w-4" />
+          <AlertDescription>
+            An error occurred while displaying the comparison. Please try again.
+          </AlertDescription>
+        </Alert>
+        <Button onClick={() => router.push('/compare')}>
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Back to Selection
+        </Button>
+      </div>
+    )
+  }
 }

@@ -1,6 +1,7 @@
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { FMEAComparison } from "@/components/fmea-comparison"
+import { ErrorBoundary } from "@/components/error-boundary"
 
 export const dynamic = "force-dynamic"
 
@@ -19,7 +20,9 @@ export default function ComparePage() {
       <section className="py-16">
         <div className="container mx-auto px-4">
           <div className="max-w-7xl mx-auto">
-            <FMEAComparison />
+            <ErrorBoundary>
+              <FMEAComparison />
+            </ErrorBoundary>
           </div>
         </div>
       </section>
