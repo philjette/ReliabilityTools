@@ -4,7 +4,7 @@ import Link from "next/link"
 import { Activity, Menu, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useAuth } from "@/contexts/auth-context"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { useRouter } from "next/navigation"
 
@@ -12,6 +12,29 @@ export function Header() {
   const { user, loading, signOut } = useAuth()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const router = useRouter()
+
+  // Debug auth state in header
+  console.log("Header - Auth state:", { 
+    loading, 
+    hasUser: !!user, 
+    userId: user?.id, 
+    email: user?.email 
+  })
+
+  // Check for auth success parameter and refresh auth state
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search)
+    if (urlParams.get('auth') === 'success') {
+      console.log("Header - Auth success detected, refreshing auth state...")
+      // Remove the auth parameter from URL
+      const newUrl = new URL(window.location.href)
+      newUrl.searchParams.delete('auth')
+      window.history.replaceState({}, '', newUrl.toString())
+      
+      // Trigger a page refresh to ensure auth state is properly loaded
+      window.location.reload()
+    }
+  }, [])
 
   const handleSignOut = async () => {
     await signOut()

@@ -65,6 +65,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setLoading(false)
       })
 
+      // Check for auth success parameter and manually refresh session
+      const urlParams = new URLSearchParams(window.location.search)
+      if (urlParams.get('auth') === 'success') {
+        console.log("Auth success detected in context, manually refreshing session...")
+        // Manually refresh the session
+        client.auth.getSession().then(({ data: { session }, error }) => {
+          console.log("Manual session refresh:", { 
+            hasSession: !!session, 
+            userId: session?.user?.id, 
+            email: session?.user?.email,
+            error: error?.message 
+          })
+          setUser(session?.user ?? null)
+          setLoading(false)
+        })
+      }
+
       return () => subscription.unsubscribe()
     } catch (err: any) {
       console.error("Error initializing auth:", err)
