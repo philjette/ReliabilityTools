@@ -15,14 +15,21 @@ export async function GET(request: NextRequest) {
       const supabase = createServerComponentClient({ cookies: () => cookieStore })
       
       console.log("Exchanging code for session...")
-      const { error } = await supabase.auth.exchangeCodeForSession(code)
+      const { data, error } = await supabase.auth.exchangeCodeForSession(code)
 
       if (error) {
         console.error("Error exchanging code for session:", error)
         return NextResponse.redirect(new URL("/auth/sign-in?error=auth_callback_error", requestUrl.origin))
       }
       
-      console.log("Code exchanged successfully, redirecting to dashboard")
+      console.log("Code exchanged successfully:", { 
+        hasSession: !!data.session, 
+        userId: data.session?.user?.id,
+        email: data.session?.user?.email 
+      })
+      
+      // Redirect to dashboard with a success parameter to trigger auth state refresh
+      return NextResponse.redirect(new URL("/dashboard?auth=success", requestUrl.origin))
     } catch (error) {
       console.error("Error in auth callback:", error)
       return NextResponse.redirect(new URL("/auth/sign-in?error=auth_callback_error", requestUrl.origin))

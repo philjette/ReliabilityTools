@@ -21,6 +21,21 @@ export function ClientDashboard() {
     return () => window.removeEventListener('storage', handleStorageChange)
   }, [refetch])
 
+  // Check for auth success parameter and refresh auth state
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search)
+    if (urlParams.get('auth') === 'success') {
+      console.log("Auth success detected, refreshing auth state...")
+      // Remove the auth parameter from URL
+      const newUrl = new URL(window.location.href)
+      newUrl.searchParams.delete('auth')
+      window.history.replaceState({}, '', newUrl.toString())
+      
+      // Trigger a page refresh to ensure auth state is properly loaded
+      window.location.reload()
+    }
+  }, [])
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-8">

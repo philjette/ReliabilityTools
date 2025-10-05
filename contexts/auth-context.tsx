@@ -37,6 +37,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       client.auth
         .getSession()
         .then(({ data: { session }, error: sessionError }) => {
+          console.log("Initial session check:", { 
+            hasSession: !!session, 
+            userId: session?.user?.id, 
+            email: session?.user?.email,
+            error: sessionError?.message 
+          })
           if (sessionError) {
             console.error("Session error:", sessionError)
             setError(sessionError.message)
@@ -53,7 +59,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Listen for auth changes
       const {
         data: { subscription },
-      } = client.auth.onAuthStateChange((_event, session) => {
+      } = client.auth.onAuthStateChange((event, session) => {
+        console.log("Auth state change:", { event, user: session?.user?.id, email: session?.user?.email })
         setUser(session?.user ?? null)
         setLoading(false)
       })
