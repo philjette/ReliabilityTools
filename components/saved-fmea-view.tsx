@@ -7,19 +7,14 @@ import { Button } from "@/components/ui/button"
 import { ArrowLeft, Download, Calendar } from "lucide-react"
 import Link from "next/link"
 import { RiskMatrix } from "@/components/risk-matrix"
-import { WeibullChart } from "@/components/weibull-chart"
-import { WeibullParameters } from "@/components/weibull-parameters"
+import { SavedFMEAWeibullChart } from "@/components/saved-fmea-weibull-chart"
 import type { SavedFMEA } from "@/lib/fmea-actions"
-import { useState } from "react"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { Label } from "@/components/ui/label"
 
 interface SavedFMEAViewProps {
   fmea: SavedFMEA
 }
 
 export function SavedFMEAView({ fmea }: SavedFMEAViewProps) {
-  const [timeUnit, setTimeUnit] = useState<"hours" | "years">("hours")
 
   const getRPNColor = (rpn: number) => {
     if (rpn >= 200) return "text-red-600 bg-red-50"
@@ -215,40 +210,11 @@ export function SavedFMEAView({ fmea }: SavedFMEAViewProps) {
             <AccordionItem value="weibull-analysis" className="border rounded-lg">
               <Card>
                 <AccordionTrigger className="px-6 hover:no-underline">
-                  <div className="flex items-center justify-between w-full pr-4">
-                    <CardTitle>Weibull Distribution Analysis</CardTitle>
-                    <div onClick={(e) => e.stopPropagation()}>
-                      <RadioGroup
-                        value={timeUnit}
-                        onValueChange={(value: "hours" | "years") => setTimeUnit(value)}
-                        className="flex gap-4"
-                      >
-                        <div className="flex items-center space-x-2">
-                          <RadioGroupItem value="hours" id="hours-saved" />
-                          <Label htmlFor="hours-saved" className="cursor-pointer">
-                            Hours
-                          </Label>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <RadioGroupItem value="years" id="years-saved" />
-                          <Label htmlFor="years-saved" className="cursor-pointer">
-                            Years
-                          </Label>
-                        </div>
-                      </RadioGroup>
-                    </div>
-                  </div>
+                  <CardTitle>Weibull Distribution Analysis</CardTitle>
                 </AccordionTrigger>
                 <AccordionContent>
                   <CardContent>
-                    <div className="mb-6">
-                      <WeibullChart
-                        failureModes={fmea.failure_modes}
-                        weibullParameters={fmea.weibull_parameters}
-                        timeUnit={timeUnit}
-                      />
-                    </div>
-                    <WeibullParameters weibullParameters={fmea.weibull_parameters} timeUnit={timeUnit} />
+                    <SavedFMEAWeibullChart fmea={fmea} />
                   </CardContent>
                 </AccordionContent>
               </Card>
