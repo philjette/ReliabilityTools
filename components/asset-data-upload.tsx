@@ -223,6 +223,18 @@ export function AssetDataUpload() {
             </AlertDescription>
           </Alert>
 
+          <div className="mb-4 p-4 bg-gray-50 rounded-lg">
+            <h4 className="font-medium mb-2">Debug Information:</h4>
+            <p>Chart Type: {chartType}</p>
+            <p>Shape Parameter: {results.shape}</p>
+            <p>Scale Parameter: {results.scale}</p>
+            <p>Time Unit: {timeUnit}</p>
+            <p>Asset Name: {results.assetName}</p>
+            <p className="text-sm text-gray-600 mt-2">
+              Check the browser console for detailed chart data logging.
+            </p>
+          </div>
+          
           <WeibullChart 
             type={chartType} 
             shape={results.shape} 

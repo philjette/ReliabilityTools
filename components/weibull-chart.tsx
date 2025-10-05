@@ -85,6 +85,18 @@ export function WeibullChart({
   const multiModeData = generateMultiModeData(type, failureModes, showCombined, timeUnit)
 
   const data = failureModes.length > 0 ? multiModeData : singleModeData
+  
+  // Debug logging
+  console.log("WeibullChart Debug:", {
+    type,
+    shape,
+    scale,
+    timeUnit,
+    dataLength: data.length,
+    firstDataPoint: data[0],
+    lastDataPoint: data[data.length - 1],
+    sampleData: data.slice(0, 5)
+  })
 
   const yAxisLabel = type === "cdf" ? "Cumulative Probability" : type === "pdf" ? "Probability Density" : "Hazard Rate"
   const xAxisLabel = timeUnit === "years" ? "Time (years)" : "Time (hours)"
@@ -149,6 +161,18 @@ export function WeibullChart({
     )
   }
 
+  // Debug: Show data info
+  if (data.length === 0) {
+    return (
+      <div className="w-full h-[400px] flex items-center justify-center border rounded-lg bg-gray-50">
+        <div className="text-center">
+          <p className="text-gray-600">No data to display</p>
+          <p className="text-sm text-gray-500">Shape: {shape}, Scale: {scale}</p>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="w-full h-[400px]">
       <ResponsiveContainer width="100%" height="100%">
@@ -196,6 +220,15 @@ function generateWeibullData(
   const maxTime = scale * 2
   const step = maxTime / 100
 
+  console.log("generateWeibullData Debug:", {
+    type,
+    shape,
+    scale,
+    timeUnit,
+    maxTime,
+    step
+  })
+
   for (let i = 0; i <= 100; i++) {
     const timeInHours = i * step
 
@@ -221,6 +254,7 @@ function generateWeibullData(
     data.push({ time: displayTime, value })
   }
 
+  console.log("Generated data sample:", data.slice(0, 5))
   return data
 }
 
