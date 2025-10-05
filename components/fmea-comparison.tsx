@@ -407,8 +407,8 @@ function FMEAComparisonView({ fmea1, fmea2 }: { fmea1: SavedFMEA; fmea2: SavedFM
               </tbody>
             </table>
           </div>
-        </CardContent>
-      </Card>
+            </CardContent>
+          </Card>
 
       {/* Weibull Parameters Comparison */}
       {(fmea1.weibull_parameters && Object.keys(fmea1.weibull_parameters).length > 0) || 
@@ -502,15 +502,15 @@ function FMEAComparisonView({ fmea1, fmea2 }: { fmea1: SavedFMEA; fmea2: SavedFM
       ) : null}
 
       {/* Maintenance Recommendations Comparison */}
-      <Card>
-        <CardHeader>
+          <Card>
+            <CardHeader>
           <CardTitle>Maintenance Recommendations Comparison</CardTitle>
           <CardDescription>
             Compare maintenance actions and recommendations between FMEAs
           </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-6">
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-6">
             {fmea1.failure_modes.map((mode1, index) => {
               const mode2 = fmea2.failure_modes[index]
               const actions1 = mode1.maintenanceActions || []
@@ -625,9 +625,9 @@ function FMEAComparisonView({ fmea1, fmea2 }: { fmea1: SavedFMEA; fmea2: SavedFM
                 </div>
                 <div className="text-sm text-gray-600">Failure Modes Count</div>
               </div>
-            </div>
-          </CardContent>
-        </Card>
+              </div>
+            </CardContent>
+          </Card>
       </div>
     </div>
   )
