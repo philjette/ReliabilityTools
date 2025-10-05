@@ -1,26 +1,18 @@
 "use client"
 
-import type React from "react"
-
 import { useState } from "react"
-import { Upload, AlertCircle, CheckCircle2, Loader2, Save } from "lucide-react"
-import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { CheckCircle2, Upload, Loader2, Save } from "lucide-react"
 import { WeibullChart } from "@/components/weibull-chart"
-import { CSVTemplateButton } from "@/components/csv-template-button"
 import { uploadAssetData, fitWeibullParameters, saveWeibullCurve, type WeibullAnalysisResult } from "@/lib/weibull-analysis-actions"
 import { useToast } from "@/hooks/use-toast"
 
-interface AssetData {
-  assetId: string
-  timeToFailure: number
-  censored: boolean
-}
-
-export function AssetDataUpload() {
+export function WeibullAnalysisUpload() {
   const [file, setFile] = useState<File | null>(null)
   const [isProcessing, setIsProcessing] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -45,37 +37,32 @@ export function AssetDataUpload() {
     }
   }
 
-  const parseCSV = (text: string): AssetData[] => {
+  const parseCSV = (text: string) => {
     const lines = text.trim().split("\n")
-    const data: AssetData[] = []
-
+    const data: Array<{ assetId: string; timeToFailure: number; censored: boolean }> = []
+    
     // Skip header row
     for (let i = 1; i < lines.length; i++) {
       const line = lines[i].trim()
       if (!line) continue
-
-      const [assetId, timeStr, censoredStr] = line.split(",").map((s) => s.trim())
-
-      const timeToFailure = Number.parseFloat(timeStr)
-      const censored = censoredStr?.toLowerCase() === "true" || censoredStr === "1"
-
-      if (assetId && !Number.isNaN(timeToFailure)) {
-        data.push({
-          assetId,
-          timeToFailure,
-          censored,
-        })
+      
+      const columns = line.split(",")
+      if (columns.length < 2) continue
+      
+      const assetId = columns[0].trim()
+      const timeToFailure = parseFloat(columns[1].trim())
+      const censored = columns[2]?.trim().toLowerCase() === "true" || false
+      
+      if (!isNaN(timeToFailure) && timeToFailure > 0) {
+        data.push({ assetId, timeToFailure, censored })
       }
     }
-
+    
     return data
   }
 
-  const handleAnalyze = async () => {
-    if (!file) {
-      setError("Please select a file first")
-      return
-    }
+  const handleAnalysis = async () => {
+    if (!file) return
 
     setIsProcessing(true)
     setError(null)
@@ -93,13 +80,32 @@ export function AssetDataUpload() {
         throw new Error("At least 3 data points are required for analysis")
       }
 
-      // Estimate Weibull parameters
-      const parameters = estimateWeibullParameters(data)
+      // Convert to the format expected by server actions
+      const assetData = data.map((d) => ({
+        asset_name: d.assetId,
+        installation_date: new Date(Date.now() - d.timeToFailure * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        failure_date: new Date().toISOString().split('T')[0],
+        failure_time_hours: d.timeToFailure
+      }))
 
-      setResults({
-        shape: parameters.shape,
-        scale: parameters.scale,
-        assetName: file.name.replace(".csv", ""),
+      // Upload data to temporary table
+      const uploadResult = await uploadAssetData(assetData)
+      if (!uploadResult.success) {
+        throw new Error(uploadResult.error || "Failed to upload data")
+      }
+
+      // Fit Weibull parameters
+      const analysisResult = await fitWeibullParameters(uploadResult.tempDataId || "")
+      if (!analysisResult.success) {
+        throw new Error(analysisResult.error || "Failed to fit Weibull parameters")
+      }
+
+      setResults(analysisResult.result || null)
+      setCurveName(analysisResult.result?.curve_name || "")
+      
+      toast({
+        title: "Analysis Complete",
+        description: "Weibull parameters have been successfully fitted to your data.",
       })
     } catch (err) {
       console.error("Error analyzing data:", err)
@@ -109,14 +115,49 @@ export function AssetDataUpload() {
     }
   }
 
+  const handleSaveCurve = async () => {
+    if (!results || !curveName.trim()) {
+      toast({
+        title: "Error",
+        description: "Please enter a name for the curve",
+        variant: "destructive",
+      })
+      return
+    }
+
+    setIsSaving(true)
+    try {
+      const saveResult = await saveWeibullCurve(curveName.trim(), results)
+      if (saveResult.success) {
+        toast({
+          title: "Curve Saved",
+          description: "Your Weibull curve has been saved successfully.",
+        })
+      } else {
+        toast({
+          title: "Error",
+          description: saveResult.error || "Failed to save curve",
+          variant: "destructive",
+        })
+      }
+    } catch (err) {
+      toast({
+        title: "Error",
+        description: "Failed to save curve: " + (err as Error).message,
+        variant: "destructive",
+      })
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
   return (
     <div className="space-y-6">
       <Card>
         <CardHeader>
           <CardTitle>Upload Asset Failure Data</CardTitle>
           <CardDescription>
-            Upload a CSV file containing asset failure times to perform Weibull analysis and estimate reliability
-            parameters.
+            Upload a CSV file containing asset failure times to perform Weibull analysis and estimate reliability parameters.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -128,28 +169,28 @@ export function AssetDataUpload() {
                 type="file"
                 accept=".csv"
                 onChange={handleFileChange}
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                className="flex-1"
               />
-              <CSVTemplateButton />
             </div>
-            {file && (
-              <p className="text-sm text-muted-foreground">
-                Selected: <span className="font-medium">{file.name}</span>
-              </p>
-            )}
+            <p className="text-sm text-gray-600">
+              CSV format: Asset ID, Time to Failure (hours), Censored (true/false)
+            </p>
           </div>
 
           {error && (
             <Alert variant="destructive">
-              <AlertCircle className="h-4 w-4" />
               <AlertDescription>{error}</AlertDescription>
             </Alert>
           )}
 
-          <Button onClick={handleAnalyze} disabled={!file || isProcessing} className="w-full">
+          <Button
+            onClick={handleAnalysis}
+            disabled={!file || isProcessing}
+            className="w-full"
+          >
             {isProcessing ? (
               <>
-                <Upload className="mr-2 h-4 w-4 animate-pulse" />
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 Analyzing Data...
               </>
             ) : (
@@ -224,23 +265,57 @@ export function AssetDataUpload() {
           </Alert>
 
           <div className="mb-4 p-4 bg-gray-50 rounded-lg">
-            <h4 className="font-medium mb-2">Debug Information:</h4>
-            <p>Chart Type: {chartType}</p>
-            <p>Shape Parameter: {results.shape}</p>
-            <p>Scale Parameter: {results.scale}</p>
-            <p>Time Unit: {timeUnit}</p>
-            <p>Asset Name: {results.assetName}</p>
-            <p className="text-sm text-gray-600 mt-2">
-              Check the browser console for detailed chart data logging.
-            </p>
+            <h4 className="font-medium mb-2">Analysis Results:</h4>
+            <p>Asset: {results.asset_name}</p>
+            <p>Shape Parameter (β): {results.shape_parameter.toFixed(3)}</p>
+            <p>Scale Parameter (η): {results.scale_parameter.toFixed(0)} hours</p>
+            <p>MTTF: {results.mttf.toFixed(0)} hours</p>
+            <p>Data Points: {results.data_points}</p>
           </div>
           
           <WeibullChart 
             type={chartType} 
-            shape={results.shape} 
-            scale={results.scale} 
+            shape={results.shape_parameter} 
+            scale={results.scale_parameter} 
             timeUnit={timeUnit} 
           />
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Save Analysis</CardTitle>
+              <CardDescription>
+                Save this Weibull analysis with a custom name for future reference.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="curve-name">Curve Name</Label>
+                <Input
+                  id="curve-name"
+                  value={curveName}
+                  onChange={(e) => setCurveName(e.target.value)}
+                  placeholder="Enter a name for this analysis"
+                />
+              </div>
+              <Button
+                onClick={handleSaveCurve}
+                disabled={!curveName.trim() || isSaving}
+                className="w-full"
+              >
+                {isSaving ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <Save className="mr-2 h-4 w-4" />
+                    Save Analysis
+                  </>
+                )}
+              </Button>
+            </CardContent>
+          </Card>
         </>
       )}
     </div>

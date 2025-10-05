@@ -3,7 +3,7 @@
 import { useState } from "react"
 
 import type React from "react"
-import { AssetDataUpload } from "@/components/asset-data-upload"
+import { WeibullAnalysisUpload } from "@/components/weibull-analysis-upload"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { useToast } from "@/components/ui/use-toast"
@@ -170,7 +170,7 @@ export default function AnalyzePage() {
             </div>
 
             {/* Upload Component */}
-            <AssetDataUpload />
+            <WeibullAnalysisUpload />
           </div>
         </div>
       </section>
