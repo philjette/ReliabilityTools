@@ -41,7 +41,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             hasSession: !!session, 
             userId: session?.user?.id, 
             email: session?.user?.email,
-            error: sessionError?.message 
+            error: sessionError?.message,
+            sessionData: session
           })
           if (sessionError) {
             console.error("Session error:", sessionError)
@@ -60,7 +61,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const {
         data: { subscription },
       } = client.auth.onAuthStateChange((event, session) => {
-        console.log("Auth state change:", { event, user: session?.user?.id, email: session?.user?.email })
+        console.log("Auth state change:", { 
+          event, 
+          user: session?.user?.id, 
+          email: session?.user?.email,
+          hasSession: !!session,
+          sessionData: session
+        })
         setUser(session?.user ?? null)
         setLoading(false)
       })
@@ -83,7 +90,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         })
       }
 
-      return () => subscription.unsubscribe()
+      // Add a timeout to force session refresh for Google OAuth
+      const timeoutId = setTimeout(() => {
+        if (!user && !loading) {
+          console.log("Timeout reached, forcing session refresh...")
+          client.auth.getSession().then(({ data: { session }, error }) => {
+            console.log("Timeout session check:", { 
+              hasSession: !!session, 
+              userId: session?.user?.id, 
+              email: session?.user?.email,
+              error: error?.message 
+            })
+            if (session) {
+              setUser(session.user)
+              setLoading(false)
+            } else {
+              // If still no session after timeout, try a page refresh
+              console.log("No session found after timeout, attempting page refresh...")
+              window.location.reload()
+            }
+          })
+        }
+      }, 3000) // 3 second timeout
+
+      return () => {
+        clearTimeout(timeoutId)
+        subscription.unsubscribe()
+      }
     } catch (err: any) {
       console.error("Error initializing auth:", err)
       setError(err.message || "Failed to initialize authentication")
