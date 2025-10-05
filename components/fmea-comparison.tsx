@@ -410,6 +410,181 @@ function FMEAComparisonView({ fmea1, fmea2 }: { fmea1: SavedFMEA; fmea2: SavedFM
         </CardContent>
       </Card>
 
+      {/* Weibull Parameters Comparison */}
+      {(fmea1.weibull_parameters && Object.keys(fmea1.weibull_parameters).length > 0) || 
+       (fmea2.weibull_parameters && Object.keys(fmea2.weibull_parameters).length > 0) ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>Weibull Parameters Comparison</CardTitle>
+            <CardDescription>
+              Compare Weibull distribution parameters for reliability analysis
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b">
+                    <th className="text-left p-4">Failure Mode</th>
+                    <th className="text-center p-4">FMEA 1 Parameters</th>
+                    <th className="text-center p-4">FMEA 2 Parameters</th>
+                    <th className="text-center p-4">Comparison</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {Object.keys({...fmea1.weibull_parameters, ...fmea2.weibull_parameters}).map((modeName) => {
+                    const params1 = fmea1.weibull_parameters?.[modeName]
+                    const params2 = fmea2.weibull_parameters?.[modeName]
+                    
+                    return (
+                      <tr key={modeName} className="border-b">
+                        <td className="p-4">
+                          <div className="font-medium">{modeName}</div>
+                        </td>
+                        <td className="p-4 text-center">
+                          {params1 ? (
+                            <div className="space-y-1">
+                              <div className="text-sm">
+                                <span className="font-medium">Shape (β):</span> {params1.shape.toFixed(2)}
+                              </div>
+                              <div className="text-sm">
+                                <span className="font-medium">Scale (η):</span> {params1.scale.toFixed(0)}h
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="text-gray-400">No data</div>
+                          )}
+                        </td>
+                        <td className="p-4 text-center">
+                          {params2 ? (
+                            <div className="space-y-1">
+                              <div className="text-sm">
+                                <span className="font-medium">Shape (β):</span> {params2.shape.toFixed(2)}
+                              </div>
+                              <div className="text-sm">
+                                <span className="font-medium">Scale (η):</span> {params2.scale.toFixed(0)}h
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="text-gray-400">No data</div>
+                          )}
+                        </td>
+                        <td className="p-4 text-center">
+                          {params1 && params2 ? (
+                            <div className="space-y-1">
+                              <div className={`text-sm font-medium ${
+                                params1.shape > params2.shape ? 'text-red-600' : 
+                                params1.shape < params2.shape ? 'text-green-600' : 'text-gray-600'
+                              }`}>
+                                Shape: {params1.shape > params2.shape ? '↑ Higher' : 
+                                       params1.shape < params2.shape ? '↓ Lower' : '= Same'}
+                              </div>
+                              <div className={`text-sm font-medium ${
+                                params1.scale > params2.scale ? 'text-green-600' : 
+                                params1.scale < params2.scale ? 'text-red-600' : 'text-gray-600'
+                              }`}>
+                                Scale: {params1.scale > params2.scale ? '↑ Higher' : 
+                                       params1.scale < params2.scale ? '↓ Lower' : '= Same'}
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="text-gray-400">N/A</div>
+                          )}
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </CardContent>
+        </Card>
+      ) : null}
+
+      {/* Maintenance Recommendations Comparison */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Maintenance Recommendations Comparison</CardTitle>
+          <CardDescription>
+            Compare maintenance actions and recommendations between FMEAs
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-6">
+            {fmea1.failure_modes.map((mode1, index) => {
+              const mode2 = fmea2.failure_modes[index]
+              const actions1 = mode1.maintenanceActions || []
+              const actions2 = mode2?.maintenanceActions || []
+              
+              return (
+                <div key={index} className="border rounded-lg p-4">
+                  <h4 className="font-semibold text-lg mb-4">{mode1.name}</h4>
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    {/* FMEA 1 Maintenance Actions */}
+                    <div>
+                      <h5 className="font-medium text-sm text-gray-600 mb-3">FMEA 1 Maintenance Actions</h5>
+                      {actions1.length > 0 ? (
+                        <div className="space-y-3">
+                          {actions1.map((action, actionIndex) => (
+                            <div key={actionIndex} className="bg-blue-50 p-3 rounded-lg">
+                              <div className="font-medium text-sm">{action.action}</div>
+                              <div className="text-xs text-gray-600 mt-1">
+                                <span className="font-medium">Frequency:</span> {action.frequency}
+                              </div>
+                              <div className="text-xs text-gray-600 mt-1">{action.description}</div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="text-gray-400 text-sm">No maintenance actions defined</div>
+                      )}
+                    </div>
+                    
+                    {/* FMEA 2 Maintenance Actions */}
+                    <div>
+                      <h5 className="font-medium text-sm text-gray-600 mb-3">FMEA 2 Maintenance Actions</h5>
+                      {actions2.length > 0 ? (
+                        <div className="space-y-3">
+                          {actions2.map((action, actionIndex) => (
+                            <div key={actionIndex} className="bg-green-50 p-3 rounded-lg">
+                              <div className="font-medium text-sm">{action.action}</div>
+                              <div className="text-xs text-gray-600 mt-1">
+                                <span className="font-medium">Frequency:</span> {action.frequency}
+                              </div>
+                              <div className="text-xs text-gray-600 mt-1">{action.description}</div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="text-gray-400 text-sm">No maintenance actions defined</div>
+                      )}
+                    </div>
+                  </div>
+                  
+                  {/* Comparison Summary */}
+                  <div className="mt-4 pt-4 border-t">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="font-medium">Maintenance Actions Count:</span>
+                      <div className="flex gap-4">
+                        <span className="text-blue-600">FMEA 1: {actions1.length}</span>
+                        <span className="text-green-600">FMEA 2: {actions2.length}</span>
+                        <span className={`font-medium ${
+                          actions1.length > actions2.length ? 'text-blue-600' : 
+                          actions1.length < actions2.length ? 'text-green-600' : 'text-gray-600'
+                        }`}>
+                          {actions1.length > actions2.length ? '↑ More in FMEA 1' : 
+                           actions1.length < actions2.length ? '↑ More in FMEA 2' : '= Equal'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Summary Statistics */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card>
@@ -447,12 +622,12 @@ function FMEAComparisonView({ fmea1, fmea2 }: { fmea1: SavedFMEA; fmea2: SavedFM
               <div>
                 <div className="text-2xl font-bold">
                   {fmea1.failure_modes.length}
-                  </div>
+                </div>
                 <div className="text-sm text-gray-600">Failure Modes Count</div>
               </div>
-              </div>
-            </CardContent>
-          </Card>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   )
