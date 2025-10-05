@@ -197,6 +197,34 @@ export async function deleteFMEA(id: string) {
   }
 }
 
+// Client-side version for use in components
+export async function deleteFMEAClient(id: string) {
+  try {
+    const { createClient } = await import("@/lib/supabase-client")
+    const supabase = createClient()
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+
+    if (!user) {
+      return { error: "User not authenticated" }
+    }
+
+    const { error } = await supabase.from("fmeas").delete().eq("id", id).eq("user_id", user.id)
+
+    if (error) {
+      console.error("Error deleting FMEA:", error)
+      return { error: error.message }
+    }
+
+    return { success: true }
+  } catch (error: any) {
+    console.error("Unexpected error deleting FMEA:", error)
+    return { error: error.message }
+  }
+}
+
 export async function generatePdf(fmeaData: FMEAData): Promise<Blob> {
   const doc = new jsPDF()
 

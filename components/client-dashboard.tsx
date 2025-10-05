@@ -42,7 +42,7 @@ export function ClientDashboard() {
   }
 
   if (fmeas && fmeas.length > 0) {
-    return <SavedFMEAsList fmeas={fmeas} />
+    return <SavedFMEAsList fmeas={fmeas} onDelete={refetch} />
   }
 
   return (

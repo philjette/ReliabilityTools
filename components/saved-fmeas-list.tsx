@@ -6,8 +6,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { FileText, Trash2, Calendar, AlertCircle } from "lucide-react"
-import { deleteFMEA, type SavedFMEA } from "@/lib/fmea-actions"
+import { deleteFMEAClient, type SavedFMEA } from "@/lib/fmea-actions"
 import { useRouter } from "next/navigation"
+import { useToast } from "@/hooks/use-toast"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -22,20 +23,48 @@ import {
 
 interface SavedFMEAsListProps {
   fmeas: SavedFMEA[]
+  onDelete?: () => void
 }
 
-export function SavedFMEAsList({ fmeas }: SavedFMEAsListProps) {
+export function SavedFMEAsList({ fmeas, onDelete }: SavedFMEAsListProps) {
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const router = useRouter()
+  const { toast } = useToast()
 
   const handleDelete = async (id: string) => {
-    setDeletingId(id)
     try {
-      await deleteFMEA(id)
-      router.refresh()
+      setDeletingId(id)
+      console.log("Deleting FMEA with ID:", id)
+      
+      const result = await deleteFMEAClient(id)
+      
+      if (result.error) {
+        console.error("Error deleting FMEA:", result.error)
+        toast({
+          title: "Error",
+          description: result.error,
+          variant: "destructive",
+        })
+      } else {
+        console.log("FMEA deleted successfully")
+        toast({
+          title: "Success",
+          description: "FMEA deleted successfully",
+        })
+        // Call the onDelete callback if provided, otherwise refresh the page
+        if (onDelete) {
+          onDelete()
+        } else {
+          router.refresh()
+        }
+      }
     } catch (error) {
       console.error("Error deleting FMEA:", error)
-      alert("Failed to delete FMEA")
+      toast({
+        title: "Error",
+        description: "Failed to delete FMEA",
+        variant: "destructive",
+      })
     } finally {
       setDeletingId(null)
     }
