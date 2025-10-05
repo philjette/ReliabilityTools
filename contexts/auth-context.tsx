@@ -65,24 +65,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setLoading(false)
       })
 
-      // Check for auth success parameter and manually refresh session
-      const urlParams = new URLSearchParams(window.location.search)
-      if (urlParams.get('auth') === 'success') {
-        console.log("Auth success detected in context, manually refreshing session...")
-        // Manually refresh the session
-        client.auth.getSession().then(({ data: { session }, error }) => {
-          console.log("Manual session refresh:", { 
-            hasSession: !!session, 
-            userId: session?.user?.id, 
-            email: session?.user?.email,
-            error: error?.message 
-          })
-          setUser(session?.user ?? null)
-          setLoading(false)
-        })
-      }
-
-      // Also check if we're on the dashboard and no user is detected - might be a Google OAuth issue
+      // Check if we're on the dashboard and no user is detected - might be a Google OAuth issue
       if (window.location.pathname === '/dashboard' && !user && !loading) {
         console.log("On dashboard but no user detected, checking for OAuth session...")
         // Try to get the session again
@@ -153,7 +136,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (!supabase) return { error: "Authentication not initialized" }
       
       console.log("Starting Google OAuth sign-in...")
-      const redirectUrl = `${window.location.origin}/auth/callback`
+      // Use Supabase's default callback URL since we can't change the domain
+      const redirectUrl = `${window.location.origin}/dashboard`
       console.log("Redirect URL:", redirectUrl)
       console.log("Current origin:", window.location.origin)
       console.log("Current pathname:", window.location.pathname)
@@ -162,6 +146,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         provider: "google",
         options: {
           redirectTo: redirectUrl,
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent',
+          }
         },
       })
       
