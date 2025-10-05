@@ -46,6 +46,9 @@ export function Header() {
               <Link href="/analyze" className="text-sm font-medium text-gray-700 hover:text-blue-600 transition-colors">
                 Weibull Analysis
               </Link>
+              <Link href="/compare" className="text-sm font-medium text-gray-700 hover:text-blue-600 transition-colors">
+                Compare
+              </Link>
               <Link href="/about" className="text-sm font-medium text-gray-700 hover:text-blue-600 transition-colors">
                 About
               </Link>
@@ -110,6 +113,13 @@ export function Header() {
                 onClick={() => setMobileMenuOpen(false)}
               >
                 Weibull Analysis
+              </Link>
+              <Link
+                href="/compare"
+                className="text-sm font-medium text-gray-700 hover:text-blue-600 transition-colors"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Compare
               </Link>
               <Link
                 href="/about"

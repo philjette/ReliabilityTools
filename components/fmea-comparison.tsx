@@ -1,311 +1,459 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { ArrowLeft } from "lucide-react"
-import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { useAppContext } from "@/contexts/AppContext"
-import { getFMEAById } from "@/lib/fmea-actions"
-import { WeibullChart } from "@/components/weibull-chart"
+import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Loader2, ArrowLeft, FileText, AlertTriangle, TrendingUp, BarChart3 } from "lucide-react"
+import { useFMEAs } from "@/hooks/use-fmeas"
+import { useSupabase } from "@/hooks/use-supabase"
+import { useAuth } from "@/contexts/auth-context"
+import type { SavedFMEA } from "@/lib/fmea-actions"
 
-export function FMEAComparison() {
+interface FMEAComparisonProps {
+  fmea1Id?: string
+  fmea2Id?: string
+}
+
+export function FMEAComparison({ fmea1Id, fmea2Id }: FMEAComparisonProps) {
+  const [selectedFMEAs, setSelectedFMEAs] = useState<{ fmea1: SavedFMEA | null; fmea2: SavedFMEA | null }>({
+    fmea1: null,
+    fmea2: null
+  })
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  
+  const { fmeas, loading: fmeasLoading, error: fmeasError } = useFMEAs()
+  const { supabase } = useSupabase()
+  const { user } = useAuth()
   const router = useRouter()
-  const { selectedFMEAs, clearSelectedFMEAs } = useAppContext()
-  const [loading, setLoading] = useState(true)
-  const [fmeas, setFmeas] = useState<any[]>([])
-  const [activeTab, setActiveTab] = useState("overview")
 
+  // Load FMEAs if IDs are provided
   useEffect(() => {
-    async function loadFMEAs() {
-      if (selectedFMEAs.length < 2) {
-        router.push("/dashboard/fmeas")
-        return
-      }
-
-      setLoading(true)
-      try {
-        const loadedFmeas = await Promise.all(
-          selectedFMEAs.map(async (fmea) => {
-            const fullFmea = await getFMEAById(fmea.id)
-            return fullFmea
-          }),
-        )
-        setFmeas(loadedFmeas.filter(Boolean))
-      } catch (error) {
-        console.error("Error loading FMEAs for comparison:", error)
-      } finally {
-        setLoading(false)
+    if (fmea1Id && fmea2Id && fmeas.length > 0) {
+      const fmea1 = fmeas.find(f => f.id === fmea1Id)
+      const fmea2 = fmeas.find(f => f.id === fmea2Id)
+      
+      if (fmea1 && fmea2) {
+        setSelectedFMEAs({ fmea1, fmea2 })
       }
     }
+  }, [fmea1Id, fmea2Id, fmeas])
 
-    loadFMEAs()
-  }, [selectedFMEAs, router])
-
-  const handleBack = () => {
-    router.push("/dashboard/fmeas")
+  const handleFMEASelection = (fmea: SavedFMEA, position: 'fmea1' | 'fmea2') => {
+    setSelectedFMEAs(prev => ({
+      ...prev,
+      [position]: fmea
+    }))
   }
 
-  if (loading) {
-    return <div className="text-center py-12">Loading comparison data...</div>
+  const startComparison = () => {
+    if (selectedFMEAs.fmea1 && selectedFMEAs.fmea2) {
+      router.push(`/compare?fmea1=${selectedFMEAs.fmea1.id}&fmea2=${selectedFMEAs.fmea2.id}`)
+    }
   }
 
-  if (fmeas.length < 2) {
+  const canCompare = selectedFMEAs.fmea1 && selectedFMEAs.fmea2
+
+  if (fmeasLoading) {
     return (
-      <div className="text-center py-12">
-        <p className="mb-4">Please select at least 2 FMEAs to compare.</p>
-        <Button onClick={handleBack}>Back to FMEAs</Button>
+      <div className="flex items-center justify-center py-8">
+        <Loader2 className="h-6 w-6 animate-spin mr-2" />
+        <p className="text-muted-foreground">Loading FMEAs...</p>
       </div>
     )
   }
 
-  // Prepare failure mode data for the chart
-  const CURVE_COLORS = [
-    "#0ea5e9", // sky blue
-    "#10b981", // emerald
-    "#f59e0b", // amber
-    "#8b5cf6", // violet
-    "#ec4899", // pink
-  ]
+  if (fmeasError) {
+    return (
+      <Alert>
+        <AlertTriangle className="h-4 w-4" />
+        <AlertDescription>{fmeasError}</AlertDescription>
+      </Alert>
+    )
+  }
 
-  const failureModesForChart = fmeas.flatMap((fmea, fmeaIndex) => {
-    return fmea.failure_modes.slice(0, 2).map((mode: any, modeIndex: number) => {
-      const params = fmea.weibull_parameters[mode.name] || { shape: 2.5, scale: 15000 }
-      return {
-        name: `${fmea.title} - ${mode.name}`,
-        shape: params.shape,
-        scale: params.scale,
-        color: CURVE_COLORS[(fmeaIndex * 2 + modeIndex) % CURVE_COLORS.length],
-      }
-    })
-  })
+  if (fmeas.length === 0) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>No FMEAs to Compare</CardTitle>
+          <CardDescription>
+            You need at least 2 FMEAs to perform a comparison. Generate some FMEAs first.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Button onClick={() => router.push('/generate')}>
+            Generate FMEA
+          </Button>
+        </CardContent>
+      </Card>
+    )
+  }
+
+  if (fmeas.length < 2) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Not Enough FMEAs</CardTitle>
+          <CardDescription>
+            You need at least 2 FMEAs to perform a comparison. You currently have {fmeas.length}.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Button onClick={() => router.push('/generate')}>
+            Generate Another FMEA
+          </Button>
+        </CardContent>
+      </Card>
+    )
+  }
+
+  // If we have both FMEAs selected, show the comparison
+  if (selectedFMEAs.fmea1 && selectedFMEAs.fmea2) {
+    return <FMEAComparisonView fmea1={selectedFMEAs.fmea1} fmea2={selectedFMEAs.fmea2} />
+  }
+
+  // Show FMEA selection interface
+  return (
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>Select FMEAs to Compare</CardTitle>
+          <CardDescription>
+            Choose two FMEAs from your saved reports to compare them side-by-side.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* FMEA 1 Selection */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold">First FMEA</h3>
+              <div className="space-y-2 max-h-96 overflow-y-auto">
+                {fmeas.map((fmea) => (
+                  <Card
+                    key={fmea.id}
+                    className={`cursor-pointer transition-colors ${
+                      selectedFMEAs.fmea1?.id === fmea.id
+                        ? 'ring-2 ring-blue-500 bg-blue-50'
+                        : 'hover:bg-gray-50'
+                    }`}
+                    onClick={() => handleFMEASelection(fmea, 'fmea1')}
+                  >
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h4 className="font-medium">{fmea.title}</h4>
+                          <p className="text-sm text-gray-600">{fmea.asset_type}</p>
+                          <p className="text-xs text-gray-500">
+                            {new Date(fmea.created_at).toLocaleDateString()}
+                          </p>
+                        </div>
+                        {selectedFMEAs.fmea1?.id === fmea.id && (
+                          <Badge variant="default">Selected</Badge>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </div>
+
+            {/* FMEA 2 Selection */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold">Second FMEA</h3>
+              <div className="space-y-2 max-h-96 overflow-y-auto">
+                {fmeas.map((fmea) => (
+                  <Card
+                    key={fmea.id}
+                    className={`cursor-pointer transition-colors ${
+                      selectedFMEAs.fmea2?.id === fmea.id
+                        ? 'ring-2 ring-blue-500 bg-blue-50'
+                        : 'hover:bg-gray-50'
+                    }`}
+                    onClick={() => handleFMEASelection(fmea, 'fmea2')}
+                  >
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h4 className="font-medium">{fmea.title}</h4>
+                          <p className="text-sm text-gray-600">{fmea.asset_type}</p>
+                          <p className="text-xs text-gray-500">
+                            {new Date(fmea.created_at).toLocaleDateString()}
+                          </p>
+                        </div>
+                        {selectedFMEAs.fmea2?.id === fmea.id && (
+                          <Badge variant="default">Selected</Badge>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-6 flex justify-center">
+            <Button 
+              onClick={startComparison}
+              disabled={!canCompare}
+              size="lg"
+            >
+              <BarChart3 className="mr-2 h-4 w-4" />
+              Compare FMEAs
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  )
+}
+
+// Component to display the actual comparison
+function FMEAComparisonView({ fmea1, fmea2 }: { fmea1: SavedFMEA; fmea2: SavedFMEA }) {
+  const router = useRouter()
+
+  const getAssetTypeLabel = (type: string) => {
+    const labels: Record<string, string> = {
+      transformer: "Power Transformer",
+      switchgear: "Switchgear",
+      cable: "Power Cable",
+      insulator: "Insulator",
+      circuit_breaker: "Circuit Breaker"
+    }
+    return labels[type] || type
+  }
+
+  const getSeverityColor = (severity: number) => {
+    if (severity >= 9) return "bg-red-100 text-red-800"
+    if (severity >= 7) return "bg-orange-100 text-orange-800"
+    if (severity >= 5) return "bg-yellow-100 text-yellow-800"
+    return "bg-green-100 text-green-800"
+  }
+
+  const getOccurrenceColor = (occurrence: number) => {
+    if (occurrence >= 9) return "bg-red-100 text-red-800"
+    if (occurrence >= 7) return "bg-orange-100 text-orange-800"
+    if (occurrence >= 5) return "bg-yellow-100 text-yellow-800"
+    return "bg-green-100 text-green-800"
+  }
+
+  const getDetectionColor = (detection: number) => {
+    if (detection <= 2) return "bg-red-100 text-red-800"
+    if (detection <= 4) return "bg-orange-100 text-orange-800"
+    if (detection <= 6) return "bg-yellow-100 text-yellow-800"
+    return "bg-green-100 text-green-800"
+  }
 
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div className="flex items-center justify-between">
-        <Button variant="outline" onClick={handleBack} className="flex items-center gap-2">
-          <ArrowLeft className="h-4 w-4" />
-          Back to FMEAs
-        </Button>
-        <Button variant="ghost" onClick={() => clearSelectedFMEAs()}>
-          Clear Selection
+        <div>
+          <h2 className="text-2xl font-bold">FMEA Comparison</h2>
+          <p className="text-gray-600">Side-by-side analysis of your FMEA reports</p>
+        </div>
+        <Button variant="outline" onClick={() => router.push('/compare')}>
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Back to Selection
         </Button>
       </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid grid-cols-4 mb-4">
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="failureModes">Failure Modes</TabsTrigger>
-          <TabsTrigger value="weibull">Weibull Analysis</TabsTrigger>
-          <TabsTrigger value="maintenance">Maintenance</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="overview" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Asset Comparison</CardTitle>
-              <CardDescription>Compare the basic properties of selected FMEAs</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-[200px]">Property</TableHead>
-                    {fmeas.map((fmea) => (
-                      <TableHead key={fmea.id}>{fmea.title}</TableHead>
-                    ))}
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  <TableRow>
-                    <TableCell className="font-medium">Asset Type</TableCell>
-                    {fmeas.map((fmea) => (
-                      <TableCell key={`${fmea.id}-type`}>{fmea.asset_type}</TableCell>
-                    ))}
-                  </TableRow>
-                  <TableRow>
-                    <TableCell className="font-medium">Voltage Rating</TableCell>
-                    {fmeas.map((fmea) => (
-                      <TableCell key={`${fmea.id}-voltage`}>{fmea.voltage_rating}</TableCell>
-                    ))}
-                  </TableRow>
-                  <TableRow>
-                    <TableCell className="font-medium">Operating Environment</TableCell>
-                    {fmeas.map((fmea) => (
-                      <TableCell key={`${fmea.id}-env`}>{fmea.operating_environment}</TableCell>
-                    ))}
-                  </TableRow>
-                  <TableRow>
-                    <TableCell className="font-medium">Asset Age</TableCell>
-                    {fmeas.map((fmea) => (
-                      <TableCell key={`${fmea.id}-age`}>{fmea.age_range}</TableCell>
-                    ))}
-                  </TableRow>
-                  <TableRow>
-                    <TableCell className="font-medium">Load Profile</TableCell>
-                    {fmeas.map((fmea) => (
-                      <TableCell key={`${fmea.id}-load`}>{fmea.load_profile}</TableCell>
-                    ))}
-                  </TableRow>
-                  <TableRow>
-                    <TableCell className="font-medium">Asset Criticality</TableCell>
-                    {fmeas.map((fmea) => (
-                      <TableCell key={`${fmea.id}-criticality`}>{fmea.asset_criticality}</TableCell>
-                    ))}
-                  </TableRow>
-                  <TableRow>
-                    <TableCell className="font-medium">Creation Date</TableCell>
-                    {fmeas.map((fmea) => (
-                      <TableCell key={`${fmea.id}-date`}>{new Date(fmea.created_at).toLocaleDateString()}</TableCell>
-                    ))}
-                  </TableRow>
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="failureModes" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Failure Mode Comparison</CardTitle>
-              <CardDescription>Compare failure modes and risk priority numbers</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-[200px]">FMEA</TableHead>
-                    <TableHead>Failure Mode</TableHead>
-                    <TableHead>Severity</TableHead>
-                    <TableHead>Occurrence</TableHead>
-                    <TableHead>Detection</TableHead>
-                    <TableHead>RPN</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {fmeas.flatMap((fmea) =>
-                    fmea.failure_modes.map((mode: any, index: number) => {
-                      const rpn = mode.severity * mode.occurrence * mode.detection
-                      let rpnClass = ""
-                      if (rpn > 150) rpnClass = "text-red-600 font-bold"
-                      else if (rpn < 100) rpnClass = "text-green-600"
-                      else rpnClass = "text-yellow-600"
-
-                      return (
-                        <TableRow key={`${fmea.id}-${index}`}>
-                          {index === 0 && (
-                            <TableCell rowSpan={fmea.failure_modes.length} className="font-medium">
-                              {fmea.title}
-                            </TableCell>
-                          )}
-                          <TableCell>{mode.name}</TableCell>
-                          <TableCell>{mode.severity}</TableCell>
-                          <TableCell>{mode.occurrence}</TableCell>
-                          <TableCell>{mode.detection}</TableCell>
-                          <TableCell className={rpnClass}>{rpn}</TableCell>
-                        </TableRow>
-                      )
-                    }),
-                  )}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="weibull" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Weibull Distribution Comparison</CardTitle>
-              <CardDescription>Compare failure probability distributions</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Tabs defaultValue="cdf" className="w-full">
-                <TabsList className="grid w-full grid-cols-3 mb-4">
-                  <TabsTrigger value="cdf">CDF</TabsTrigger>
-                  <TabsTrigger value="pdf">PDF</TabsTrigger>
-                  <TabsTrigger value="hazard">Hazard</TabsTrigger>
-                </TabsList>
-                <TabsContent value="cdf" className="pt-4">
-                  <WeibullChart
-                    type="cdf"
-                    shape={2.5}
-                    scale={15000}
-                    failureModes={failureModesForChart}
-                    showCombined={false}
-                  />
-                </TabsContent>
-                <TabsContent value="pdf" className="pt-4">
-                  <WeibullChart
-                    type="pdf"
-                    shape={2.5}
-                    scale={15000}
-                    failureModes={failureModesForChart}
-                    showCombined={false}
-                  />
-                </TabsContent>
-                <TabsContent value="hazard" className="pt-4">
-                  <WeibullChart
-                    type="hazard"
-                    shape={2.5}
-                    scale={15000}
-                    failureModes={failureModesForChart}
-                    showCombined={false}
-                  />
-                </TabsContent>
-              </Tabs>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="maintenance" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Maintenance Action Comparison</CardTitle>
-              <CardDescription>Compare recommended maintenance actions</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-6">
-                {fmeas.map((fmea) => (
-                  <div key={fmea.id} className="border-b pb-6 last:border-b-0 last:pb-0">
-                    <h3 className="text-lg font-medium mb-4">{fmea.title}</h3>
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Failure Mode</TableHead>
-                          <TableHead>Maintenance Action</TableHead>
-                          <TableHead>Frequency</TableHead>
-                          <TableHead>Description</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {fmea.failure_modes.flatMap(
-                          (mode: any, modeIndex: number) =>
-                            mode.maintenanceActions?.map((action: any, actionIndex: number) => (
-                              <TableRow key={`${fmea.id}-${modeIndex}-${actionIndex}`}>
-                                {actionIndex === 0 && (
-                                  <TableCell rowSpan={mode.maintenanceActions?.length || 1} className="font-medium">
-                                    {mode.name}
-                                  </TableCell>
-                                )}
-                                <TableCell>{action.action}</TableCell>
-                                <TableCell>{action.frequency}</TableCell>
-                                <TableCell>{action.description}</TableCell>
-                              </TableRow>
-                            )) || [],
-                        )}
-                      </TableBody>
-                    </Table>
-                  </div>
-                ))}
+      {/* FMEA Overview Cards */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <FileText className="mr-2 h-5 w-5" />
+              {fmea1.title}
+            </CardTitle>
+            <CardDescription>
+              {getAssetTypeLabel(fmea1.asset_type)} • Created {new Date(fmea1.created_at).toLocaleDateString()}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              <div className="flex justify-between">
+                <span className="text-sm font-medium">Voltage Rating:</span>
+                <span className="text-sm">{fmea1.voltage_rating}</span>
               </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+              <div className="flex justify-between">
+                <span className="text-sm font-medium">Environment:</span>
+                <span className="text-sm">{fmea1.operating_environment}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-sm font-medium">Age Range:</span>
+                <span className="text-sm">{fmea1.age_range}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-sm font-medium">Criticality:</span>
+                <span className="text-sm">{fmea1.asset_criticality}</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <FileText className="mr-2 h-5 w-5" />
+              {fmea2.title}
+            </CardTitle>
+            <CardDescription>
+              {getAssetTypeLabel(fmea2.asset_type)} • Created {new Date(fmea2.created_at).toLocaleDateString()}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              <div className="flex justify-between">
+                <span className="text-sm font-medium">Voltage Rating:</span>
+                <span className="text-sm">{fmea2.voltage_rating}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-sm font-medium">Environment:</span>
+                <span className="text-sm">{fmea2.operating_environment}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-sm font-medium">Age Range:</span>
+                <span className="text-sm">{fmea2.age_range}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-sm font-medium">Criticality:</span>
+                <span className="text-sm">{fmea2.asset_criticality}</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Failure Modes Comparison */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Failure Modes Comparison</CardTitle>
+          <CardDescription>
+            Compare failure modes, RPNs, and risk levels between the two FMEAs
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b">
+                  <th className="text-left p-4">Failure Mode</th>
+                  <th className="text-center p-4">FMEA 1</th>
+                  <th className="text-center p-4">FMEA 2</th>
+                  <th className="text-center p-4">Comparison</th>
+                </tr>
+              </thead>
+              <tbody>
+                {fmea1.failure_modes.map((mode1, index) => {
+                  const mode2 = fmea2.failure_modes[index]
+                  const rpn1 = mode1.severity * mode1.occurrence * mode1.detection
+                  const rpn2 = mode2 ? mode2.severity * mode2.occurrence * mode2.detection : 0
+                  
+                  return (
+                    <tr key={index} className="border-b">
+                      <td className="p-4">
+                        <div>
+                          <div className="font-medium">{mode1.name}</div>
+                          <div className="text-sm text-gray-600">{mode1.causes?.[0] || 'No causes listed'}</div>
+                        </div>
+                      </td>
+                      <td className="p-4 text-center">
+                        <div className="space-y-1">
+                          <div className="flex justify-center gap-2">
+                            <Badge className={getSeverityColor(mode1.severity)}>S: {mode1.severity}</Badge>
+                            <Badge className={getOccurrenceColor(mode1.occurrence)}>O: {mode1.occurrence}</Badge>
+                            <Badge className={getDetectionColor(mode1.detection)}>D: {mode1.detection}</Badge>
+                          </div>
+                          <div className="text-lg font-bold">RPN: {rpn1}</div>
+                        </div>
+                      </td>
+                      <td className="p-4 text-center">
+                        {mode2 ? (
+                          <div className="space-y-1">
+                            <div className="flex justify-center gap-2">
+                              <Badge className={getSeverityColor(mode2.severity)}>S: {mode2.severity}</Badge>
+                              <Badge className={getOccurrenceColor(mode2.occurrence)}>O: {mode2.occurrence}</Badge>
+                              <Badge className={getDetectionColor(mode2.detection)}>D: {mode2.detection}</Badge>
+                            </div>
+                            <div className="text-lg font-bold">RPN: {rpn2}</div>
+                          </div>
+                        ) : (
+                          <div className="text-gray-400">No corresponding mode</div>
+                        )}
+                      </td>
+                      <td className="p-4 text-center">
+                        {mode2 ? (
+                          <div className="space-y-1">
+                            <div className={`text-sm font-medium ${
+                              rpn1 > rpn2 ? 'text-red-600' : rpn1 < rpn2 ? 'text-green-600' : 'text-gray-600'
+                            }`}>
+                              {rpn1 > rpn2 ? '↑ Higher Risk' : rpn1 < rpn2 ? '↓ Lower Risk' : '= Same Risk'}
+                            </div>
+                            <div className="text-xs text-gray-500">
+                              Δ: {Math.abs(rpn1 - rpn2)}
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="text-gray-400">N/A</div>
+                        )}
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Summary Statistics */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center">
+              <TrendingUp className="h-8 w-8 text-blue-600 mr-3" />
+              <div>
+                <div className="text-2xl font-bold">
+                  {Math.max(...fmea1.failure_modes.map(m => m.severity * m.occurrence * m.detection))}
+                </div>
+                <div className="text-sm text-gray-600">Highest RPN (FMEA 1)</div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center">
+              <TrendingUp className="h-8 w-8 text-green-600 mr-3" />
+              <div>
+                <div className="text-2xl font-bold">
+                  {Math.max(...fmea2.failure_modes.map(m => m.severity * m.occurrence * m.detection))}
+                </div>
+                <div className="text-sm text-gray-600">Highest RPN (FMEA 2)</div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center">
+              <BarChart3 className="h-8 w-8 text-purple-600 mr-3" />
+              <div>
+                <div className="text-2xl font-bold">
+                  {fmea1.failure_modes.length}
+                </div>
+                <div className="text-sm text-gray-600">Failure Modes Count</div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   )
 }
