@@ -82,6 +82,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         })
       }
 
+      // Also check if we're on the dashboard and no user is detected - might be a Google OAuth issue
+      if (window.location.pathname === '/dashboard' && !user && !loading) {
+        console.log("On dashboard but no user detected, checking for OAuth session...")
+        // Try to get the session again
+        client.auth.getSession().then(({ data: { session }, error }) => {
+          console.log("Dashboard session check:", { 
+            hasSession: !!session, 
+            userId: session?.user?.id, 
+            email: session?.user?.email,
+            error: error?.message 
+          })
+          if (session) {
+            setUser(session.user)
+            setLoading(false)
+          }
+        })
+      }
+
       return () => subscription.unsubscribe()
     } catch (err: any) {
       console.error("Error initializing auth:", err)
@@ -135,12 +153,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (!supabase) return { error: "Authentication not initialized" }
       
       console.log("Starting Google OAuth sign-in...")
-      console.log("Redirect URL:", `${window.location.origin}/auth/callback`)
+      const redirectUrl = `${window.location.origin}/auth/callback`
+      console.log("Redirect URL:", redirectUrl)
+      console.log("Current origin:", window.location.origin)
+      console.log("Current pathname:", window.location.pathname)
       
       const { error: oauthError } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
+          redirectTo: redirectUrl,
         },
       })
       

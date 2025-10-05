@@ -6,8 +6,22 @@ import { cookies } from "next/headers"
 export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url)
   const code = requestUrl.searchParams.get("code")
+  const error = requestUrl.searchParams.get("error")
+  const errorDescription = requestUrl.searchParams.get("error_description")
 
-  console.log("Auth callback received:", { code: !!code, url: requestUrl.toString() })
+  console.log("Auth callback received:", { 
+    code: !!code, 
+    error,
+    errorDescription,
+    url: requestUrl.toString(),
+    allParams: Object.fromEntries(requestUrl.searchParams.entries())
+  })
+
+  // Handle OAuth errors
+  if (error) {
+    console.error("OAuth error received:", { error, errorDescription })
+    return NextResponse.redirect(new URL(`/auth/sign-in?error=oauth_error&message=${encodeURIComponent(errorDescription || error)}`, requestUrl.origin))
+  }
 
   if (code) {
     try {
