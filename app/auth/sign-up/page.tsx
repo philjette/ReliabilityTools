@@ -83,13 +83,19 @@ export default function SignUpPage() {
     setLoading(true)
 
     try {
+      console.log("Starting Google sign-up...")
       const result = await signInWithGoogle()
 
       if (result.error) {
+        console.error("Google sign-up error:", result.error)
         setFormError(result.error)
         setLoading(false)
+      } else {
+        console.log("Google sign-up initiated successfully")
+        // Don't set loading to false here as the user will be redirected
       }
     } catch (err: any) {
+      console.error("Google sign-up exception:", err)
       setFormError(err.message || "An unexpected error occurred")
       setLoading(false)
     }

@@ -109,13 +109,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signInWithGoogle = async () => {
     try {
       if (!supabase) return { error: "Authentication not initialized" }
+      
+      console.log("Starting Google OAuth sign-in...")
+      console.log("Redirect URL:", `${window.location.origin}/auth/callback`)
+      
       const { error: oauthError } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
           redirectTo: `${window.location.origin}/auth/callback`,
         },
       })
-      if (oauthError) return { error: oauthError.message }
+      
+      if (oauthError) {
+        console.error("Google OAuth error:", oauthError)
+        return { error: oauthError.message }
+      }
+      
+      console.log("Google OAuth initiated successfully")
       return {}
     } catch (err: any) {
       console.error("Google sign in error:", err)
