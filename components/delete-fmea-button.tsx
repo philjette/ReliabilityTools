@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
@@ -22,9 +22,16 @@ interface DeleteFMEAButtonProps {
 
 export function DeleteFMEAButton({ id }: DeleteFMEAButtonProps) {
   const [isOpen, setIsOpen] = useState(false)
+  const [mounted, setMounted] = useState(false)
   const { deleteFMEA, deleting } = useDeleteFMEA()
 
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
   const handleDelete = async () => {
+    if (!mounted) return
+
     const result = await deleteFMEA(id)
     
     if (!result.error) {

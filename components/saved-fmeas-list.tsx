@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -28,10 +28,17 @@ interface SavedFMEAsListProps {
 
 export function SavedFMEAsList({ fmeas, onDelete }: SavedFMEAsListProps) {
   const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [mounted, setMounted] = useState(false)
   const router = useRouter()
   const { deleteFMEA } = useDeleteFMEA()
 
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
   const handleDelete = async (id: string) => {
+    if (!mounted) return
+
     try {
       setDeletingId(id)
       const result = await deleteFMEA(id)

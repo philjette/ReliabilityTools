@@ -1,15 +1,25 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useSupabase } from "./use-supabase"
 import { useToast } from "@/hooks/use-toast"
 
 export function useDeleteFMEA() {
   const [deleting, setDeleting] = useState(false)
-  const { supabase } = useSupabase()
+  const [mounted, setMounted] = useState(false)
+  const { supabase, loading: supabaseLoading } = useSupabase()
   const { toast } = useToast()
 
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
   const deleteFMEA = async (id: string) => {
+    // Only run on client side
+    if (!mounted) {
+      return { error: "Component not mounted" }
+    }
+
     if (!supabase) {
       toast({
         title: "Error",
