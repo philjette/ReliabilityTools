@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Loader2, ArrowLeft, FileText, AlertTriangle, TrendingUp, BarChart3, Activity } from "lucide-react"
+import { Loader2, ArrowLeft, FileText, AlertTriangle, TrendingUp, BarChart3 } from "lucide-react"
 import { useFMEAs } from "@/hooks/use-fmeas"
 import { useSupabase } from "@/hooks/use-supabase"
 import { useAuth } from "@/contexts/auth-context"
@@ -211,65 +211,11 @@ export function FMEAComparison({ fmea1Id, fmea2Id }: FMEAComparisonProps) {
   )
 }
 
-// Weibull analysis helper functions
-function calculateMTTF(shape: number, scale: number): number {
-  try {
-    // Use approximation for gamma function if Math.gamma is not available
-    const gamma = (x: number) => {
-      if (x < 0.5) return Math.PI / (Math.sin(Math.PI * x) * gamma(1 - x))
-      x -= 1
-      let a = 0.99999999999980993
-      const p = [
-        676.5203681218851, -1259.1392167224028, 771.32342877765313,
-        -176.61502916214059, 12.507343278686905, -0.13857109526572012,
-        9.9843695780195716e-6, 1.5056327351493116e-7
-      ]
-      for (let i = 0; i < p.length; i++) {
-        a += p[i] / (x + i + 1)
-      }
-      const t = x + p.length - 0.5
-      return Math.sqrt(2 * Math.PI) * Math.pow(t, x + 0.5) * Math.exp(-t) * a
-    }
-    return scale * Math.exp(-1 / shape) * gamma(1 + 1 / shape)
-  } catch (error) {
-    console.error("Error calculating MTTF:", error)
-    return scale // Fallback to scale parameter
-  }
-}
-
-function weibullReliability(t: number, shape: number, scale: number): number {
-  try {
-    if (t < 0 || shape <= 0 || scale <= 0) return 0
-    return Math.exp(-Math.pow(t / scale, shape))
-  } catch (error) {
-    console.error("Error calculating reliability:", error)
-    return 0
-  }
-}
-
-function weibullFailureRate(t: number, shape: number, scale: number): number {
-  try {
-    if (t < 0 || shape <= 0 || scale <= 0) return 0
-    return (shape / scale) * Math.pow(t / scale, shape - 1)
-  } catch (error) {
-    console.error("Error calculating failure rate:", error)
-    return 0
-  }
-}
-
-function getWeibullInterpretation(shape: number): string {
-  if (shape < 1) return "Decreasing failure rate (early failures)"
-  if (shape === 1) return "Constant failure rate (random failures)"
-  return "Increasing failure rate (wear-out failures)"
-}
-
 // Component to display the actual comparison
 function FMEAComparisonView({ fmea1, fmea2 }: { fmea1: SavedFMEA; fmea2: SavedFMEA }) {
   const router = useRouter()
 
-  // Add error boundary for the entire comparison
-  try {
-    const getAssetTypeLabel = (type: string) => {
+  const getAssetTypeLabel = (type: string) => {
     const labels: Record<string, string> = {
       transformer: "Power Transformer",
       switchgear: "Switchgear",
@@ -317,8 +263,8 @@ function FMEAComparisonView({ fmea1, fmea2 }: { fmea1: SavedFMEA; fmea2: SavedFM
 
       {/* FMEA Overview Cards */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
+          <Card>
+            <CardHeader>
             <CardTitle className="flex items-center">
               <FileText className="mr-2 h-5 w-5" />
               {fmea1.title}
@@ -326,8 +272,8 @@ function FMEAComparisonView({ fmea1, fmea2 }: { fmea1: SavedFMEA; fmea2: SavedFM
             <CardDescription>
               {getAssetTypeLabel(fmea1.asset_type)} • Created {new Date(fmea1.created_at).toLocaleDateString()}
             </CardDescription>
-          </CardHeader>
-          <CardContent>
+            </CardHeader>
+            <CardContent>
             <div className="space-y-2">
               <div className="flex justify-between">
                 <span className="text-sm font-medium">Voltage Rating:</span>
@@ -346,11 +292,11 @@ function FMEAComparisonView({ fmea1, fmea2 }: { fmea1: SavedFMEA; fmea2: SavedFM
                 <span className="text-sm">{fmea1.asset_criticality}</span>
               </div>
             </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
 
-        <Card>
-          <CardHeader>
+          <Card>
+            <CardHeader>
             <CardTitle className="flex items-center">
               <FileText className="mr-2 h-5 w-5" />
               {fmea2.title}
@@ -358,8 +304,8 @@ function FMEAComparisonView({ fmea1, fmea2 }: { fmea1: SavedFMEA; fmea2: SavedFM
             <CardDescription>
               {getAssetTypeLabel(fmea2.asset_type)} • Created {new Date(fmea2.created_at).toLocaleDateString()}
             </CardDescription>
-          </CardHeader>
-          <CardContent>
+            </CardHeader>
+            <CardContent>
             <div className="space-y-2">
               <div className="flex justify-between">
                 <span className="text-sm font-medium">Voltage Rating:</span>
@@ -378,19 +324,19 @@ function FMEAComparisonView({ fmea1, fmea2 }: { fmea1: SavedFMEA; fmea2: SavedFM
                 <span className="text-sm">{fmea2.asset_criticality}</span>
               </div>
             </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
       </div>
 
       {/* Failure Modes Comparison */}
-      <Card>
-        <CardHeader>
+          <Card>
+            <CardHeader>
           <CardTitle>Failure Modes Comparison</CardTitle>
           <CardDescription>
             Compare failure modes, RPNs, and risk levels between the two FMEAs
           </CardDescription>
-        </CardHeader>
-        <CardContent>
+            </CardHeader>
+            <CardContent>
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
@@ -464,248 +410,6 @@ function FMEAComparisonView({ fmea1, fmea2 }: { fmea1: SavedFMEA; fmea2: SavedFM
         </CardContent>
       </Card>
 
-      {/* Weibull Analysis Comparison */}
-      {(fmea1.weibull_parameters && Object.keys(fmea1.weibull_parameters).length > 0) || 
-       (fmea2.weibull_parameters && Object.keys(fmea2.weibull_parameters).length > 0) ? (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <Activity className="mr-2 h-5 w-5" />
-              Weibull Analysis Comparison
-            </CardTitle>
-            <CardDescription>
-              Compare reliability parameters and failure rate characteristics between FMEAs
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-6">
-              {/* Weibull Parameters Table */}
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b">
-                      <th className="text-left p-4">Failure Mode</th>
-                      <th className="text-center p-4">FMEA 1 Parameters</th>
-                      <th className="text-center p-4">FMEA 2 Parameters</th>
-                      <th className="text-center p-4">Comparison</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {fmea1.failure_modes.map((mode1, index) => {
-                      const mode2 = fmea2.failure_modes[index]
-                      const weibull1 = fmea1.weibull_parameters?.[mode1.name]
-                      const weibull2 = fmea2.weibull_parameters?.[mode2?.name || '']
-                      
-                      if (!weibull1 && !weibull2) return null
-                      
-                      let mttf1 = 0
-                      let mttf2 = 0
-                      
-                      try {
-                        mttf1 = weibull1 ? calculateMTTF(weibull1.shape, weibull1.scale) : 0
-                        mttf2 = weibull2 ? calculateMTTF(weibull2.shape, weibull2.scale) : 0
-                      } catch (error) {
-                        console.error("Error calculating MTTF for comparison:", error)
-                      }
-                      
-                      return (
-                        <tr key={index} className="border-b">
-                          <td className="p-4">
-                            <div className="font-medium">{mode1.name}</div>
-                          </td>
-                          <td className="p-4 text-center">
-                            {weibull1 ? (
-                              <div className="space-y-2">
-                                <div className="flex justify-center gap-2">
-                                  <Badge variant="outline">β: {weibull1.shape.toFixed(2)}</Badge>
-                                  <Badge variant="outline">η: {weibull1.scale.toFixed(0)}h</Badge>
-                                </div>
-                                <div className="text-sm text-gray-600">
-                                  MTTF: {mttf1.toFixed(0)}h
-                                </div>
-                                <div className="text-xs text-gray-500">
-                                  {getWeibullInterpretation(weibull1.shape)}
-                                </div>
-                              </div>
-                            ) : (
-                              <div className="text-gray-400">No data</div>
-                            )}
-                          </td>
-                          <td className="p-4 text-center">
-                            {weibull2 ? (
-                              <div className="space-y-2">
-                                <div className="flex justify-center gap-2">
-                                  <Badge variant="outline">β: {weibull2.shape.toFixed(2)}</Badge>
-                                  <Badge variant="outline">η: {weibull2.scale.toFixed(0)}h</Badge>
-                                </div>
-                                <div className="text-sm text-gray-600">
-                                  MTTF: {mttf2.toFixed(0)}h
-                                </div>
-                                <div className="text-xs text-gray-500">
-                                  {getWeibullInterpretation(weibull2.shape)}
-                                </div>
-                              </div>
-                            ) : (
-                              <div className="text-gray-400">No data</div>
-                            )}
-                          </td>
-                          <td className="p-4 text-center">
-                            {weibull1 && weibull2 ? (
-                              <div className="space-y-1">
-                                <div className={`text-sm font-medium ${
-                                  mttf1 > mttf2 ? 'text-green-600' : mttf1 < mttf2 ? 'text-red-600' : 'text-gray-600'
-                                }`}>
-                                  {mttf1 > mttf2 ? '↑ Longer Life' : mttf1 < mttf2 ? '↓ Shorter Life' : '= Similar Life'}
-                                </div>
-                                <div className="text-xs text-gray-500">
-                                  Δ MTTF: {Math.abs(mttf1 - mttf2).toFixed(0)}h
-                                </div>
-                                <div className="text-xs text-gray-500">
-                                  Shape Δ: {Math.abs(weibull1.shape - weibull2.shape).toFixed(2)}
-                                </div>
-                              </div>
-                            ) : (
-                              <div className="text-gray-400">N/A</div>
-                            )}
-                          </td>
-                        </tr>
-                      )
-                    })}
-                  </tbody>
-                </table>
-              </div>
-
-              {/* Reliability Comparison Charts */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Reliability Curves */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg">Reliability Curves</CardTitle>
-                    <CardDescription>Reliability vs. Time comparison</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      {fmea1.failure_modes.slice(0, 3).map((mode, index) => {
-                        const weibull1 = fmea1.weibull_parameters?.[mode.name]
-                        const mode2 = fmea2.failure_modes[index]
-                        const weibull2 = fmea2.weibull_parameters?.[mode2?.name || '']
-                        
-                        if (!weibull1 && !weibull2) return null
-                        
-                        return (
-                          <div key={index} className="space-y-2">
-                            <div className="font-medium text-sm">{mode.name}</div>
-                            <div className="h-32 bg-gray-50 rounded p-4 flex items-end space-x-1">
-                              {weibull1 && (
-                                <div className="flex-1">
-                                  <div className="text-xs text-blue-600 mb-1">FMEA 1</div>
-                                  <div className="h-20 bg-blue-200 rounded-sm flex items-end">
-                                    <div className="w-full h-16 bg-blue-500 rounded-sm opacity-80"></div>
-                                  </div>
-                                </div>
-                              )}
-                              {weibull2 && (
-                                <div className="flex-1">
-                                  <div className="text-xs text-green-600 mb-1">FMEA 2</div>
-                                  <div className="h-20 bg-green-200 rounded-sm flex items-end">
-                                    <div className="w-full h-16 bg-green-500 rounded-sm opacity-80"></div>
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-                            <div className="text-xs text-gray-500">
-                              {weibull1 && (() => {
-                                try {
-                                  const reliability = weibullReliability(1000, weibull1.shape, weibull1.scale) * 100
-                                  return `FMEA 1: R(1000h) = ${reliability.toFixed(1)}%`
-                                } catch (error) {
-                                  console.error("Error calculating reliability for FMEA 1:", error)
-                                  return "FMEA 1: Error calculating reliability"
-                                }
-                              })()}
-                              {weibull1 && weibull2 && ' | '}
-                              {weibull2 && (() => {
-                                try {
-                                  const reliability = weibullReliability(1000, weibull2.shape, weibull2.scale) * 100
-                                  return `FMEA 2: R(1000h) = ${reliability.toFixed(1)}%`
-                                } catch (error) {
-                                  console.error("Error calculating reliability for FMEA 2:", error)
-                                  return "FMEA 2: Error calculating reliability"
-                                }
-                              })()}
-                            </div>
-                          </div>
-                        )
-                      })}
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Failure Rate Comparison */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg">Failure Rate Characteristics</CardTitle>
-                    <CardDescription>Shape parameter (β) comparison</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      {fmea1.failure_modes.slice(0, 3).map((mode, index) => {
-                        const weibull1 = fmea1.weibull_parameters?.[mode.name]
-                        const mode2 = fmea2.failure_modes[index]
-                        const weibull2 = fmea2.weibull_parameters?.[mode2?.name || '']
-                        
-                        if (!weibull1 && !weibull2) return null
-                        
-                        return (
-                          <div key={index} className="space-y-2">
-                            <div className="font-medium text-sm">{mode.name}</div>
-                            <div className="flex items-center space-x-4">
-                              {weibull1 && (
-                                <div className="flex-1">
-                                  <div className="text-xs text-blue-600 mb-1">FMEA 1</div>
-                                  <div className="flex items-center space-x-2">
-                                    <div className="w-16 h-2 bg-gray-200 rounded-full overflow-hidden">
-                                      <div 
-                                        className={`h-full ${weibull1.shape < 1 ? 'bg-red-500' : weibull1.shape === 1 ? 'bg-yellow-500' : 'bg-green-500'}`}
-                                        style={{ width: `${Math.min(weibull1.shape * 20, 100)}%` }}
-                                      ></div>
-                                    </div>
-                                    <span className="text-xs font-mono">{weibull1.shape.toFixed(2)}</span>
-                                  </div>
-                                </div>
-                              )}
-                              {weibull2 && (
-                                <div className="flex-1">
-                                  <div className="text-xs text-green-600 mb-1">FMEA 2</div>
-                                  <div className="flex items-center space-x-2">
-                                    <div className="w-16 h-2 bg-gray-200 rounded-full overflow-hidden">
-                                      <div 
-                                        className={`h-full ${weibull2.shape < 1 ? 'bg-red-500' : weibull2.shape === 1 ? 'bg-yellow-500' : 'bg-green-500'}`}
-                                        style={{ width: `${Math.min(weibull2.shape * 20, 100)}%` }}
-                                      ></div>
-                                    </div>
-                                    <span className="text-xs font-mono">{weibull2.shape.toFixed(2)}</span>
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-                            <div className="text-xs text-gray-500">
-                              {weibull1 && getWeibullInterpretation(weibull1.shape)}
-                              {weibull1 && weibull2 && ' vs '}
-                              {weibull2 && getWeibullInterpretation(weibull2.shape)}
-                            </div>
-                          </div>
-                        )
-                      })}
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      ) : null}
-
       {/* Summary Statistics */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card>
@@ -743,30 +447,13 @@ function FMEAComparisonView({ fmea1, fmea2 }: { fmea1: SavedFMEA; fmea2: SavedFM
               <div>
                 <div className="text-2xl font-bold">
                   {fmea1.failure_modes.length}
-                </div>
+                  </div>
                 <div className="text-sm text-gray-600">Failure Modes Count</div>
               </div>
-            </div>
-          </CardContent>
-        </Card>
+              </div>
+            </CardContent>
+          </Card>
       </div>
     </div>
   )
-  } catch (error) {
-    console.error("Error in FMEA comparison view:", error)
-    return (
-      <div className="space-y-6">
-        <Alert>
-          <AlertTriangle className="h-4 w-4" />
-          <AlertDescription>
-            An error occurred while displaying the comparison. Please try again.
-          </AlertDescription>
-        </Alert>
-        <Button onClick={() => router.push('/compare')}>
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Back to Selection
-        </Button>
-      </div>
-    )
-  }
 }
