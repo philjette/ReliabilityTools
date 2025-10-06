@@ -142,6 +142,74 @@ export async function saveWeibullCurveClient(curveName: string, analysisResult: 
   }
 }
 
+// Client-side version of getUserWeibullCurves
+export async function getUserWeibullCurvesClient(): Promise<{ success: boolean; error?: string; curves?: WeibullAnalysisResult[] }> {
+  try {
+    console.log("getUserWeibullCurvesClient called")
+    
+    const supabase = createClient()
+    const { data: { user }, error: userError } = await supabase.auth.getUser()
+    
+    console.log("User check result:", { user: !!user, error: userError })
+    
+    if (!user) {
+      console.error("No authenticated user found")
+      return { success: false, error: "User not authenticated. Please sign in and try again." }
+    }
+
+    const { data: curves, error } = await supabase
+      .from("weibull_curves")
+      .select("*")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false })
+
+    if (error) {
+      console.error("Error fetching Weibull curves:", error)
+      return { success: false, error: error.message }
+    }
+
+    console.log("Fetched curves:", curves)
+    return { success: true, curves: curves || [] }
+  } catch (error: any) {
+    console.error("Unexpected error fetching Weibull curves:", error)
+    return { success: false, error: error.message || "Failed to fetch Weibull curves" }
+  }
+}
+
+// Client-side version of deleteWeibullCurve
+export async function deleteWeibullCurveClient(id: string): Promise<{ success: boolean; error?: string }> {
+  try {
+    console.log("deleteWeibullCurveClient called with id:", id)
+    
+    const supabase = createClient()
+    const { data: { user }, error: userError } = await supabase.auth.getUser()
+    
+    console.log("User check result:", { user: !!user, error: userError })
+    
+    if (!user) {
+      console.error("No authenticated user found")
+      return { success: false, error: "User not authenticated. Please sign in and try again." }
+    }
+
+    const { error } = await supabase
+      .from("weibull_curves")
+      .delete()
+      .eq("id", id)
+      .eq("user_id", user.id)
+
+    if (error) {
+      console.error("Error deleting Weibull curve:", error)
+      return { success: false, error: error.message }
+    }
+
+    console.log("Weibull curve deleted successfully")
+    return { success: true }
+  } catch (error: any) {
+    console.error("Unexpected error deleting Weibull curve:", error)
+    return { success: false, error: error.message || "Failed to delete Weibull curve" }
+  }
+}
+
 // Maximum Likelihood Estimation for Weibull parameters
 function calculateWeibullMLE(failureTimes: number[]): { shape: number; scale: number } {
   const n = failureTimes.length

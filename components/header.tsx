@@ -63,9 +63,12 @@ export function Header() {
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      <DropdownMenuItem asChild>
-                        <Link href="/dashboard">My FMEAs</Link>
-                      </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/dashboard">My FMEAs</Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/curves">My Failure Curves</Link>
+                  </DropdownMenuItem>
                       <DropdownMenuItem onClick={handleSignOut}>Sign out</DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
@@ -122,13 +125,20 @@ export function Header() {
                 <>
                   {user ? (
                     <>
-                      <Link
-                        href="/dashboard"
-                        className="text-sm font-medium text-gray-700 hover:text-blue-600 transition-colors"
-                        onClick={() => setMobileMenuOpen(false)}
-                      >
-                        My FMEAs
-                      </Link>
+                          <Link
+                            href="/dashboard"
+                            className="text-sm font-medium text-gray-700 hover:text-blue-600 transition-colors"
+                            onClick={() => setMobileMenuOpen(false)}
+                          >
+                            My FMEAs
+                          </Link>
+                          <Link
+                            href="/curves"
+                            className="text-sm font-medium text-gray-700 hover:text-blue-600 transition-colors"
+                            onClick={() => setMobileMenuOpen(false)}
+                          >
+                            My Failure Curves
+                          </Link>
                       <button
                         onClick={() => {
                           handleSignOut()
