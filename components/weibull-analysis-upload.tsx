@@ -2,12 +2,13 @@
 
 import { useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { CheckCircle2, Upload, Loader2, Save } from "lucide-react"
+import { CheckCircle2, Upload, Loader2, Save, TrendingUp, Clock, BarChart3, Database } from "lucide-react"
 import { WeibullChart } from "@/components/weibull-chart"
 import { uploadAssetDataClient, fitWeibullParametersClient, saveWeibullCurveClient, type WeibullAnalysisResult } from "@/lib/weibull-analysis-client"
 import { useToast } from "@/hooks/use-toast"
@@ -22,6 +23,30 @@ export function WeibullAnalysisUpload() {
   const [curveName, setCurveName] = useState("")
   const [isSaving, setIsSaving] = useState(false)
   const { toast } = useToast()
+
+  const formatMTTF = (mttf: number) => {
+    if (mttf >= 8760) {
+      return `${(mttf / 8760).toFixed(1)} years`
+    } else if (mttf >= 24) {
+      return `${(mttf / 24).toFixed(1)} days`
+    } else {
+      return `${mttf.toFixed(0)} hours`
+    }
+  }
+
+  const getShapeInterpretation = (shape: number) => {
+    if (shape < 1) return "Early failures (infant mortality)"
+    if (shape === 1) return "Random failures (exponential)"
+    if (shape > 1 && shape < 2) return "Wear-out failures"
+    return "Rapid wear-out failures"
+  }
+
+  const getShapeColor = (shape: number) => {
+    if (shape < 1) return "bg-blue-100 text-blue-800"
+    if (shape === 1) return "bg-green-100 text-green-800"
+    if (shape > 1 && shape < 2) return "bg-yellow-100 text-yellow-800"
+    return "bg-red-100 text-red-800"
+  }
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = event.target.files?.[0]
@@ -264,14 +289,53 @@ export function WeibullAnalysisUpload() {
             </AlertDescription>
           </Alert>
 
-          <div className="mb-4 p-4 bg-gray-50 rounded-lg">
-            <h4 className="font-medium mb-2">Analysis Results:</h4>
-            <p>Asset: {results.asset_name}</p>
-            <p>Shape Parameter (β): {results.shape_parameter.toFixed(3)}</p>
-            <p>Scale Parameter (η): {results.scale_parameter.toFixed(0)} hours</p>
-            <p>MTTF: {results.mttf.toFixed(0)} hours</p>
-            <p>Data Points: {results.data_points}</p>
-          </div>
+          {/* Analysis Overview */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Analysis Overview</CardTitle>
+              <CardDescription>Key parameters and statistics from the Weibull analysis</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div className="text-center">
+                  <div className="flex items-center justify-center w-12 h-12 bg-blue-100 rounded-lg mx-auto mb-3">
+                    <TrendingUp className="h-6 w-6 text-blue-600" />
+                  </div>
+                  <div className="text-2xl font-bold">{results.shape_parameter.toFixed(3)}</div>
+                  <div className="text-sm text-gray-600">Shape Parameter (β)</div>
+                  <Badge className={`mt-2 ${getShapeColor(results.shape_parameter)}`}>
+                    {getShapeInterpretation(results.shape_parameter)}
+                  </Badge>
+                </div>
+
+                <div className="text-center">
+                  <div className="flex items-center justify-center w-12 h-12 bg-green-100 rounded-lg mx-auto mb-3">
+                    <Clock className="h-6 w-6 text-green-600" />
+                  </div>
+                  <div className="text-2xl font-bold">{results.scale_parameter.toFixed(0)}</div>
+                  <div className="text-sm text-gray-600">Scale Parameter (η)</div>
+                  <div className="text-xs text-gray-500 mt-1">hours</div>
+                </div>
+
+                <div className="text-center">
+                  <div className="flex items-center justify-center w-12 h-12 bg-purple-100 rounded-lg mx-auto mb-3">
+                    <BarChart3 className="h-6 w-6 text-purple-600" />
+                  </div>
+                  <div className="text-2xl font-bold">{formatMTTF(results.mttf)}</div>
+                  <div className="text-sm text-gray-600">Mean Time to Failure</div>
+                </div>
+
+                <div className="text-center">
+                  <div className="flex items-center justify-center w-12 h-12 bg-orange-100 rounded-lg mx-auto mb-3">
+                    <Database className="h-6 w-6 text-orange-600" />
+                  </div>
+                  <div className="text-2xl font-bold">{results.data_points}</div>
+                  <div className="text-sm text-gray-600">Data Points</div>
+                  <div className="text-xs text-gray-500 mt-1">failures analyzed</div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
           
           <WeibullChart 
             type={chartType} 
