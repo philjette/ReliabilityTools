@@ -9,7 +9,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { CheckCircle2, Upload, Loader2, Save } from "lucide-react"
 import { WeibullChart } from "@/components/weibull-chart"
-import { uploadAssetData, fitWeibullParameters, saveWeibullCurve, type WeibullAnalysisResult } from "@/lib/weibull-analysis-actions"
+import { uploadAssetDataClient, fitWeibullParametersClient, saveWeibullCurveClient, type WeibullAnalysisResult } from "@/lib/weibull-analysis-client"
 import { useToast } from "@/hooks/use-toast"
 
 export function WeibullAnalysisUpload() {
@@ -89,13 +89,13 @@ export function WeibullAnalysisUpload() {
       }))
 
       // Upload data to temporary table
-      const uploadResult = await uploadAssetData(assetData)
+      const uploadResult = await uploadAssetDataClient(assetData)
       if (!uploadResult.success) {
         throw new Error(uploadResult.error || "Failed to upload data")
       }
 
       // Fit Weibull parameters
-      const analysisResult = await fitWeibullParameters(uploadResult.tempDataId || "")
+      const analysisResult = await fitWeibullParametersClient(uploadResult.tempDataId || "")
       if (!analysisResult.success) {
         throw new Error(analysisResult.error || "Failed to fit Weibull parameters")
       }
@@ -127,7 +127,7 @@ export function WeibullAnalysisUpload() {
 
     setIsSaving(true)
     try {
-      const saveResult = await saveWeibullCurve(curveName.trim(), results)
+      const saveResult = await saveWeibullCurveClient(curveName.trim(), results)
       if (saveResult.success) {
         toast({
           title: "Curve Saved",

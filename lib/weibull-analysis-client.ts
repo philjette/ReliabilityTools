@@ -1,58 +1,16 @@
-"use server"
+"use client"
 
-import { createServerComponentClient } from "@supabase/auth-helpers-nextjs"
-import { cookies } from "next/headers"
-import { createClient } from "@supabase/supabase-js"
+import { createClient } from "@/lib/supabase-client"
+import type { AssetDataPoint, WeibullAnalysisResult } from "./weibull-analysis-actions"
 
-export interface AssetDataPoint {
-  asset_name: string
-  installation_date: string
-  failure_date: string
-  failure_time_hours: number
-}
-
-export interface WeibullAnalysisResult {
-  id?: string
-  curve_name: string
-  asset_name: string
-  shape_parameter: number
-  scale_parameter: number
-  mttf: number
-  total_failures: number
-  data_points: number
-  created_at?: string
-}
-
-export interface TempAssetData {
-  id?: string
-  user_id: string
-  asset_name: string
-  installation_date: string
-  failure_date: string
-  failure_time_hours: number
-  created_at?: string
-}
-
-// Upload asset data to temporary table
-export async function uploadAssetData(data: AssetDataPoint[]): Promise<{ success: boolean; error?: string; tempDataId?: string }> {
+// Client-side version of uploadAssetData
+export async function uploadAssetDataClient(data: AssetDataPoint[]): Promise<{ success: boolean; error?: string; tempDataId?: string }> {
   try {
-    console.log("uploadAssetData called with data:", data)
+    console.log("uploadAssetDataClient called with data:", data)
     
-    // Try server component client first
-    let supabase
-    try {
-      const cookieStore = cookies()
-      supabase = createServerComponentClient({ cookies: () => cookieStore })
-    } catch (error) {
-      console.log("Server component client failed, trying direct client:", error)
-      // Fallback to direct client if server component client fails
-      supabase = createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.SUPABASE_SERVICE_ROLE_KEY!
-      )
-    }
-
+    const supabase = createClient()
     const { data: { user }, error: userError } = await supabase.auth.getUser()
+    
     console.log("User check result:", { user: !!user, error: userError })
     
     if (!user) {
@@ -86,26 +44,14 @@ export async function uploadAssetData(data: AssetDataPoint[]): Promise<{ success
   }
 }
 
-// Fit Weibull parameters to uploaded data
-export async function fitWeibullParameters(tempDataId: string): Promise<{ success: boolean; error?: string; result?: WeibullAnalysisResult }> {
+// Client-side version of fitWeibullParameters
+export async function fitWeibullParametersClient(tempDataId: string): Promise<{ success: boolean; error?: string; result?: WeibullAnalysisResult }> {
   try {
-    console.log("fitWeibullParameters called with tempDataId:", tempDataId)
+    console.log("fitWeibullParametersClient called with tempDataId:", tempDataId)
     
-    // Try server component client first
-    let supabase
-    try {
-      const cookieStore = cookies()
-      supabase = createServerComponentClient({ cookies: () => cookieStore })
-    } catch (error) {
-      console.log("Server component client failed, trying direct client:", error)
-      // Fallback to direct client if server component client fails
-      supabase = createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.SUPABASE_SERVICE_ROLE_KEY!
-      )
-    }
-
+    const supabase = createClient()
     const { data: { user }, error: userError } = await supabase.auth.getUser()
+    
     console.log("User check result:", { user: !!user, error: userError })
     
     if (!user) {
@@ -154,26 +100,14 @@ export async function fitWeibullParameters(tempDataId: string): Promise<{ succes
   }
 }
 
-// Save fitted curve to permanent table
-export async function saveWeibullCurve(curveName: string, analysisResult: WeibullAnalysisResult): Promise<{ success: boolean; error?: string }> {
+// Client-side version of saveWeibullCurve
+export async function saveWeibullCurveClient(curveName: string, analysisResult: WeibullAnalysisResult): Promise<{ success: boolean; error?: string }> {
   try {
-    console.log("saveWeibullCurve called with:", { curveName, analysisResult })
+    console.log("saveWeibullCurveClient called with:", { curveName, analysisResult })
     
-    // Try server component client first
-    let supabase
-    try {
-      const cookieStore = cookies()
-      supabase = createServerComponentClient({ cookies: () => cookieStore })
-    } catch (error) {
-      console.log("Server component client failed, trying direct client:", error)
-      // Fallback to direct client if server component client fails
-      supabase = createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.SUPABASE_SERVICE_ROLE_KEY!
-      )
-    }
-
+    const supabase = createClient()
     const { data: { user }, error: userError } = await supabase.auth.getUser()
+    
     console.log("User check result:", { user: !!user, error: userError })
     
     if (!user) {
@@ -205,34 +139,6 @@ export async function saveWeibullCurve(curveName: string, analysisResult: Weibul
   } catch (error: any) {
     console.error("Unexpected error saving Weibull curve:", error)
     return { success: false, error: error.message || "Failed to save Weibull curve" }
-  }
-}
-
-// Get user's saved Weibull curves
-export async function getUserWeibullCurves(): Promise<{ success: boolean; error?: string; curves?: WeibullAnalysisResult[] }> {
-  try {
-    const cookieStore = cookies()
-    const supabase = createServerComponentClient({ cookies: () => cookieStore })
-
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) {
-      return { success: false, error: "User not authenticated" }
-    }
-
-    const { data: curves, error } = await supabase
-      .from("weibull_curves")
-      .select("*")
-      .eq("user_id", user.id)
-      .order("created_at", { ascending: false })
-
-    if (error) {
-      return { success: false, error: error.message }
-    }
-
-    return { success: true, curves: curves || [] }
-  } catch (error: any) {
-    console.error("Unexpected error fetching Weibull curves:", error)
-    return { success: false, error: error.message || "Failed to fetch Weibull curves" }
   }
 }
 
