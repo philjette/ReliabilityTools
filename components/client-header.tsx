@@ -19,7 +19,7 @@ interface HeaderProps {
 }
 
 export function ClientHeader({ activePath = "/" }: HeaderProps) {
-  const { user, isLoading } = useAuth()
+  const { user, loading: isLoading } = useAuth()
   const [isClient, setIsClient] = useState(false)
   const [isOpen, setIsOpen] = useState(false)
   const router = useRouter()

@@ -63,6 +63,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         console.log("Auth state change:", { event, user: session?.user?.id, email: session?.user?.email })
         setUser(session?.user ?? null)
         setLoading(false)
+        
+        // Force a re-render by updating error state if needed
+        if (event === 'SIGNED_IN' && session?.user) {
+          setError(null)
+        }
       })
 
       // Check if we're on the dashboard and no user is detected - might be a Google OAuth issue
@@ -136,8 +141,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (!supabase) return { error: "Authentication not initialized" }
       
       console.log("Starting Google OAuth sign-in...")
-      // Use Supabase's default callback URL since we can't change the domain
-      const redirectUrl = `${window.location.origin}/dashboard`
+      // Use the proper auth callback URL
+      const redirectUrl = `${window.location.origin}/auth/callback?next=/dashboard`
       console.log("Redirect URL:", redirectUrl)
       console.log("Current origin:", window.location.origin)
       console.log("Current pathname:", window.location.pathname)
