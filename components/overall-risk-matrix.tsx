@@ -1,11 +1,12 @@
 "use client"
 
-import { useMemo } from "react"
+import { useMemo, useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { AlertCircle, TrendingUp, FileText, BarChart3 } from "lucide-react"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { AlertCircle, TrendingUp, FileText, BarChart3, X } from "lucide-react"
 import Link from "next/link"
 
 interface FailureMode {
@@ -33,6 +34,8 @@ interface OverallRiskMatrixProps {
 }
 
 export function OverallRiskMatrix({ fmeas }: OverallRiskMatrixProps) {
+  const [selectedTile, setSelectedTile] = useState<{ severity: number; occurrence: number } | null>(null)
+
   // Aggregate all failure modes from all FMEAs
   const allFailureModes = useMemo(() => {
     const modes: (FailureMode & { fmeaId: string; fmeaTitle: string; assetType: string })[] = []
@@ -91,6 +94,13 @@ export function OverallRiskMatrix({ fmeas }: OverallRiskMatrixProps) {
 
     return matrix
   }, [allFailureModes])
+
+  // Get filtered failure modes based on selected tile
+  const filteredFailureModes = useMemo(() => {
+    if (!selectedTile) return []
+    const key = `${selectedTile.severity}-${selectedTile.occurrence}`
+    return matrixData[key] || []
+  }, [selectedTile, matrixData])
 
   const getRiskColor = (severity: number, occurrence: number): string => {
     const risk = severity * occurrence
@@ -182,11 +192,20 @@ export function OverallRiskMatrix({ fmeas }: OverallRiskMatrixProps) {
                         const modes = matrixData[key] || []
                         const riskColor = getRiskColor(severity, occurrence)
 
+                        const isSelected = selectedTile?.severity === severity && selectedTile?.occurrence === occurrence
+
                         return (
                           <div
                             key={`${severity}-${occurrence}`}
-                            className={`${riskColor} p-2 rounded text-white text-center relative group cursor-pointer min-h-[40px] flex items-center justify-center`}
+                            className={`${riskColor} p-2 rounded text-white text-center relative group cursor-pointer min-h-[40px] flex items-center justify-center transition-all ${
+                              isSelected ? 'ring-4 ring-blue-300 ring-offset-2' : ''
+                            } ${modes.length > 0 ? 'hover:scale-105' : ''}`}
                             title={`Severity: ${severity}, Occurrence: ${occurrence}, Risk: ${getRiskLevel(severity, occurrence)}`}
+                            onClick={() => {
+                              if (modes.length > 0) {
+                                setSelectedTile({ severity, occurrence })
+                              }
+                            }}
                           >
                             {modes.length > 0 && <span className="text-xs font-bold">{modes.length}</span>}
 
@@ -197,6 +216,7 @@ export function OverallRiskMatrix({ fmeas }: OverallRiskMatrixProps) {
                                   <div className="font-medium mb-1">
                                     {modes.length} failure mode{modes.length > 1 ? "s" : ""}
                                   </div>
+                                  <div className="text-xs text-gray-300 mb-1">Click to view details</div>
                                   {modes.slice(0, 3).map((mode, idx) => (
                                     <div key={idx} className="truncate">
                                       • {mode.failureMode} ({mode.fmeaTitle})
@@ -238,6 +258,124 @@ export function OverallRiskMatrix({ fmeas }: OverallRiskMatrixProps) {
                 <span>Critical (49-100)</span>
               </div>
             </div>
+
+            {/* Filtered Table */}
+            {selectedTile && filteredFailureModes.length > 0 && (
+              <div className="mt-6 space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h4 className="font-medium flex items-center gap-2">
+                      <AlertCircle className="h-4 w-4" />
+                      Failure Modes: Severity {selectedTile.severity}, Occurrence {selectedTile.occurrence}
+                    </h4>
+                    <p className="text-sm text-gray-600">
+                      {filteredFailureModes.length} failure mode{filteredFailureModes.length !== 1 ? 's' : ''} found
+                    </p>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setSelectedTile(null)}
+                    className="flex items-center gap-2"
+                  >
+                    <X className="h-4 w-4" />
+                    Clear Filter
+                  </Button>
+                </div>
+
+                <div className="border rounded-lg overflow-hidden">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Failure Mode</TableHead>
+                        <TableHead>FMEA</TableHead>
+                        <TableHead>Asset Type</TableHead>
+                        <TableHead className="text-center">Severity</TableHead>
+                        <TableHead className="text-center">Occurrence</TableHead>
+                        <TableHead className="text-center">Detection</TableHead>
+                        <TableHead className="text-center">RPN</TableHead>
+                        <TableHead className="text-center">Risk Level</TableHead>
+                        <TableHead className="text-center">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredFailureModes
+                        .sort((a, b) => b.rpn - a.rpn)
+                        .map((mode, idx) => (
+                          <TableRow key={idx}>
+                            <TableCell className="font-medium max-w-xs">
+                              <div className="truncate" title={mode.failureMode}>
+                                {mode.failureMode}
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <div className="max-w-xs">
+                                <div className="truncate font-medium" title={mode.fmeaTitle}>
+                                  {mode.fmeaTitle}
+                                </div>
+                                <div className="text-xs text-gray-500 truncate">
+                                  {mode.assetType}
+                                </div>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant="secondary">{mode.assetType}</Badge>
+                            </TableCell>
+                            <TableCell className="text-center">
+                              <Badge variant="outline">{mode.severity}</Badge>
+                            </TableCell>
+                            <TableCell className="text-center">
+                              <Badge variant="outline">{mode.occurrence}</Badge>
+                            </TableCell>
+                            <TableCell className="text-center">
+                              <Badge variant="outline">{mode.detection}</Badge>
+                            </TableCell>
+                            <TableCell className="text-center">
+                              <Badge 
+                                variant={mode.rpn >= 100 ? "destructive" : mode.rpn >= 50 ? "outline" : "secondary"}
+                                className={mode.rpn >= 50 ? "text-orange-600 border-orange-600" : ""}
+                              >
+                                {mode.rpn}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-center">
+                              <Badge 
+                                variant={mode.severity * mode.occurrence >= 49 ? "destructive" : "outline"}
+                                className={mode.severity * mode.occurrence >= 25 && mode.severity * mode.occurrence < 49 ? "text-orange-600 border-orange-600" : ""}
+                              >
+                                {getRiskLevel(mode.severity, mode.occurrence)}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-center">
+                              <Button asChild size="sm" variant="outline">
+                                <Link href={`/dashboard/fmea/${mode.fmeaId}`}>
+                                  View FMEA
+                                </Link>
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </div>
+            )}
+
+            {/* Empty state when tile is selected but no failure modes */}
+            {selectedTile && filteredFailureModes.length === 0 && (
+              <div className="mt-6 p-6 text-center text-gray-500">
+                <AlertCircle className="h-8 w-8 mx-auto mb-2 text-gray-400" />
+                <p>No failure modes found for this severity/occurrence combination</p>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setSelectedTile(null)}
+                  className="mt-2"
+                >
+                  Clear Filter
+                </Button>
+              </div>
+            )}
           </TabsContent>
 
           <TabsContent value="summary" className="space-y-4">
