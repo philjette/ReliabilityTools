@@ -8,7 +8,11 @@ import { useState, useEffect } from "react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { useRouter } from "next/navigation"
 
-export function Header() {
+interface HeaderProps {
+  activePath?: string
+}
+
+export function Header({ activePath = "/" }: HeaderProps) {
   const { user, loading, signOut } = useAuth()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const router = useRouter()
