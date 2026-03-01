@@ -1,12 +1,11 @@
 import { redirect } from "next/navigation"
-import { createServerComponentClient } from "@supabase/auth-helpers-nextjs"
-import { cookies } from "next/headers"
+import { createClient } from "@/lib/supabase-server"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { FMEAComparison } from "@/components/fmea-comparison"
 
 export default async function CompareFMEAs() {
-  const supabase = createServerComponentClient({ cookies })
+  const supabase = await createClient()
   const {
     data: { session },
   } = await supabase.auth.getSession()

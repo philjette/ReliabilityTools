@@ -1,7 +1,6 @@
 "use server"
 
-import { createServerComponentClient } from "@supabase/auth-helpers-nextjs"
-import { cookies } from "next/headers"
+import { createClient } from "@/lib/supabase-server"
 import jsPDF from "jspdf"
 import autoTable from "jspdf-autotable"
 
@@ -36,8 +35,7 @@ export interface FMEAData {
 export async function saveFMEA(fmeaData: FMEAData) {
   try {
     console.log("saveFMEA called with data:", fmeaData)
-    const cookieStore = cookies()
-    const supabase = createServerComponentClient({ cookies: () => cookieStore })
+    const supabase = await createClient()
 
     const {
       data: { user },
@@ -82,8 +80,7 @@ export async function saveFMEA(fmeaData: FMEAData) {
 
 export async function getUserFMEAs() {
   try {
-    const cookieStore = cookies()
-    const supabase = createServerComponentClient({ cookies: () => cookieStore })
+    const supabase = await createClient()
 
     const {
       data: { user },
@@ -145,8 +142,7 @@ export async function getUserFMEAsClient() {
 
 export async function getFMEAById(id: string) {
   try {
-    const cookieStore = cookies()
-    const supabase = createServerComponentClient({ cookies: () => cookieStore })
+    const supabase = await createClient()
 
     const {
       data: { user },
@@ -172,8 +168,7 @@ export async function getFMEAById(id: string) {
 
 export async function deleteFMEA(id: string) {
   try {
-    const cookieStore = cookies()
-    const supabase = createServerComponentClient({ cookies: () => cookieStore })
+    const supabase = await createClient()
 
     const {
       data: { user },

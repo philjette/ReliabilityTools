@@ -1,7 +1,6 @@
 "use server"
 
-import { createServerComponentClient } from "@supabase/auth-helpers-nextjs"
-import { cookies } from "next/headers"
+import { createClient as createServerClient } from "@/lib/supabase-server"
 import { createClient } from "@supabase/supabase-js"
 
 export interface AssetDataPoint {
@@ -56,11 +55,9 @@ export async function uploadAssetData(data: AssetDataPoint[]): Promise<{ success
     // Try server component client first
     let supabase
     try {
-      const cookieStore = cookies()
-      supabase = createServerComponentClient({ cookies: () => cookieStore })
+      supabase = await createServerClient()
     } catch (error) {
-      console.log("Server component client failed, trying direct client:", error)
-      // Fallback to direct client if server component client fails
+      console.log("Server client failed, trying service role:", error)
       supabase = createClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
         process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -106,14 +103,11 @@ export async function fitWeibullParameters(tempDataId: string): Promise<{ succes
   try {
     console.log("fitWeibullParameters called with tempDataId:", tempDataId)
     
-    // Try server component client first
     let supabase
     try {
-      const cookieStore = cookies()
-      supabase = createServerComponentClient({ cookies: () => cookieStore })
+      supabase = await createServerClient()
     } catch (error) {
-      console.log("Server component client failed, trying direct client:", error)
-      // Fallback to direct client if server component client fails
+      console.log("Server client failed, trying service role:", error)
       supabase = createClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
         process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -222,11 +216,9 @@ export async function saveWeibullCurve(curveName: string, analysisResult: Weibul
     // Try server component client first
     let supabase
     try {
-      const cookieStore = cookies()
-      supabase = createServerComponentClient({ cookies: () => cookieStore })
+      supabase = await createServerClient()
     } catch (error) {
-      console.log("Server component client failed, trying direct client:", error)
-      // Fallback to direct client if server component client fails
+      console.log("Server client failed, trying service role:", error)
       supabase = createClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
         process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -271,8 +263,7 @@ export async function saveWeibullCurve(curveName: string, analysisResult: Weibul
 // Get user's saved Weibull curves
 export async function getUserWeibullCurves(): Promise<{ success: boolean; error?: string; curves?: WeibullAnalysisResult[] }> {
   try {
-    const cookieStore = cookies()
-    const supabase = createServerComponentClient({ cookies: () => cookieStore })
+    const supabase = await createServerClient()
 
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) {
