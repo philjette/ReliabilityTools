@@ -1,7 +1,7 @@
 import { createServerClient } from "@supabase/ssr"
 import { cookies } from "next/headers"
 
-/** Supabase client for Server Components, Server Actions, and Route Handlers. Use this instead of createServerComponentClient from auth-helpers. */
+/** Supabase client for Server Components, Server Actions, and Route Handlers. */
 export async function createClient() {
   const cookieStore = await cookies()
   return createServerClient(
@@ -9,21 +9,17 @@ export async function createClient() {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        get(name: string) {
-          return cookieStore.get(name)?.value
+        getAll() {
+          return cookieStore.getAll()
         },
-        set(name: string, value: string, options: Record<string, unknown>) {
+        setAll(cookiesToSet) {
           try {
-            cookieStore.set({ name, value, ...options })
+            cookiesToSet.forEach(({ name, value, options }) =>
+              cookieStore.set(name, value, options)
+            )
           } catch {
-            // Ignore in Server Components; middleware handles session refresh
-          }
-        },
-        remove(name: string, options: Record<string, unknown>) {
-          try {
-            cookieStore.set({ name, value: "", ...options })
-          } catch {
-            // Ignore in Server Components
+            // The `setAll` method was called from a Server Component.
+            // This can be ignored if you have middleware refreshing user sessions.
           }
         },
       },

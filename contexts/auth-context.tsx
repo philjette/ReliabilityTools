@@ -35,19 +35,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       // Get initial session
       client.auth
-        .getSession()
-        .then(({ data: { session }, error: sessionError }) => {
-          console.log("Initial session check:", { 
-            hasSession: !!session, 
-            userId: session?.user?.id, 
-            email: session?.user?.email,
-            error: sessionError?.message 
-          })
-          if (sessionError) {
-            console.error("Session error:", sessionError)
-            setError(sessionError.message)
+        .getUser()
+        .then(({ data: { user: currentUser }, error: userError }) => {
+          if (userError) {
+            // Not an error if user is simply not logged in
+            if (userError.message !== "Auth session missing!") {
+              console.error("Session error:", userError)
+              setError(userError.message)
+            }
           }
-          setUser(session?.user ?? null)
+          setUser(currentUser ?? null)
           setLoading(false)
         })
         .catch((err) => {
@@ -60,33 +57,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const {
         data: { subscription },
       } = client.auth.onAuthStateChange((event, session) => {
-        console.log("Auth state change:", { event, user: session?.user?.id, email: session?.user?.email })
         setUser(session?.user ?? null)
         setLoading(false)
-        
-        // Force a re-render by updating error state if needed
         if (event === 'SIGNED_IN' && session?.user) {
           setError(null)
         }
       })
-
-      // Check if we're on the dashboard and no user is detected - might be a Google OAuth issue
-      if (window.location.pathname === '/dashboard' && !user && !loading) {
-        console.log("On dashboard but no user detected, checking for OAuth session...")
-        // Try to get the session again
-        client.auth.getSession().then(({ data: { session }, error }) => {
-          console.log("Dashboard session check:", { 
-            hasSession: !!session, 
-            userId: session?.user?.id, 
-            email: session?.user?.email,
-            error: error?.message 
-          })
-          if (session) {
-            setUser(session.user)
-            setLoading(false)
-          }
-        })
-      }
 
       return () => subscription.unsubscribe()
     } catch (err: any) {
@@ -140,12 +116,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       if (!supabase) return { error: "Authentication not initialized" }
       
-      console.log("Starting Google OAuth sign-in...")
-      // Use the proper auth callback URL
       const redirectUrl = `${window.location.origin}/auth/callback?next=/dashboard`
-      console.log("Redirect URL:", redirectUrl)
-      console.log("Current origin:", window.location.origin)
-      console.log("Current pathname:", window.location.pathname)
       
       const { error: oauthError } = await supabase.auth.signInWithOAuth({
         provider: "google",
@@ -159,11 +130,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       })
       
       if (oauthError) {
-        console.error("Google OAuth error:", oauthError)
         return { error: oauthError.message }
       }
       
-      console.log("Google OAuth initiated successfully")
       return {}
     } catch (err: any) {
       console.error("Google sign in error:", err)
