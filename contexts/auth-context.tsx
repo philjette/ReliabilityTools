@@ -33,14 +33,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const client = createClient()
       setSupabase(client)
 
+      console.log("[v0] Auth context initializing...")
+
       // Get initial session
       client.auth
         .getUser()
         .then(({ data: { user: currentUser }, error: userError }) => {
+          console.log("[v0] getUser result:", { 
+            hasUser: !!currentUser, 
+            userId: currentUser?.id,
+            email: currentUser?.email,
+            error: userError?.message 
+          })
           if (userError) {
             // Not an error if user is simply not logged in
             if (userError.message !== "Auth session missing!") {
-              console.error("Session error:", userError)
+              console.error("[v0] Session error:", userError)
               setError(userError.message)
             }
           }
@@ -48,7 +56,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setLoading(false)
         })
         .catch((err) => {
-          console.error("Error getting session:", err)
+          console.error("[v0] Error getting session:", err)
           setError(err.message || "Failed to initialize authentication")
           setLoading(false)
         })
@@ -57,6 +65,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const {
         data: { subscription },
       } = client.auth.onAuthStateChange((event, session) => {
+        console.log("[v0] Auth state changed:", { event, hasSession: !!session, userId: session?.user?.id })
         setUser(session?.user ?? null)
         setLoading(false)
         if (event === 'SIGNED_IN' && session?.user) {
@@ -66,7 +75,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       return () => subscription.unsubscribe()
     } catch (err: any) {
-      console.error("Error initializing auth:", err)
+      console.error("[v0] Error initializing auth:", err)
       setError(err.message || "Failed to initialize authentication")
       setLoading(false)
     }

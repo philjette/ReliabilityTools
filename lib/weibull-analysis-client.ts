@@ -6,15 +6,29 @@ import type { AssetDataPoint, WeibullAnalysisResult, WeibullCurveFit } from "./w
 // Client-side version of uploadAssetData
 export async function uploadAssetDataClient(data: AssetDataPoint[]): Promise<{ success: boolean; error?: string; tempDataId?: string }> {
   try {
-    console.log("uploadAssetDataClient called with data:", data)
+    console.log("[v0] uploadAssetDataClient called with data:", data)
     
     const supabase = createClient()
+    
+    // Check session first
+    const { data: sessionData, error: sessionError } = await supabase.auth.getSession()
+    console.log("[v0] Session check:", { 
+      hasSession: !!sessionData?.session, 
+      sessionError: sessionError?.message,
+      accessToken: sessionData?.session?.access_token ? "present" : "missing"
+    })
+    
     const { data: { user }, error: userError } = await supabase.auth.getUser()
     
-    console.log("User check result:", { user: !!user, error: userError })
+    console.log("[v0] User check result:", { 
+      hasUser: !!user, 
+      userId: user?.id,
+      email: user?.email,
+      error: userError?.message 
+    })
     
     if (!user) {
-      console.error("No authenticated user found")
+      console.error("[v0] No authenticated user found")
       return { success: false, error: "User not authenticated. Please sign in and try again." }
     }
 

@@ -29,8 +29,16 @@ export async function middleware(request: NextRequest) {
     }
   )
 
-  // Refresh the auth token on every request
-  await supabase.auth.getUser()
+  // IMPORTANT: Do not remove this line - it refreshes the auth token
+  // and ensures cookies are properly set in the response
+  const { data: { user } } = await supabase.auth.getUser()
+
+  // Debug logging
+  if (request.nextUrl.pathname.startsWith('/dashboard') || 
+      request.nextUrl.pathname.startsWith('/analyze') ||
+      request.nextUrl.pathname.startsWith('/generate')) {
+    console.log("[v0] Middleware - path:", request.nextUrl.pathname, "user:", user?.id || "none")
+  }
 
   return supabaseResponse
 }
