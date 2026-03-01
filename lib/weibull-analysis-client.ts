@@ -1,7 +1,7 @@
 "use client"
 
 import { createClient } from "@/lib/supabase-client"
-import type { AssetDataPoint, WeibullAnalysisResult } from "./weibull-analysis-actions"
+import type { AssetDataPoint, WeibullAnalysisResult, WeibullCurveFit } from "./weibull-analysis-actions"
 
 // Client-side version of uploadAssetData
 export async function uploadAssetDataClient(data: AssetDataPoint[]): Promise<{ success: boolean; error?: string; tempDataId?: string }> {
@@ -26,7 +26,7 @@ export async function uploadAssetDataClient(data: AssetDataPoint[]): Promise<{ s
           user_id: user.id,
           asset_name: point.asset_name,
           installation_date: point.installation_date,
-          failure_date: point.failure_date,
+          failure_date: point.failure_date ?? null,
           failure_time_hours: point.failure_time_hours
         }))
       )
@@ -64,7 +64,6 @@ export async function fitWeibullParametersClient(tempDataId: string): Promise<{ 
       .from("temp_asset_data")
       .select("*")
       .eq("user_id", user.id)
-      .order("failure_time_hours", { ascending: true })
 
     if (fetchError) {
       return { success: false, error: fetchError.message }
@@ -74,23 +73,65 @@ export async function fitWeibullParametersClient(tempDataId: string): Promise<{ 
       return { success: false, error: "Need at least 3 data points for Weibull analysis" }
     }
 
-    // Extract failure times
-    const failureTimes = assetData.map(d => d.failure_time_hours)
-    
-    // Calculate Weibull parameters using Maximum Likelihood Estimation
-    const weibullParams = calculateWeibullMLE(failureTimes)
-    
-    // Calculate MTTF
-    const mttf = weibullParams.scale * Math.exp(1 / weibullParams.shape)
+    const nowMs = Date.now()
+    const msPerHour = 1000 * 60 * 60
 
+    type Event = { time: number; censored: boolean }
+    const events: Event[] = assetData.map((d) => {
+      const isCensored = d.failure_date == null || d.failure_date === ""
+      const time =
+        isCensored
+          ? d.failure_time_hours > 0
+            ? d.failure_time_hours
+            : (nowMs - new Date(d.installation_date).getTime()) / msPerHour
+          : d.failure_time_hours
+      return { time: Math.max(time, 1e-6), censored: isCensored }
+    })
+    events.sort((a, b) => a.time - b.time)
+
+    const failureTimes = events.filter((e) => !e.censored).map((e) => e.time)
+    const censoredTimes = events.filter((e) => e.censored).map((e) => e.time)
+    const nFailures = failureTimes.length
+    const hasCensored = censoredTimes.length > 0
+
+    if (nFailures < 3) {
+      return { success: false, error: "Need at least 3 observed failures for Weibull analysis" }
+    }
+
+    const completeParams = calculateWeibullMLE(failureTimes)
+    const completeMttf = completeParams.scale * Math.exp(1 / completeParams.shape)
+    const completeOnly: WeibullCurveFit = {
+      shape_parameter: completeParams.shape,
+      scale_parameter: completeParams.scale,
+      mttf: completeMttf,
+      total_failures: nFailures,
+      data_points: nFailures,
+    }
+
+    let withCensored: WeibullCurveFit | undefined
+    if (hasCensored) {
+      const censoredParams = calculateWeibullCensoredMLE(failureTimes, censoredTimes)
+      const censoredMttf = censoredParams.scale * Math.exp(1 / censoredParams.shape)
+      withCensored = {
+        shape_parameter: censoredParams.shape,
+        scale_parameter: censoredParams.scale,
+        mttf: censoredMttf,
+        total_failures: nFailures,
+        data_points: events.length,
+      }
+    }
+
+    const primary = withCensored ?? completeOnly
     const result: WeibullAnalysisResult = {
       curve_name: `${assetData[0].asset_name} Analysis`,
       asset_name: assetData[0].asset_name,
-      shape_parameter: weibullParams.shape,
-      scale_parameter: weibullParams.scale,
-      mttf: mttf,
-      total_failures: assetData.length,
-      data_points: assetData.length
+      shape_parameter: primary.shape_parameter,
+      scale_parameter: primary.scale_parameter,
+      mttf: primary.mttf,
+      total_failures: primary.total_failures,
+      data_points: primary.data_points,
+      complete_only: completeOnly,
+      with_censored: withCensored,
     }
 
     return { success: true, result }
@@ -243,5 +284,42 @@ function calculateWeibullMLE(failureTimes: number[]): { shape: number; scale: nu
     scale = Math.pow(sum2 / n, 1 / shape)
   }
   
+  return { shape, scale }
+}
+
+function calculateWeibullCensoredMLE(
+  failureTimes: number[],
+  censoredTimes: number[]
+): { shape: number; scale: number } {
+  const r = failureTimes.length
+  const allTimes = [...failureTimes, ...censoredTimes]
+  if (r < 1) throw new Error("Need at least one failure for censored MLE")
+
+  let shape = 1.5
+  const maxIterations = 100
+  const tolerance = 1e-6
+  const sumLogT = failureTimes.reduce((s, t) => s + Math.log(t), 0)
+
+  for (let iter = 0; iter < maxIterations; iter++) {
+    const tBeta = allTimes.map((t) => Math.pow(t, shape))
+    const tBetaLnT = allTimes.map((t) => Math.pow(t, shape) * Math.log(t))
+    const tBetaLn2T = allTimes.map((t) => Math.pow(t, shape) * Math.log(t) * Math.log(t))
+    const S = tBeta.reduce((a, b) => a + b, 0)
+    const dS = tBetaLnT.reduce((a, b) => a + b, 0)
+    const d2S = tBetaLn2T.reduce((a, b) => a + b, 0)
+    const scale = Math.pow(S / r, 1 / shape)
+    const B = dS / S
+    const f = r / shape + (r / (shape * shape)) * Math.log(S / r) - (r * B) / shape + sumLogT
+    const C = d2S / S - B * B
+    const fPrime = -r / (shape * shape) - (2 * r / (shape * shape * shape)) * Math.log(S / r) + (2 * r * B) / (shape * shape) - (r / shape) * C + (r * B * B) / shape
+    if (Math.abs(f) < tolerance) break
+    const newShape = shape - f / fPrime
+    if (newShape <= 0) break
+    shape = newShape
+  }
+
+  const tBeta = allTimes.map((t) => Math.pow(t, shape))
+  const S = tBeta.reduce((a, b) => a + b, 0)
+  const scale = Math.pow(S / r, 1 / shape)
   return { shape, scale }
 }

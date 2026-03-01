@@ -8,9 +8,10 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { CheckCircle2, Upload, Loader2, Save, TrendingUp, Clock, BarChart3, Database } from "lucide-react"
+import { CheckCircle2, Upload, Loader2, Save, TrendingUp, Clock, BarChart3, Database, Download } from "lucide-react"
 import { WeibullChart } from "@/components/weibull-chart"
-import { uploadAssetDataClient, fitWeibullParametersClient, saveWeibullCurveClient, type WeibullAnalysisResult } from "@/lib/weibull-analysis-client"
+import { uploadAssetDataClient, fitWeibullParametersClient, saveWeibullCurveClient } from "@/lib/weibull-analysis-client"
+import type { WeibullAnalysisResult } from "@/lib/weibull-analysis-actions"
 import { useToast } from "@/hooks/use-toast"
 
 export function WeibullAnalysisUpload() {
@@ -62,9 +63,48 @@ export function WeibullAnalysisUpload() {
     }
   }
 
+  const MS_PER_HOUR = 60 * 60 * 1000
+
+  function getTemplateCSV(): string {
+    const header = "Asset ID,Install date,Failure date"
+    const rows: string[] = [header]
+    const now = new Date()
+    const baseYear = 2010
+    for (let i = 1; i <= 100; i++) {
+      const assetId = `Asset-${i}`
+      const installYear = baseYear + Math.floor((i * 17) % 14)
+      const installMonth = 1 + (i % 12)
+      const installDay = 1 + (i % 28)
+      const installDate = new Date(installYear, installMonth - 1, installDay)
+      const installStr = installDate.toISOString().slice(0, 10)
+      const isCensored = (i - 1) % 4 === 0
+      let failureStr = ""
+      if (!isCensored) {
+        const maxYearsToNow = (now.getTime() - installDate.getTime()) / (365.25 * 24 * 60 * 60 * 1000)
+        const yearsToFailure = Math.min(0.8 + (i % 100) / 100 * 8, Math.max(0.5, maxYearsToNow - 0.1))
+        const failureDate = new Date(installDate.getTime() + yearsToFailure * 365.25 * 24 * 60 * 60 * 1000)
+        failureStr = failureDate.toISOString().slice(0, 10)
+      }
+      rows.push(`${assetId},${installStr},${failureStr}`)
+    }
+    return rows.join("\n")
+  }
+
+  const handleDownloadTemplate = () => {
+    const csv = getTemplateCSV()
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement("a")
+    a.href = url
+    a.download = "weibull-upload-template.csv"
+    a.click()
+    URL.revokeObjectURL(url)
+    toast({ title: "Template downloaded", description: "weibull-upload-template.csv" })
+  }
+
   const parseCSV = (text: string) => {
     const lines = text.trim().split("\n")
-    const data: Array<{ assetId: string; timeToFailure: number; censored: boolean }> = []
+    const data: Array<{ assetId: string; installDate: string; failureDate: string | null }> = []
     
     // Skip header row
     for (let i = 1; i < lines.length; i++) {
@@ -75,12 +115,21 @@ export function WeibullAnalysisUpload() {
       if (columns.length < 2) continue
       
       const assetId = columns[0].trim()
-      const timeToFailure = parseFloat(columns[1].trim())
-      const censored = columns[2]?.trim().toLowerCase() === "true" || false
+      const installDate = columns[1].trim()
+      const failureDateRaw = columns[2]?.trim()
+      const failureDate =
+        !failureDateRaw || failureDateRaw.toLowerCase() === "null" || failureDateRaw === ""
+          ? null
+          : failureDateRaw
       
-      if (!isNaN(timeToFailure) && timeToFailure > 0) {
-        data.push({ assetId, timeToFailure, censored })
+      const installParsed = new Date(installDate)
+      if (isNaN(installParsed.getTime())) continue
+      if (failureDate) {
+        const failureParsed = new Date(failureDate)
+        if (isNaN(failureParsed.getTime()) || failureParsed.getTime() < installParsed.getTime()) continue
       }
+      
+      data.push({ assetId, installDate, failureDate })
     }
     
     return data
@@ -105,13 +154,23 @@ export function WeibullAnalysisUpload() {
         throw new Error("At least 3 data points are required for analysis")
       }
 
-      // Convert to the format expected by server actions
-      const assetData = data.map((d) => ({
-        asset_name: d.assetId,
-        installation_date: new Date(Date.now() - d.timeToFailure * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-        failure_date: new Date().toISOString().split('T')[0],
-        failure_time_hours: d.timeToFailure
-      }))
+      // Compute time in hours from dates. Missing failure date = right-censored (survived at least to now).
+      const now = Date.now()
+      const assetData = data.map((d) => {
+        const installMs = new Date(d.installDate).getTime()
+        const endMs = d.failureDate ? new Date(d.failureDate).getTime() : now
+        const timeInHours = (endMs - installMs) / MS_PER_HOUR
+        const installation_date = new Date(installMs).toISOString().split("T")[0]
+        const failure_date = d.failureDate
+          ? new Date(d.failureDate).toISOString().split("T")[0]
+          : null
+        return {
+          asset_name: d.assetId,
+          installation_date,
+          failure_date,
+          failure_time_hours: Math.max(timeInHours, 0)
+        }
+      })
 
       // Upload data to temporary table
       const uploadResult = await uploadAssetDataClient(assetData)
@@ -188,7 +247,7 @@ export function WeibullAnalysisUpload() {
         <CardContent className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="file-upload">CSV File</Label>
-            <div className="flex gap-2">
+            <div className="flex flex-col sm:flex-row gap-2">
               <input
                 id="file-upload"
                 type="file"
@@ -196,9 +255,13 @@ export function WeibullAnalysisUpload() {
                 onChange={handleFileChange}
                 className="flex-1"
               />
+              <Button type="button" variant="outline" onClick={handleDownloadTemplate} className="shrink-0">
+                <Download className="mr-2 h-4 w-4" />
+                Download template
+              </Button>
             </div>
             <p className="text-sm text-gray-600">
-              CSV format: Asset ID, Time to Failure (hours), Censored (true/false)
+              CSV format: Asset ID, Install date, Failure date. Use YYYY-MM-DD for dates. If Failure date is empty or &quot;null&quot;, the asset is right-censored (has not yet failed; time under observation is from install to now). The template has 100 sample records you can replace with your own data.
             </p>
           </div>
 
@@ -286,6 +349,7 @@ export function WeibullAnalysisUpload() {
             <CheckCircle2 className="h-4 w-4" />
             <AlertDescription>
               Analysis completed successfully! Review the Weibull parameters and charts below.
+              {results.with_censored && " The overview below uses the fit that includes right-censored data (less biased). The chart shows both series for comparison."}
             </AlertDescription>
           </Alert>
 
@@ -337,11 +401,15 @@ export function WeibullAnalysisUpload() {
             </CardContent>
           </Card>
           
-          <WeibullChart 
-            type={chartType} 
-            shape={results.shape_parameter} 
-            scale={results.scale_parameter} 
-            timeUnit={timeUnit} 
+          <WeibullChart
+            type={chartType}
+            shape={results.shape_parameter}
+            scale={results.scale_parameter}
+            timeUnit={timeUnit}
+            failureModes={results.with_censored ? [
+              { name: "Complete (failures only)", shape: results.complete_only!.shape_parameter, scale: results.complete_only!.scale_parameter, color: "#0ea5e9" },
+              { name: "With right-censored", shape: results.with_censored.shape_parameter, scale: results.with_censored.scale_parameter, color: "#22c55e" }
+            ] : []}
           />
 
           <Card>
