@@ -36,38 +36,50 @@ function convertToYears(hours: number): number {
 function generateTicks(scale: number, maxTime: number, timeUnit: "hours" | "years" = "hours") {
   const ticks = []
 
-  let step: number
   if (timeUnit === "years") {
-    const scaleInYears = scale / HOURS_IN_YEAR
-    const maxTimeInYears = maxTime / HOURS_IN_YEAR
-
-    if (scaleInYears < 10) {
+    // When timeUnit is "years", the data's time values are already in years
+    // maxTime here is in years (converted from the display data)
+    const maxTimeInYears = maxTime
+    
+    let step: number
+    if (maxTimeInYears <= 5) {
       step = 1
-    } else if (scaleInYears >= 10 && scaleInYears < 30) {
+    } else if (maxTimeInYears <= 20) {
+      step = 2
+    } else if (maxTimeInYears <= 50) {
       step = 5
-    } else {
+    } else if (maxTimeInYears <= 100) {
       step = 10
+    } else {
+      step = 20
     }
 
     for (let i = 0; i <= Math.ceil(maxTimeInYears / step) * step; i += step) {
-      if (i <= maxTimeInYears) {
+      if (i <= maxTimeInYears * 1.1) { // Allow slight overflow for last tick
         ticks.push(i)
       }
     }
   } else {
-    if (scale < 87600) {
-      step = 8760
-    } else if (scale >= 87600 && scale < 262800) {
-      step = 43800
+    // Hours mode - calculate appropriate step
+    let step: number
+    if (scale < 87600) { // Less than 10 years
+      step = 8760 // 1 year in hours
+    } else if (scale < 262800) { // Less than 30 years
+      step = 43800 // 5 years in hours
     } else {
-      step = 87600
+      step = 87600 // 10 years in hours
     }
 
     for (let i = 0; i <= Math.ceil(maxTime / step) * step; i += step) {
-      if (i <= maxTime) {
+      if (i <= maxTime * 1.1) {
         ticks.push(i)
       }
     }
+  }
+
+  // Ensure we always have at least 0 tick
+  if (ticks.length === 0 || ticks[0] !== 0) {
+    ticks.unshift(0)
   }
 
   return ticks
@@ -85,24 +97,14 @@ export function WeibullChart({
   const multiModeData = generateMultiModeData(type, failureModes, showCombined, timeUnit)
 
   const data = failureModes.length > 0 ? multiModeData : singleModeData
-  
-  // Debug logging
-  console.log("WeibullChart Debug:", {
-    type,
-    shape,
-    scale,
-    timeUnit,
-    dataLength: data.length,
-    firstDataPoint: data[0],
-    lastDataPoint: data[data.length - 1],
-    sampleData: data.slice(0, 5)
-  })
 
   const yAxisLabel = type === "cdf" ? "Cumulative Probability" : type === "pdf" ? "Probability Density" : "Hazard Rate"
   const xAxisLabel = timeUnit === "years" ? "Time (years)" : "Time (hours)"
 
-  const maxScale = failureModes.length > 0 ? Math.max(...failureModes.map((mode) => mode.scale)) : scale
-  const maxTime = maxScale * 2
+  const maxScaleHours = failureModes.length > 0 ? Math.max(...failureModes.map((mode) => mode.scale)) : scale
+  // Convert maxTime to display units for tick calculation
+  const maxTimeHours = maxScaleHours * 2
+  const maxTimeDisplay = timeUnit === "years" ? convertToYears(maxTimeHours) : maxTimeHours
 
   if (failureModes.length > 0) {
     return (
@@ -114,9 +116,9 @@ export function WeibullChart({
               dataKey="time"
               label={{ value: xAxisLabel, position: "insideBottomRight", offset: -10 }}
               tickMargin={10}
-              tickFormatter={(value) => value.toFixed(1)}
-              ticks={generateTicks(maxScale, maxTime, timeUnit)}
-              domain={["dataMin", "dataMax"]}
+              tickFormatter={(value) => timeUnit === "years" ? value.toFixed(1) : Math.round(value).toString()}
+              ticks={generateTicks(maxScaleHours, maxTimeDisplay, timeUnit)}
+              domain={[0, "dataMax"]}
               type="number"
             />
             <YAxis
@@ -189,8 +191,8 @@ export function WeibullChart({
             label={{ value: xAxisLabel, position: "insideBottomRight", offset: -10 }}
             tickMargin={10}
             tickFormatter={(value) => (timeUnit === "years" ? value.toFixed(1) : Math.round(value).toString())}
-            ticks={generateTicks(scale, maxTime, timeUnit)}
-            domain={["dataMin", "dataMax"]}
+            ticks={generateTicks(scale, maxTimeDisplay, timeUnit)}
+            domain={[0, "dataMax"]}
             type="number"
             scale="linear"
           />
@@ -220,15 +222,6 @@ function generateWeibullData(
   const maxTime = scale * 2
   const step = maxTime / 100
 
-  console.log("generateWeibullData Debug:", {
-    type,
-    shape,
-    scale,
-    timeUnit,
-    maxTime,
-    step
-  })
-
   for (let i = 0; i <= 100; i++) {
     const timeInHours = i * step
 
@@ -254,7 +247,6 @@ function generateWeibullData(
     data.push({ time: displayTime, value })
   }
 
-  console.log("Generated data sample:", data.slice(0, 5))
   return data
 }
 

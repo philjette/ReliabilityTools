@@ -376,16 +376,24 @@ export function WeibullAnalysisUpload() {
                   <div className="flex items-center justify-center w-12 h-12 bg-green-100 rounded-lg mx-auto mb-3">
                     <Clock className="h-6 w-6 text-green-600" />
                   </div>
-                  <div className="text-2xl font-bold">{results.scale_parameter.toFixed(0)}</div>
+                  <div className="text-2xl font-bold">
+                    {timeUnit === "years" 
+                      ? (results.scale_parameter / 8760).toFixed(2)
+                      : results.scale_parameter.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                  </div>
                   <div className="text-sm text-gray-600">Scale Parameter (η)</div>
-                  <div className="text-xs text-gray-500 mt-1">hours</div>
+                  <div className="text-xs text-gray-500 mt-1">{timeUnit}</div>
                 </div>
 
                 <div className="text-center">
                   <div className="flex items-center justify-center w-12 h-12 bg-purple-100 rounded-lg mx-auto mb-3">
                     <BarChart3 className="h-6 w-6 text-purple-600" />
                   </div>
-                  <div className="text-2xl font-bold">{formatMTTF(results.mttf)}</div>
+                  <div className="text-2xl font-bold">
+                    {timeUnit === "years"
+                      ? `${(results.mttf / 8760).toFixed(2)} years`
+                      : formatMTTF(results.mttf)}
+                  </div>
                   <div className="text-sm text-gray-600">Mean Time to Failure</div>
                 </div>
 
