@@ -14,7 +14,6 @@ export default function DirectDashboard() {
   const [user, setUser] = useState<any>(null)
   const router = useRouter()
   const { toast } = useToast()
-  const supabase = createClient()
 
   useEffect(() => {
     async function checkAuth() {
@@ -25,6 +24,8 @@ export default function DirectDashboard() {
         if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
           throw new Error("Supabase environment variables are not configured")
         }
+
+        const supabase = createClient()
 
         setStatus("Getting session...")
         const { data, error } = await supabase.auth.getSession()
@@ -58,7 +59,7 @@ export default function DirectDashboard() {
     }
 
     checkAuth()
-  }, [router, toast, supabase.auth])
+  }, [router, toast])
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center p-4">
