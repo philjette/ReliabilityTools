@@ -6,11 +6,29 @@ import type { AssetDataPoint, WeibullAnalysisResult, WeibullCurveFit } from "./w
 // Client-side version of uploadAssetData
 export async function uploadAssetDataClient(data: AssetDataPoint[]): Promise<{ success: boolean; error?: string; tempDataId?: string }> {
   try {
+    console.log("[v0] uploadAssetDataClient called with data:", data)
+    
     const supabase = createClient()
-    const { data: { session } } = await supabase.auth.getSession()
-    const user = session?.user
+    
+    // Check session first
+    const { data: sessionData, error: sessionError } = await supabase.auth.getSession()
+    console.log("[v0] Session check:", { 
+      hasSession: !!sessionData?.session, 
+      sessionError: sessionError?.message,
+      accessToken: sessionData?.session?.access_token ? "present" : "missing"
+    })
+    
+    const { data: { user }, error: userError } = await supabase.auth.getUser()
+    
+    console.log("[v0] User check result:", { 
+      hasUser: !!user, 
+      userId: user?.id,
+      email: user?.email,
+      error: userError?.message 
+    })
     
     if (!user) {
+      console.error("[v0] No authenticated user found")
       return { success: false, error: "User not authenticated. Please sign in and try again." }
     }
 
@@ -43,11 +61,15 @@ export async function uploadAssetDataClient(data: AssetDataPoint[]): Promise<{ s
 // Client-side version of fitWeibullParameters
 export async function fitWeibullParametersClient(tempDataId: string): Promise<{ success: boolean; error?: string; result?: WeibullAnalysisResult }> {
   try {
+    console.log("fitWeibullParametersClient called with tempDataId:", tempDataId)
+    
     const supabase = createClient()
-    const { data: { session } } = await supabase.auth.getSession()
-    const user = session?.user
+    const { data: { user }, error: userError } = await supabase.auth.getUser()
+    
+    console.log("User check result:", { user: !!user, error: userError })
     
     if (!user) {
+      console.error("No authenticated user found")
       return { success: false, error: "User not authenticated. Please sign in and try again." }
     }
 
@@ -136,11 +158,15 @@ export async function fitWeibullParametersClient(tempDataId: string): Promise<{ 
 // Client-side version of saveWeibullCurve
 export async function saveWeibullCurveClient(curveName: string, analysisResult: WeibullAnalysisResult): Promise<{ success: boolean; error?: string }> {
   try {
+    console.log("saveWeibullCurveClient called with:", { curveName, analysisResult })
+    
     const supabase = createClient()
-    const { data: { session } } = await supabase.auth.getSession()
-    const user = session?.user
+    const { data: { user }, error: userError } = await supabase.auth.getUser()
+    
+    console.log("User check result:", { user: !!user, error: userError })
     
     if (!user) {
+      console.error("No authenticated user found")
       return { success: false, error: "User not authenticated. Please sign in and try again." }
     }
 
@@ -174,11 +200,15 @@ export async function saveWeibullCurveClient(curveName: string, analysisResult: 
 // Client-side version of getUserWeibullCurves
 export async function getUserWeibullCurvesClient(): Promise<{ success: boolean; error?: string; curves?: WeibullAnalysisResult[] }> {
   try {
+    console.log("getUserWeibullCurvesClient called")
+    
     const supabase = createClient()
-    const { data: { session } } = await supabase.auth.getSession()
-    const user = session?.user
+    const { data: { user }, error: userError } = await supabase.auth.getUser()
+    
+    console.log("User check result:", { user: !!user, error: userError })
     
     if (!user) {
+      console.error("No authenticated user found")
       return { success: false, error: "User not authenticated. Please sign in and try again." }
     }
 
@@ -193,6 +223,7 @@ export async function getUserWeibullCurvesClient(): Promise<{ success: boolean; 
       return { success: false, error: error.message }
     }
 
+    console.log("Fetched curves:", curves)
     return { success: true, curves: curves || [] }
   } catch (error: any) {
     console.error("Unexpected error fetching Weibull curves:", error)
@@ -203,11 +234,15 @@ export async function getUserWeibullCurvesClient(): Promise<{ success: boolean; 
 // Client-side version of deleteWeibullCurve
 export async function deleteWeibullCurveClient(id: string): Promise<{ success: boolean; error?: string }> {
   try {
+    console.log("deleteWeibullCurveClient called with id:", id)
+    
     const supabase = createClient()
-    const { data: { session } } = await supabase.auth.getSession()
-    const user = session?.user
+    const { data: { user }, error: userError } = await supabase.auth.getUser()
+    
+    console.log("User check result:", { user: !!user, error: userError })
     
     if (!user) {
+      console.error("No authenticated user found")
       return { success: false, error: "User not authenticated. Please sign in and try again." }
     }
 
@@ -222,6 +257,7 @@ export async function deleteWeibullCurveClient(id: string): Promise<{ success: b
       return { success: false, error: error.message }
     }
 
+    console.log("Weibull curve deleted successfully")
     return { success: true }
   } catch (error: any) {
     console.error("Unexpected error deleting Weibull curve:", error)

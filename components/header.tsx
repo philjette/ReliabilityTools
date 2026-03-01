@@ -17,6 +17,9 @@ export function Header({ activePath = "/" }: HeaderProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const router = useRouter()
 
+  // Debug auth state
+  console.log("[v0] Header render - auth state:", { loading, hasUser: !!user, email: user?.email })
+
   const handleSignOut = async () => {
     await signOut()
     router.push("/")

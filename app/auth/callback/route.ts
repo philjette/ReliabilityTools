@@ -7,6 +7,8 @@ export async function GET(request: NextRequest) {
   const code = searchParams.get('code')
   const next = searchParams.get('next') ?? '/dashboard'
 
+  console.log("[v0] Auth callback called with code:", code ? "present" : "missing", "next:", next)
+
   if (code) {
     const cookieStore = await cookies()
     
@@ -19,23 +21,32 @@ export async function GET(request: NextRequest) {
             return cookieStore.getAll()
           },
           setAll(cookiesToSet) {
+            console.log("[v0] Setting cookies:", cookiesToSet.map(c => c.name))
             try {
               cookiesToSet.forEach(({ name, value, options }) =>
                 cookieStore.set(name, value, options)
               )
-            } catch {
-              // Ignore - the `setAll` method is called from a Route Handler
+            } catch (e) {
+              console.error("[v0] Error setting cookies:", e)
             }
           },
         },
       }
     )
 
-    const { error } = await supabase.auth.exchangeCodeForSession(code)
+    const { data, error } = await supabase.auth.exchangeCodeForSession(code)
+    
+    console.log("[v0] Exchange code result:", { 
+      hasSession: !!data?.session, 
+      userId: data?.user?.id,
+      error: error?.message 
+    })
     
     if (!error) {
       const forwardedHost = request.headers.get('x-forwarded-host')
       const isLocalEnv = process.env.NODE_ENV === 'development'
+      
+      console.log("[v0] Redirecting to:", next, "forwardedHost:", forwardedHost)
       
       if (isLocalEnv) {
         return NextResponse.redirect(`${origin}${next}`)
@@ -45,7 +56,7 @@ export async function GET(request: NextRequest) {
         return NextResponse.redirect(`${origin}${next}`)
       }
     } else {
-      console.error('Auth callback error:', error)
+      console.error('[v0] Auth callback error:', error)
     }
   }
 

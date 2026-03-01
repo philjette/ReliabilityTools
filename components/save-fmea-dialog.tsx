@@ -40,7 +40,15 @@ export function SaveFMEADialog({ open, onOpenChange, fmeaData }: SaveFMEADialogP
   }, [fmeaData.title])
 
   const handleSave = async () => {
+    console.log("=== handleSave called ===")
+    console.log("Title:", title)
+    console.log("Title trimmed:", title.trim())
+    console.log("FMEA Data:", fmeaData)
+    console.log("Button should be enabled:", !saving && title.trim().length > 0)
+    console.log("Auth user from context:", authUser)
+
     if (!title.trim()) {
+      console.log("Title is empty, showing error")
       toast({
         title: "Error",
         description: "Please enter a title for the FMEA",
@@ -50,6 +58,7 @@ export function SaveFMEADialog({ open, onOpenChange, fmeaData }: SaveFMEADialogP
     }
 
     if (!authUser) {
+      console.log("No user in auth context")
       toast({
         title: "Error",
         description: "You must be signed in to save FMEAs. Please sign in and try again.",
@@ -58,6 +67,7 @@ export function SaveFMEADialog({ open, onOpenChange, fmeaData }: SaveFMEADialogP
       return
     }
 
+    console.log("Starting save process...")
     setSaving(true)
 
     try {
@@ -66,11 +76,24 @@ export function SaveFMEADialog({ open, onOpenChange, fmeaData }: SaveFMEADialogP
         title: title.trim(),
       }
 
+      console.log("Saving data:", dataToSave)
+      console.log("Calling saveFMEA...")
+
+      // Try client-side save first
       const supabase = createClient()
-      const { data: { session } } = await supabase.auth.getSession()
-      const user = session?.user
+      console.log("Supabase client created:", !!supabase)
+      
+      // Check current session
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+      console.log("Session check:", { session: !!session, error: sessionError })
+      
+      const { data: { user }, error: userError } = await supabase.auth.getUser()
+      console.log("User check:", { user: !!user, error: userError })
       
       if (!user) {
+        console.error("No authenticated user found")
+        console.error("Session:", session)
+        console.error("User error:", userError)
         toast({
           title: "Error",
           description: "You must be signed in to save FMEAs. Please sign in and try again.",
@@ -78,6 +101,8 @@ export function SaveFMEADialog({ open, onOpenChange, fmeaData }: SaveFMEADialogP
         })
         return
       }
+
+      console.log("User authenticated:", user.id)
 
       const { data, error } = await supabase
         .from("fmeas")
@@ -97,13 +122,19 @@ export function SaveFMEADialog({ open, onOpenChange, fmeaData }: SaveFMEADialogP
         .select()
         .single()
 
-      if (error) {
+      const result = error ? { error: error.message } : { data }
+
+      console.log("Save result received:", result)
+
+      if (result.error) {
+        console.error("Save failed with error:", result.error)
         toast({
           title: "Error",
-          description: error.message,
+          description: result.error,
           variant: "destructive",
         })
       } else {
+        console.log("Save successful!")
         toast({
           title: "Success",
           description: "FMEA saved successfully",

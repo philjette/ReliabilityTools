@@ -26,52 +26,60 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [supabase] = useState(() => {
-    try {
-      return createClient()
-    } catch {
-      return null
-    }
-  })
+  const [supabase, setSupabase] = useState<ReturnType<typeof createClient> | null>(null)
 
   useEffect(() => {
-    if (!supabase) {
-      setError("Failed to initialize Supabase client")
-      setLoading(false)
-      return
-    }
+    try {
+      const client = createClient()
+      setSupabase(client)
 
-    // Get initial session - use getSession first (reads from cookie/storage),
-    // then validate with getUser if session exists
-    supabase.auth
-      .getSession()
-      .then(async ({ data: { session } }) => {
-        if (session?.user) {
-          setUser(session.user)
+      console.log("[v0] Auth context initializing...")
+
+      // Get initial session
+      client.auth
+        .getUser()
+        .then(({ data: { user: currentUser }, error: userError }) => {
+          console.log("[v0] getUser result:", { 
+            hasUser: !!currentUser, 
+            userId: currentUser?.id,
+            email: currentUser?.email,
+            error: userError?.message 
+          })
+          if (userError) {
+            // Not an error if user is simply not logged in
+            if (userError.message !== "Auth session missing!") {
+              console.error("[v0] Session error:", userError)
+              setError(userError.message)
+            }
+          }
+          setUser(currentUser ?? null)
           setLoading(false)
-        } else {
-          setUser(null)
+        })
+        .catch((err) => {
+          console.error("[v0] Error getting session:", err)
+          setError(err.message || "Failed to initialize authentication")
           setLoading(false)
+        })
+
+      // Listen for auth changes
+      const {
+        data: { subscription },
+      } = client.auth.onAuthStateChange((event, session) => {
+        console.log("[v0] Auth state changed:", { event, hasSession: !!session, userId: session?.user?.id })
+        setUser(session?.user ?? null)
+        setLoading(false)
+        if (event === 'SIGNED_IN' && session?.user) {
+          setError(null)
         }
       })
-      .catch((err) => {
-        console.error("Error getting session:", err)
-        setLoading(false)
-      })
 
-    // Listen for auth changes (fires on sign-in, sign-out, token refresh)
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((event, session) => {
-      setUser(session?.user ?? null)
+      return () => subscription.unsubscribe()
+    } catch (err: any) {
+      console.error("[v0] Error initializing auth:", err)
+      setError(err.message || "Failed to initialize authentication")
       setLoading(false)
-      if (event === 'SIGNED_IN' && session?.user) {
-        setError(null)
-      }
-    })
-
-    return () => subscription.unsubscribe()
-  }, [supabase])
+    }
+  }, [])
 
   const signIn = async (email: string, password: string) => {
     try {
