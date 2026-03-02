@@ -5,8 +5,8 @@ import { Download } from "lucide-react"
 
 export function CSVTemplateButton() {
   const handleDownload = () => {
-    // Sample data with failure times spanning 15-35 years (131,400 - 306,600 hours)
-    // This produces a more realistic shape parameter in the 2-4 range for aging equipment
+    // Sample data with failure times spanning 16-26 years (140,160 - 227,760 hours)
+    // This produces a realistic shape parameter in the 2-4 range for aging equipment
     const csvContent = `Asset_ID,Failure_Time_Hours,Failure_Mode,Environment
 T001,157680,Insulation Breakdown,Outdoor
 T002,192720,Contact Wear,Indoor
