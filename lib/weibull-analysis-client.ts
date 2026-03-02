@@ -115,7 +115,20 @@ export async function fitWeibullParametersClient(tempDataId: string): Promise<{ 
 
     const completeParams = calculateWeibullMLE(failureTimes)
     // MTTF = scale * gamma(1 + 1/shape)
-    const completeMttf = completeParams.scale * gamma(1 + 1 / completeParams.shape)
+    const gammaArg = 1 + 1 / completeParams.shape
+    const gammaValue = gamma(gammaArg)
+    const completeMttf = completeParams.scale * gammaValue
+    console.log("[v0] MTTF calculation debug:", {
+      shape: completeParams.shape,
+      scale: completeParams.scale,
+      gammaArg,
+      gammaValue,
+      mttf: completeMttf,
+      mttfInYears: completeMttf / 8760,
+      failureTimesMin: Math.min(...failureTimes),
+      failureTimesMax: Math.max(...failureTimes),
+      failureTimesAvg: failureTimes.reduce((a, b) => a + b, 0) / failureTimes.length
+    })
     const completeOnly: WeibullCurveFit = {
       shape_parameter: completeParams.shape,
       scale_parameter: completeParams.scale,
