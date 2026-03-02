@@ -1,6 +1,7 @@
 "use client"
 
 import { createClient } from "@/lib/supabase-client"
+import { gamma } from "@/lib/gamma"
 import type { AssetDataPoint, WeibullAnalysisResult, WeibullCurveFit } from "./weibull-analysis-actions"
 
 // Client-side version of uploadAssetData
@@ -113,7 +114,8 @@ export async function fitWeibullParametersClient(tempDataId: string): Promise<{ 
     }
 
     const completeParams = calculateWeibullMLE(failureTimes)
-    const completeMttf = completeParams.scale * Math.exp(1 / completeParams.shape)
+    // MTTF = scale * gamma(1 + 1/shape)
+    const completeMttf = completeParams.scale * gamma(1 + 1 / completeParams.shape)
     const completeOnly: WeibullCurveFit = {
       shape_parameter: completeParams.shape,
       scale_parameter: completeParams.scale,
@@ -125,7 +127,8 @@ export async function fitWeibullParametersClient(tempDataId: string): Promise<{ 
     let withCensored: WeibullCurveFit | undefined
     if (hasCensored) {
       const censoredParams = calculateWeibullCensoredMLE(failureTimes, censoredTimes)
-      const censoredMttf = censoredParams.scale * Math.exp(1 / censoredParams.shape)
+      // MTTF = scale * gamma(1 + 1/shape)
+      const censoredMttf = censoredParams.scale * gamma(1 + 1 / censoredParams.shape)
       withCensored = {
         shape_parameter: censoredParams.shape,
         scale_parameter: censoredParams.scale,
