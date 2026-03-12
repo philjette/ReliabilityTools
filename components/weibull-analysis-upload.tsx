@@ -359,53 +359,124 @@ export function WeibullAnalysisUpload() {
               <CardTitle>Analysis Overview</CardTitle>
               <CardDescription>Key parameters and statistics from the Weibull analysis</CardDescription>
             </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <div className="text-center">
-                  <div className="flex items-center justify-center w-12 h-12 bg-blue-100 rounded-lg mx-auto mb-3">
-                    <TrendingUp className="h-6 w-6 text-blue-600" />
+            <CardContent className="space-y-6">
+              {results.with_censored ? (
+                <>
+                  <div>
+                    <h4 className="text-sm font-medium text-muted-foreground mb-3">Complete (failures only)</h4>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      <div className="text-center p-3 rounded-lg bg-blue-50/50">
+                        <div className="text-xl font-bold">{results.complete_only!.shape_parameter.toFixed(3)}</div>
+                        <div className="text-xs text-gray-600">Shape (β)</div>
+                        <Badge className={`mt-1 text-xs ${getShapeColor(results.complete_only!.shape_parameter)}`}>
+                          {getShapeInterpretation(results.complete_only!.shape_parameter)}
+                        </Badge>
+                      </div>
+                      <div className="text-center p-3 rounded-lg bg-blue-50/50">
+                        <div className="text-xl font-bold">
+                          {timeUnit === "years"
+                            ? (results.complete_only!.scale_parameter / 8760).toFixed(2)
+                            : results.complete_only!.scale_parameter.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                        </div>
+                        <div className="text-xs text-gray-600">Scale (η)</div>
+                        <div className="text-xs text-gray-500">{timeUnit}</div>
+                      </div>
+                      <div className="text-center p-3 rounded-lg bg-purple-50/50">
+                        <div className="text-xl font-bold">
+                          {timeUnit === "years"
+                            ? `${(results.mttf / 8760).toFixed(2)} years`
+                            : formatMTTF(results.mttf)}
+                        </div>
+                        <div className="text-xs text-gray-600">Mean Time to Failure</div>
+                      </div>
+                      <div className="text-center p-3 rounded-lg bg-orange-50/50">
+                        <div className="text-xl font-bold">{results.complete_only!.total_failures}</div>
+                        <div className="text-xs text-gray-600">Failures</div>
+                      </div>
+                    </div>
                   </div>
-                  <div className="text-2xl font-bold">{results.shape_parameter.toFixed(3)}</div>
-                  <div className="text-sm text-gray-600">Shape Parameter (β)</div>
-                  <Badge className={`mt-2 ${getShapeColor(results.shape_parameter)}`}>
-                    {getShapeInterpretation(results.shape_parameter)}
-                  </Badge>
-                </div>
+                  <div>
+                    <h4 className="text-sm font-medium text-muted-foreground mb-3">With right-censored</h4>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      <div className="text-center p-3 rounded-lg bg-green-50/50">
+                        <div className="text-xl font-bold">{results.with_censored.shape_parameter.toFixed(3)}</div>
+                        <div className="text-xs text-gray-600">Shape (β)</div>
+                        <Badge className={`mt-1 text-xs ${getShapeColor(results.with_censored.shape_parameter)}`}>
+                          {getShapeInterpretation(results.with_censored.shape_parameter)}
+                        </Badge>
+                      </div>
+                      <div className="text-center p-3 rounded-lg bg-green-50/50">
+                        <div className="text-xl font-bold">
+                          {timeUnit === "years"
+                            ? (results.with_censored.scale_parameter / 8760).toFixed(2)
+                            : results.with_censored.scale_parameter.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                        </div>
+                        <div className="text-xs text-gray-600">Scale (η)</div>
+                        <div className="text-xs text-gray-500">{timeUnit}</div>
+                      </div>
+                      <div className="text-center p-3 rounded-lg bg-purple-50/50">
+                        <div className="text-xl font-bold">
+                          {timeUnit === "years"
+                            ? `${(results.mttf / 8760).toFixed(2)} years`
+                            : formatMTTF(results.mttf)}
+                        </div>
+                        <div className="text-xs text-gray-600">Mean Time to Failure</div>
+                      </div>
+                      <div className="text-center p-3 rounded-lg bg-orange-50/50">
+                        <div className="text-xl font-bold">{results.with_censored.data_points}</div>
+                        <div className="text-xs text-gray-600">Total (failures + censored)</div>
+                      </div>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                  <div className="text-center">
+                    <div className="flex items-center justify-center w-12 h-12 bg-blue-100 rounded-lg mx-auto mb-3">
+                      <TrendingUp className="h-6 w-6 text-blue-600" />
+                    </div>
+                    <div className="text-2xl font-bold">{results.shape_parameter.toFixed(3)}</div>
+                    <div className="text-sm text-gray-600">Shape Parameter (β)</div>
+                    <Badge className={`mt-2 ${getShapeColor(results.shape_parameter)}`}>
+                      {getShapeInterpretation(results.shape_parameter)}
+                    </Badge>
+                  </div>
 
-                <div className="text-center">
-                  <div className="flex items-center justify-center w-12 h-12 bg-green-100 rounded-lg mx-auto mb-3">
-                    <Clock className="h-6 w-6 text-green-600" />
+                  <div className="text-center">
+                    <div className="flex items-center justify-center w-12 h-12 bg-green-100 rounded-lg mx-auto mb-3">
+                      <Clock className="h-6 w-6 text-green-600" />
+                    </div>
+                    <div className="text-2xl font-bold">
+                      {timeUnit === "years"
+                        ? (results.scale_parameter / 8760).toFixed(2)
+                        : results.scale_parameter.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                    </div>
+                    <div className="text-sm text-gray-600">Scale Parameter (η)</div>
+                    <div className="text-xs text-gray-500 mt-1">{timeUnit}</div>
                   </div>
-                  <div className="text-2xl font-bold">
-                    {timeUnit === "years" 
-                      ? (results.scale_parameter / 8760).toFixed(2)
-                      : results.scale_parameter.toLocaleString(undefined, { maximumFractionDigits: 0 })}
-                  </div>
-                  <div className="text-sm text-gray-600">Scale Parameter (η)</div>
-                  <div className="text-xs text-gray-500 mt-1">{timeUnit}</div>
-                </div>
 
-                <div className="text-center">
-                  <div className="flex items-center justify-center w-12 h-12 bg-purple-100 rounded-lg mx-auto mb-3">
-                    <BarChart3 className="h-6 w-6 text-purple-600" />
+                  <div className="text-center">
+                    <div className="flex items-center justify-center w-12 h-12 bg-purple-100 rounded-lg mx-auto mb-3">
+                      <BarChart3 className="h-6 w-6 text-purple-600" />
+                    </div>
+                    <div className="text-2xl font-bold">
+                      {timeUnit === "years"
+                        ? `${(results.mttf / 8760).toFixed(2)} years`
+                        : formatMTTF(results.mttf)}
+                    </div>
+                    <div className="text-sm text-gray-600">Mean Time to Failure</div>
                   </div>
-                  <div className="text-2xl font-bold">
-                    {timeUnit === "years"
-                      ? `${(results.mttf / 8760).toFixed(2)} years`
-                      : formatMTTF(results.mttf)}
-                  </div>
-                  <div className="text-sm text-gray-600">Mean Time to Failure</div>
-                </div>
 
-                <div className="text-center">
-                  <div className="flex items-center justify-center w-12 h-12 bg-orange-100 rounded-lg mx-auto mb-3">
-                    <Database className="h-6 w-6 text-orange-600" />
+                  <div className="text-center">
+                    <div className="flex items-center justify-center w-12 h-12 bg-orange-100 rounded-lg mx-auto mb-3">
+                      <Database className="h-6 w-6 text-orange-600" />
+                    </div>
+                    <div className="text-2xl font-bold">{results.data_points}</div>
+                    <div className="text-sm text-gray-600">Data Points</div>
+                    <div className="text-xs text-gray-500 mt-1">failures analyzed</div>
                   </div>
-                  <div className="text-2xl font-bold">{results.data_points}</div>
-                  <div className="text-sm text-gray-600">Data Points</div>
-                  <div className="text-xs text-gray-500 mt-1">failures analyzed</div>
                 </div>
-              </div>
+              )}
             </CardContent>
           </Card>
 

@@ -10,7 +10,7 @@ export function Footer() {
             <div className="space-y-4">
               <Link href="/" className="flex items-center gap-2 font-bold text-xl">
                 <Activity className="h-6 w-6 text-primary" />
-                <span>AssetX.pro</span>
+                <span>reliabilitytools.ai</span>
               </Link>
               <p className="text-sm text-muted-foreground">
                 Professional reliability engineering tools for electrical asset management and failure analysis.
@@ -44,7 +44,7 @@ export function Footer() {
           </div>
         </div>
         <div className="mt-8 border-t pt-8 text-center text-sm text-muted-foreground">
-          <p>&copy; 2024 AssetX.pro. All rights reserved.</p>
+          <p>&copy; {new Date().getFullYear()} reliabilitytools.ai. All rights reserved.</p>
         </div>
       </div>
     </footer>

@@ -71,7 +71,7 @@ export function ClientHeader({ activePath = "/" }: HeaderProps) {
       <div className="container flex h-16 items-center justify-between px-4 md:px-6">
         <Link href="/" className="flex items-center gap-2 font-bold text-xl">
           <Activity className="h-6 w-6 text-primary" />
-          <span>AssetX.pro</span>
+          <span>reliabilitytools.ai</span>
         </Link>
 
         {/* Desktop Navigation */}
