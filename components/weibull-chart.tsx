@@ -33,7 +33,7 @@ function convertToYears(hours: number): number {
   return hours / HOURS_IN_YEAR
 }
 
-function generateTicks(scale: number, maxTime: number, timeUnit: "hours" | "years" = "hours") {
+function generateTicks(scale: number, maxTime: number, timeUnit: "hours" | "years" = "years") {
   const ticks = []
 
   if (timeUnit === "years") {
@@ -91,7 +91,7 @@ export function WeibullChart({
   scale,
   failureModes = [],
   showCombined = false,
-  timeUnit = "hours",
+  timeUnit = "years",
 }: WeibullChartProps) {
   const singleModeData = generateWeibullData(type, shape, scale, timeUnit)
   const multiModeData = generateMultiModeData(type, failureModes, showCombined, timeUnit)
@@ -216,7 +216,7 @@ function generateWeibullData(
   type: "cdf" | "pdf" | "hazard",
   shape: number,
   scale: number,
-  timeUnit: "hours" | "years" = "hours",
+  timeUnit: "hours" | "years" = "years",
 ) {
   const data = []
   const maxTime = scale * 2
@@ -254,7 +254,7 @@ function generateMultiModeData(
   type: "cdf" | "pdf" | "hazard",
   failureModes: Array<{ name: string; shape: number; scale: number; color: string }>,
   showCombined: boolean,
-  timeUnit: "hours" | "years" = "hours",
+  timeUnit: "hours" | "years" = "years",
 ) {
   if (failureModes.length === 0) return []
 

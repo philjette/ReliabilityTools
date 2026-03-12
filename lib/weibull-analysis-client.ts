@@ -1,12 +1,10 @@
 "use client"
 
 import { createClient } from "@/lib/supabase-client"
-import { weibullMTTF } from "@/lib/gamma"
 import type { AssetDataPoint, WeibullAnalysisResult, WeibullCurveFit } from "./weibull-analysis-actions"
 
 const SHAPE_MIN = 0.05
 const SHAPE_MAX = 20
-const MTTF_MAX_HOURS = 50_000_000
 
 // Client-side version of uploadAssetData
 export async function uploadAssetDataClient(data: AssetDataPoint[]): Promise<{ success: boolean; error?: string; tempDataId?: string }> {
@@ -92,53 +90,69 @@ export async function fitWeibullParametersClient(tempDataId: string): Promise<{ 
       return { success: false, error: "Need at least 3 data points for Weibull analysis" }
     }
 
-    const nowMs = Date.now()
     const msPerHour = 1000 * 60 * 60
+    const hoursPerDay = 24
+
+    const failureDates = assetData
+      .map((d) => d.failure_date)
+      .filter((x): x is string => x != null && x !== "")
+    const censorDateMs =
+      failureDates.length > 0
+        ? Math.max(...failureDates.map((d) => new Date(d).getTime()))
+        : Date.now()
 
     type Event = { time: number; censored: boolean }
     const events: Event[] = assetData.map((d) => {
       const isCensored = d.failure_date == null || d.failure_date === ""
       const time =
         isCensored
-          ? d.failure_time_hours > 0
-            ? d.failure_time_hours
-            : (nowMs - new Date(d.installation_date).getTime()) / msPerHour
+          ? Math.max(
+              (censorDateMs - new Date(d.installation_date).getTime()) / msPerHour,
+              1e-6
+            )
           : d.failure_time_hours
       return { time: Math.max(time, 1e-6), censored: isCensored }
     })
     events.sort((a, b) => a.time - b.time)
 
-    const failureTimes = events.filter((e) => !e.censored).map((e) => e.time)
-    const censoredTimes = events.filter((e) => e.censored).map((e) => e.time)
-    const nFailures = failureTimes.length
-    const hasCensored = censoredTimes.length > 0
+    const failureTimesHours = events.filter((e) => !e.censored).map((e) => e.time)
+    const censoredTimesHours = events.filter((e) => e.censored).map((e) => e.time)
+    const nFailures = failureTimesHours.length
+    const hasCensored = censoredTimesHours.length > 0
 
     if (nFailures < 3) {
       return { success: false, error: "Need at least 3 observed failures for Weibull analysis" }
     }
 
-    const maxObservedHours = Math.max(...events.map((e) => e.time))
+    const empiricalMttf =
+      failureTimesHours.reduce((sum, t) => sum + t, 0) / Math.max(nFailures, 1)
 
-    let completeParams = calculateWeibullMLE(failureTimes)
-    completeParams = clampShapeAndRecomputeScale(completeParams.shape, completeParams.scale, failureTimes)
-    const completeMttf = capMTTF(weibullMTTF(completeParams.shape, completeParams.scale), maxObservedHours)
+    const failureTimesDays = failureTimesHours.map((h) => h / hoursPerDay)
+    const censoredTimesDays = censoredTimesHours.map((h) => h / hoursPerDay)
+
+    let completeParams = calculateWeibullMLE(failureTimesDays)
+    completeParams = clampShapeAndRecomputeScale(completeParams.shape, completeParams.scale, failureTimesDays)
     const completeOnly: WeibullCurveFit = {
       shape_parameter: completeParams.shape,
-      scale_parameter: completeParams.scale,
-      mttf: completeMttf,
+      scale_parameter: completeParams.scale * hoursPerDay,
+      mttf: empiricalMttf,
       total_failures: nFailures,
       data_points: nFailures,
     }
 
     let withCensored: WeibullCurveFit | undefined
     if (hasCensored) {
-      let censoredParams = calculateWeibullCensoredMLE(failureTimes, censoredTimes)
-      censoredParams = clampShapeAndRecomputeScaleCensored(censoredParams.shape, censoredParams.scale, failureTimes, censoredTimes)
-      const censoredMttf = capMTTF(weibullMTTF(censoredParams.shape, censoredParams.scale), maxObservedHours)
+      let censoredParams = calculateWeibullCensoredMLE(failureTimesDays, censoredTimesDays)
+      censoredParams = clampShapeAndRecomputeScaleCensored(
+        censoredParams.shape,
+        censoredParams.scale,
+        failureTimesDays,
+        censoredTimesDays
+      )
       withCensored = {
         shape_parameter: censoredParams.shape,
-        scale_parameter: censoredParams.scale,
-        mttf: censoredMttf,
+        scale_parameter: censoredParams.scale * hoursPerDay,
+        mttf: empiricalMttf,
         total_failures: nFailures,
         data_points: events.length,
       }
@@ -278,12 +292,6 @@ function clampShape(shape: number): number {
   return Math.max(SHAPE_MIN, Math.min(SHAPE_MAX, shape))
 }
 
-function capMTTF(mttf: number, maxObservedHours: number): number {
-  const cap = Math.min(MTTF_MAX_HOURS, Math.max(maxObservedHours * 100, 8760 * 100))
-  if (mttf > cap || !Number.isFinite(mttf)) return cap
-  return mttf
-}
-
 function clampShapeAndRecomputeScale(
   shape: number,
   _scale: number,
@@ -306,7 +314,7 @@ function clampShapeAndRecomputeScaleCensored(
   const r = failureTimes.length
   const allTimes = [...failureTimes, ...censoredTimes]
   const S = allTimes.reduce((sum, t) => sum + Math.pow(t, s), 0)
-  const scale = Math.pow(S / r, 1 / s)
+  const scale = Math.pow((s * S) / r, 1 / s)
   return { shape: s, scale }
 }
 
@@ -351,34 +359,55 @@ function calculateWeibullCensoredMLE(
   censoredTimes: number[]
 ): { shape: number; scale: number } {
   const r = failureTimes.length
-  const allTimes = [...failureTimes, ...censoredTimes]
   if (r < 1) throw new Error("Need at least one failure for censored MLE")
 
-  let shape = 1.5
-  const maxIterations = 100
-  const tolerance = 1e-6
-  const sumLogT = failureTimes.reduce((s, t) => s + Math.log(t), 0)
+  const allTimes = [...failureTimes, ...censoredTimes]
+  const sumLogFailures = failureTimes.reduce((s, t) => s + Math.log(t), 0)
 
-  for (let iter = 0; iter < maxIterations; iter++) {
-    const tBeta = allTimes.map((t) => Math.pow(t, shape))
-    const tBetaLnT = allTimes.map((t) => Math.pow(t, shape) * Math.log(t))
-    const tBetaLn2T = allTimes.map((t) => Math.pow(t, shape) * Math.log(t) * Math.log(t))
+  // Profile-likelihood: log L = r*log(beta) - r*beta*log(eta) + (beta-1)*sum_fail log(t) - sum_all (t/eta)^beta
+  function logLikelihood(beta: number): number {
+    if (!Number.isFinite(beta) || beta <= 0) return -Infinity
+    const tBeta = allTimes.map((t) => Math.pow(t, beta))
     const S = tBeta.reduce((a, b) => a + b, 0)
-    const dS = tBetaLnT.reduce((a, b) => a + b, 0)
-    const d2S = tBetaLn2T.reduce((a, b) => a + b, 0)
-    const scale = Math.pow(S / r, 1 / shape)
-    const B = dS / S
-    const f = r / shape + (r / (shape * shape)) * Math.log(S / r) - (r * B) / shape + sumLogT
-    const C = d2S / S - B * B
-    const fPrime = -r / (shape * shape) - (2 * r / (shape * shape * shape)) * Math.log(S / r) + (2 * r * B) / (shape * shape) - (r / shape) * C + (r * B * B) / shape
-    if (Math.abs(f) < tolerance) break
-    const newShape = shape - f / fPrime
-    if (newShape <= 0) break
-    shape = newShape
+    if (!Number.isFinite(S) || S <= 0) return -Infinity
+    const eta = Math.pow((beta * S) / r, 1 / beta)
+    const sumOverEtaBeta = S / Math.pow(eta, beta)
+    return r * Math.log(beta) - r * beta * Math.log(eta) + (beta - 1) * sumLogFailures - sumOverEtaBeta
   }
 
-  const tBeta = allTimes.map((t) => Math.pow(t, shape))
+  // Simple 1D grid search over a reasonable beta range, then refine locally
+  let bestBeta = 1.0
+  let bestLL = -Infinity
+  const betaMin = SHAPE_MIN
+  const betaMax = SHAPE_MAX
+  const steps = 80
+
+  for (let i = 0; i <= steps; i++) {
+    const beta = betaMin + (i * (betaMax - betaMin)) / steps
+    const ll = logLikelihood(beta)
+    if (ll > bestLL) {
+      bestLL = ll
+      bestBeta = beta
+    }
+  }
+
+  // Local refinement around bestBeta
+  const refineSteps = 40
+  const halfWidth = (betaMax - betaMin) / steps
+  const refineMin = Math.max(betaMin, bestBeta - halfWidth)
+  const refineMax = Math.min(betaMax, bestBeta + halfWidth)
+  bestLL = -Infinity
+  for (let i = 0; i <= refineSteps; i++) {
+    const beta = refineMin + (i * (refineMax - refineMin)) / refineSteps
+    const ll = logLikelihood(beta)
+    if (ll > bestLL) {
+      bestLL = ll
+      bestBeta = beta
+    }
+  }
+
+  const tBeta = allTimes.map((t) => Math.pow(t, bestBeta))
   const S = tBeta.reduce((a, b) => a + b, 0)
-  const scale = Math.pow(S / r, 1 / shape)
-  return { shape, scale }
+  const scale = Math.pow((bestBeta * S) / r, 1 / bestBeta)
+  return { shape: bestBeta, scale }
 }

@@ -25,7 +25,7 @@ export function AssetDataUpload() {
   const [isProcessing, setIsProcessing] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [results, setResults] = useState<WeibullAnalysisResult | null>(null)
-  const [timeUnit, setTimeUnit] = useState<"hours" | "years">("hours")
+  const [timeUnit, setTimeUnit] = useState<"hours" | "years">("years")
   const [chartType, setChartType] = useState<"cdf" | "pdf" | "hazard">("cdf")
   const [curveName, setCurveName] = useState("")
   const [isSaving, setIsSaving] = useState(false)

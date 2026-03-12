@@ -24,7 +24,7 @@ export function ClientCurveDetail({ curveId }: ClientCurveDetailProps) {
   const [curve, setCurve] = useState<WeibullAnalysisResult | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [timeUnit, setTimeUnit] = useState<"hours" | "years">("hours")
+  const [timeUnit, setTimeUnit] = useState<"hours" | "years">("years")
   const [chartType, setChartType] = useState<"cdf" | "pdf" | "hazard">("cdf")
   const { supabase, loading: supabaseLoading } = useSupabase()
   const { user: authUser, loading: authLoading } = useAuth()

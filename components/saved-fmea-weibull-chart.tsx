@@ -12,7 +12,7 @@ interface SavedFMEAWeibullChartProps {
 }
 
 export function SavedFMEAWeibullChart({ fmea }: SavedFMEAWeibullChartProps) {
-  const [timeUnit, setTimeUnit] = useState<"hours" | "years">("hours")
+  const [timeUnit, setTimeUnit] = useState<"hours" | "years">("years")
   const [chartType, setChartType] = useState<"cdf" | "pdf" | "hazard">("cdf")
 
   // Convert saved FMEA data to the format expected by WeibullChart
