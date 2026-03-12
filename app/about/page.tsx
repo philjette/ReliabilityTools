@@ -13,11 +13,11 @@ export default function AboutPage() {
       <div className="container mx-auto px-4 py-16">
         {/* Mission Section */}
         <section className="text-center mb-16">
-          <h1 className="text-4xl font-bold text-gray-900 mb-6">About assetx</h1>
+          <h1 className="text-4xl font-bold text-gray-900 mb-6">About reliabilitytools.ai</h1>
           <div className="max-w-3xl mx-auto">
             <h2 className="text-2xl font-semibold text-gray-800 mb-4">Our Mission</h2>
             <p className="text-lg text-gray-600 leading-relaxed">
-              assetx is dedicated to revolutionizing reliability engineering for electrical transmission and
+              reliabilitytools.ai is dedicated to revolutionizing reliability engineering for electrical transmission and
               distribution assets. We combine advanced AI technology with proven engineering methodologies to provide
               comprehensive, accurate, and actionable reliability analysis tools that help engineers make informed
               decisions about asset management, maintenance strategies, and risk mitigation.

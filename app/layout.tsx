@@ -8,9 +8,9 @@ import { Toaster } from "@/components/ui/toaster"
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "assetx - AI-Powered Reliability Engineering",
+  title: "reliabilitytools.ai - AI-Powered Reliability Engineering",
   description: "Advanced FMEA generation and Weibull analysis powered by AI",
-    generator: 'v0.app'
+  generator: "v0.app",
 }
 
 export default function RootLayout({

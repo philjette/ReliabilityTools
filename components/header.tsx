@@ -32,7 +32,7 @@ export function Header({ activePath = "/" }: HeaderProps) {
           <div className="flex items-center gap-6">
             <Link href="/" className="flex items-center space-x-2">
               <Activity className="h-6 w-6 text-blue-600" />
-              <span className="text-xl font-bold">assetx</span>
+              <span className="text-xl font-bold">reliabilitytools.ai</span>
             </Link>
             <nav className="hidden md:flex items-center gap-6">
               <Link
