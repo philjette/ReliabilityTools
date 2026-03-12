@@ -207,18 +207,26 @@ export async function saveWeibullCurveClient(curveName: string, analysisResult: 
       return { success: false, error: "User not authenticated. Please sign in and try again." }
     }
 
+    const insertRow: Record<string, unknown> = {
+      user_id: user.id,
+      curve_name: curveName,
+      asset_name: analysisResult.asset_name,
+      shape_parameter: analysisResult.shape_parameter,
+      scale_parameter: analysisResult.scale_parameter,
+      mttf: analysisResult.mttf,
+      total_failures: analysisResult.total_failures,
+      data_points: analysisResult.data_points,
+    }
+    if (analysisResult.complete_only && analysisResult.with_censored) {
+      insertRow.dual_fit = {
+        complete_only: analysisResult.complete_only,
+        with_censored: analysisResult.with_censored,
+      }
+    }
+
     const { data, error } = await supabase
       .from("weibull_curves")
-      .insert({
-        user_id: user.id,
-        curve_name: curveName,
-        asset_name: analysisResult.asset_name,
-        shape_parameter: analysisResult.shape_parameter,
-        scale_parameter: analysisResult.scale_parameter,
-        mttf: analysisResult.mttf,
-        total_failures: analysisResult.total_failures,
-        data_points: analysisResult.data_points
-      })
+      .insert(insertRow)
       .select()
       .single()
 

@@ -38,6 +38,8 @@ export interface WeibullAnalysisResult {
   complete_only?: WeibullCurveFit
   /** Fit using all records (failures + right-censored); only present when censored data exists */
   with_censored?: WeibullCurveFit
+  /** Persisted dual fit when saved (complete_only + with_censored); set when loading from DB */
+  dual_fit?: { complete_only: WeibullCurveFit; with_censored: WeibullCurveFit }
 }
 
 export interface TempAssetData {
@@ -255,18 +257,26 @@ export async function saveWeibullCurve(curveName: string, analysisResult: Weibul
       return { success: false, error: "User not authenticated. Please sign in and try again." }
     }
 
+    const insertRow: Record<string, unknown> = {
+      user_id: user.id,
+      curve_name: curveName,
+      asset_name: analysisResult.asset_name,
+      shape_parameter: analysisResult.shape_parameter,
+      scale_parameter: analysisResult.scale_parameter,
+      mttf: analysisResult.mttf,
+      total_failures: analysisResult.total_failures,
+      data_points: analysisResult.data_points,
+    }
+    if (analysisResult.complete_only && analysisResult.with_censored) {
+      insertRow.dual_fit = {
+        complete_only: analysisResult.complete_only,
+        with_censored: analysisResult.with_censored,
+      }
+    }
+
     const { data, error } = await supabase
       .from("weibull_curves")
-      .insert({
-        user_id: user.id,
-        curve_name: curveName,
-        asset_name: analysisResult.asset_name,
-        shape_parameter: analysisResult.shape_parameter,
-        scale_parameter: analysisResult.scale_parameter,
-        mttf: analysisResult.mttf,
-        total_failures: analysisResult.total_failures,
-        data_points: analysisResult.data_points
-      })
+      .insert(insertRow)
       .select()
       .single()
 
