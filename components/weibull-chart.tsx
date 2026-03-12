@@ -1,5 +1,6 @@
 "use client"
 
+import { useId } from "react"
 import {
   Area,
   AreaChart,
@@ -93,10 +94,14 @@ export function WeibullChart({
   showCombined = false,
   timeUnit = "years",
 }: WeibullChartProps) {
+  const gradientId = useId().replace(/:/g, "")
   const singleModeData = generateWeibullData(type, shape, scale, timeUnit)
   const multiModeData = generateMultiModeData(type, failureModes, showCombined, timeUnit)
 
   const data = failureModes.length > 0 ? multiModeData : singleModeData
+  const xDomain = data.length
+    ? ([data[0]?.time ?? 0, data[data.length - 1]?.time ?? 1] as [number, number])
+    : ([0, 1] as [number, number])
 
   const yAxisLabel = type === "cdf" ? "Cumulative Probability" : type === "pdf" ? "Probability Density" : "Hazard Rate"
   const xAxisLabel = timeUnit === "years" ? "Time (years)" : "Time (hours)"
@@ -118,8 +123,9 @@ export function WeibullChart({
               tickMargin={10}
               tickFormatter={(value) => timeUnit === "years" ? value.toFixed(1) : Math.round(value).toString()}
               ticks={generateTicks(maxScaleHours, maxTimeDisplay, timeUnit)}
-              domain={[0, "dataMax"]}
+              domain={xDomain}
               type="number"
+              scale="linear"
             />
             <YAxis
               label={{ value: yAxisLabel, angle: -90, position: "insideLeft", offset: -5 }}
@@ -180,7 +186,7 @@ export function WeibullChart({
       <ResponsiveContainer width="100%" height="100%">
         <AreaChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 30 }}>
           <defs>
-            <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
+            <linearGradient id={`colorValue-${gradientId}`} x1="0" y1="0" x2="0" y2="1">
               <stop offset="5%" stopColor="#0ea5e9" stopOpacity={0.8} />
               <stop offset="95%" stopColor="#0ea5e9" stopOpacity={0} />
             </linearGradient>
@@ -192,7 +198,7 @@ export function WeibullChart({
             tickMargin={10}
             tickFormatter={(value) => (timeUnit === "years" ? value.toFixed(1) : Math.round(value).toString())}
             ticks={generateTicks(scale, maxTimeDisplay, timeUnit)}
-            domain={[0, "dataMax"]}
+            domain={xDomain}
             type="number"
             scale="linear"
           />
@@ -205,7 +211,14 @@ export function WeibullChart({
             formatter={(value: number) => [value.toFixed(4), yAxisLabel]}
             labelFormatter={(label) => `Time: ${Number(label).toFixed(2)} ${timeUnit}`}
           />
-          <Area type="monotone" dataKey="value" stroke="#0ea5e9" fillOpacity={1} fill="url(#colorValue)" />
+          <Area
+            type="monotone"
+            dataKey="value"
+            stroke="#0ea5e9"
+            strokeWidth={2}
+            fillOpacity={1}
+            fill={`url(#colorValue-${gradientId})`}
+          />
         </AreaChart>
       </ResponsiveContainer>
     </div>
@@ -218,8 +231,9 @@ function generateWeibullData(
   scale: number,
   timeUnit: "hours" | "years" = "years",
 ) {
-  const data = []
-  const maxTime = scale * 2
+  const data: Array<{ time: number; value: number }> = []
+  const scaleHours = scale > 0 ? scale : 8760
+  const maxTime = scaleHours * 2
   const step = maxTime / 100
 
   for (let i = 0; i <= 100; i++) {
@@ -232,19 +246,21 @@ function generateWeibullData(
     let value = 0
     switch (type) {
       case "cdf":
-        value = 1 - Math.exp(-Math.pow(timeInHours / scale, shape))
+        value = 1 - Math.exp(-Math.pow(timeInHours / scaleHours, shape))
         break
       case "pdf":
         value =
-          (shape / scale) * Math.pow(timeInHours / scale, shape - 1) * Math.exp(-Math.pow(timeInHours / scale, shape))
+          (shape / scaleHours) *
+          Math.pow(timeInHours / scaleHours, shape - 1) *
+          Math.exp(-Math.pow(timeInHours / scaleHours, shape))
         break
       case "hazard":
-        value = (shape / scale) * Math.pow(timeInHours / scale, shape - 1)
+        value = (shape / scaleHours) * Math.pow(timeInHours / scaleHours, shape - 1)
         break
     }
 
     const displayTime = timeUnit === "years" ? convertToYears(timeInHours) : timeInHours
-    data.push({ time: displayTime, value })
+    data.push({ time: Number(displayTime), value: Number(value) })
   }
 
   return data
