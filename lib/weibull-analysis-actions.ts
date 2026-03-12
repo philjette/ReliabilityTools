@@ -2,6 +2,11 @@
 
 import { createClient as createServerClient } from "@/lib/supabase-server"
 import { createClient } from "@supabase/supabase-js"
+import { weibullMTTF } from "@/lib/gamma"
+
+const SHAPE_MIN = 0.05
+const SHAPE_MAX = 20
+const MTTF_MAX_HOURS = 50_000_000 // ~5700 years; avoid storing absurd values from unstable fits
 
 export interface AssetDataPoint {
   asset_name: string
@@ -162,9 +167,12 @@ export async function fitWeibullParameters(tempDataId: string): Promise<{ succes
       return { success: false, error: "Need at least 3 observed failures for Weibull analysis" }
     }
 
+    const maxObservedHours = Math.max(...events.map((e) => e.time))
+
     // Fit 1: complete data only (failures)
-    const completeParams = calculateWeibullMLE(failureTimes)
-    const completeMttf = completeParams.scale * Math.exp(1 / completeParams.shape)
+    let completeParams = calculateWeibullMLE(failureTimes)
+    completeParams = clampShapeAndRecomputeScale(completeParams.shape, completeParams.scale, failureTimes, failureTimes)
+    const completeMttf = capMTTF(weibullMTTF(completeParams.shape, completeParams.scale), maxObservedHours)
     const completeOnly: WeibullCurveFit = {
       shape_parameter: completeParams.shape,
       scale_parameter: completeParams.scale,
@@ -176,8 +184,9 @@ export async function fitWeibullParameters(tempDataId: string): Promise<{ succes
     // Fit 2: with right-censored (when present)
     let withCensored: WeibullCurveFit | undefined
     if (hasCensored) {
-      const censoredParams = calculateWeibullCensoredMLE(failureTimes, censoredTimes)
-      const censoredMttf = censoredParams.scale * Math.exp(1 / censoredParams.shape)
+      let censoredParams = calculateWeibullCensoredMLE(failureTimes, censoredTimes)
+      censoredParams = clampShapeAndRecomputeScaleCensored(censoredParams.shape, censoredParams.scale, failureTimes, censoredTimes)
+      const censoredMttf = capMTTF(weibullMTTF(censoredParams.shape, censoredParams.scale), maxObservedHours)
       withCensored = {
         shape_parameter: censoredParams.shape,
         scale_parameter: censoredParams.scale,
@@ -285,6 +294,46 @@ export async function getUserWeibullCurves(): Promise<{ success: boolean; error?
     console.error("Unexpected error fetching Weibull curves:", error)
     return { success: false, error: error.message || "Failed to fetch Weibull curves" }
   }
+}
+
+function clampShape(shape: number): number {
+  return Math.max(SHAPE_MIN, Math.min(SHAPE_MAX, shape))
+}
+
+function capMTTF(mttf: number, maxObservedHours: number): number {
+  const cap = Math.min(MTTF_MAX_HOURS, Math.max(maxObservedHours * 100, 8760 * 100))
+  if (mttf > cap || !Number.isFinite(mttf)) {
+    return cap
+  }
+  return mttf
+}
+
+/** After clamping shape, recompute scale from complete data: η = (Σ t^β / n)^(1/β) */
+function clampShapeAndRecomputeScale(
+  shape: number,
+  _scale: number,
+  failureTimes: number[]
+): { shape: number; scale: number } {
+  const s = clampShape(shape)
+  const n = failureTimes.length
+  const sumTBeta = failureTimes.reduce((sum, t) => sum + Math.pow(t, s), 0)
+  const scale = Math.pow(sumTBeta / n, 1 / s)
+  return { shape: s, scale }
+}
+
+/** After clamping shape, recompute scale from censored data: η = (S/r)^(1/β), S = Σ t^β over all */
+function clampShapeAndRecomputeScaleCensored(
+  shape: number,
+  _scale: number,
+  failureTimes: number[],
+  censoredTimes: number[]
+): { shape: number; scale: number } {
+  const s = clampShape(shape)
+  const r = failureTimes.length
+  const allTimes = [...failureTimes, ...censoredTimes]
+  const S = allTimes.reduce((sum, t) => sum + Math.pow(t, s), 0)
+  const scale = Math.pow(S / r, 1 / s)
+  return { shape: s, scale }
 }
 
 // Maximum Likelihood Estimation for Weibull parameters

@@ -1,8 +1,12 @@
 "use client"
 
 import { createClient } from "@/lib/supabase-client"
-import { gamma } from "@/lib/gamma"
+import { weibullMTTF } from "@/lib/gamma"
 import type { AssetDataPoint, WeibullAnalysisResult, WeibullCurveFit } from "./weibull-analysis-actions"
+
+const SHAPE_MIN = 0.05
+const SHAPE_MAX = 20
+const MTTF_MAX_HOURS = 50_000_000
 
 // Client-side version of uploadAssetData
 export async function uploadAssetDataClient(data: AssetDataPoint[]): Promise<{ success: boolean; error?: string; tempDataId?: string }> {
@@ -113,9 +117,11 @@ export async function fitWeibullParametersClient(tempDataId: string): Promise<{ 
       return { success: false, error: "Need at least 3 observed failures for Weibull analysis" }
     }
 
-    const completeParams = calculateWeibullMLE(failureTimes)
-    // MTTF = scale * gamma(1 + 1/shape)
-    const completeMttf = completeParams.scale * gamma(1 + 1 / completeParams.shape)
+    const maxObservedHours = Math.max(...events.map((e) => e.time))
+
+    let completeParams = calculateWeibullMLE(failureTimes)
+    completeParams = clampShapeAndRecomputeScale(completeParams.shape, completeParams.scale, failureTimes)
+    const completeMttf = capMTTF(weibullMTTF(completeParams.shape, completeParams.scale), maxObservedHours)
     const completeOnly: WeibullCurveFit = {
       shape_parameter: completeParams.shape,
       scale_parameter: completeParams.scale,
@@ -126,9 +132,9 @@ export async function fitWeibullParametersClient(tempDataId: string): Promise<{ 
 
     let withCensored: WeibullCurveFit | undefined
     if (hasCensored) {
-      const censoredParams = calculateWeibullCensoredMLE(failureTimes, censoredTimes)
-      // MTTF = scale * gamma(1 + 1/shape)
-      const censoredMttf = censoredParams.scale * gamma(1 + 1 / censoredParams.shape)
+      let censoredParams = calculateWeibullCensoredMLE(failureTimes, censoredTimes)
+      censoredParams = clampShapeAndRecomputeScaleCensored(censoredParams.shape, censoredParams.scale, failureTimes, censoredTimes)
+      const censoredMttf = capMTTF(weibullMTTF(censoredParams.shape, censoredParams.scale), maxObservedHours)
       withCensored = {
         shape_parameter: censoredParams.shape,
         scale_parameter: censoredParams.scale,
@@ -266,6 +272,42 @@ export async function deleteWeibullCurveClient(id: string): Promise<{ success: b
     console.error("Unexpected error deleting Weibull curve:", error)
     return { success: false, error: error.message || "Failed to delete Weibull curve" }
   }
+}
+
+function clampShape(shape: number): number {
+  return Math.max(SHAPE_MIN, Math.min(SHAPE_MAX, shape))
+}
+
+function capMTTF(mttf: number, maxObservedHours: number): number {
+  const cap = Math.min(MTTF_MAX_HOURS, Math.max(maxObservedHours * 100, 8760 * 100))
+  if (mttf > cap || !Number.isFinite(mttf)) return cap
+  return mttf
+}
+
+function clampShapeAndRecomputeScale(
+  shape: number,
+  _scale: number,
+  failureTimes: number[]
+): { shape: number; scale: number } {
+  const s = clampShape(shape)
+  const n = failureTimes.length
+  const sumTBeta = failureTimes.reduce((sum, t) => sum + Math.pow(t, s), 0)
+  const scale = Math.pow(sumTBeta / n, 1 / s)
+  return { shape: s, scale }
+}
+
+function clampShapeAndRecomputeScaleCensored(
+  shape: number,
+  _scale: number,
+  failureTimes: number[],
+  censoredTimes: number[]
+): { shape: number; scale: number } {
+  const s = clampShape(shape)
+  const r = failureTimes.length
+  const allTimes = [...failureTimes, ...censoredTimes]
+  const S = allTimes.reduce((sum, t) => sum + Math.pow(t, s), 0)
+  const scale = Math.pow(S / r, 1 / s)
+  return { shape: s, scale }
 }
 
 // Maximum Likelihood Estimation for Weibull parameters
