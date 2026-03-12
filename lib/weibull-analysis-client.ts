@@ -61,22 +61,116 @@ export async function uploadAssetDataClient(data: AssetDataPoint[]): Promise<{ s
   }
 }
 
-// Client-side version of fitWeibullParameters
+/** Run Weibull fit on in-memory asset data. Use this so the chart reflects exactly the parsed CSV. */
+export function fitWeibullFromAssetData(assetData: AssetDataPoint[]): { success: boolean; error?: string; result?: WeibullAnalysisResult } {
+  try {
+    if (!assetData || assetData.length < 3) {
+      return { success: false, error: "Need at least 3 data points for Weibull analysis" }
+    }
+    const result = computeWeibullResult(assetData)
+    return { success: true, result }
+  } catch (error: any) {
+    console.error("Unexpected error fitting Weibull parameters:", error)
+    return { success: false, error: error?.message || "Failed to fit Weibull parameters" }
+  }
+}
+
+/** Core fit logic: build events (censor date = max failure date), then MLE. */
+function computeWeibullResult(assetData: Array<{ asset_name: string; installation_date: string; failure_date: string | null; failure_time_hours: number }>): WeibullAnalysisResult {
+  const msPerHour = 1000 * 60 * 60
+  const hoursPerDay = 24
+
+  const failureDates = assetData
+    .map((d) => d.failure_date)
+    .filter((x): x is string => x != null && x !== "")
+  const censorDateMs =
+    failureDates.length > 0
+      ? Math.max(...failureDates.map((d) => new Date(d).getTime()))
+      : Date.now()
+
+  type Event = { time: number; censored: boolean }
+  const events: Event[] = assetData.map((d) => {
+    const isCensored = d.failure_date == null || d.failure_date === ""
+    const time =
+      isCensored
+        ? Math.max(
+            (censorDateMs - new Date(d.installation_date).getTime()) / msPerHour,
+            1e-6
+          )
+        : d.failure_time_hours
+    return { time: Math.max(time, 1e-6), censored: isCensored }
+  })
+  events.sort((a, b) => a.time - b.time)
+
+  const failureTimesHours = events.filter((e) => !e.censored).map((e) => e.time)
+  const censoredTimesHours = events.filter((e) => e.censored).map((e) => e.time)
+  const nFailures = failureTimesHours.length
+  const hasCensored = censoredTimesHours.length > 0
+
+  if (nFailures < 3) {
+    throw new Error("Need at least 3 observed failures for Weibull analysis")
+  }
+
+  const empiricalMttf =
+    failureTimesHours.reduce((sum, t) => sum + t, 0) / Math.max(nFailures, 1)
+
+  const failureTimesDays = failureTimesHours.map((h) => h / hoursPerDay)
+  const censoredTimesDays = censoredTimesHours.map((h) => h / hoursPerDay)
+
+  let completeParams = calculateWeibullMLE(failureTimesDays)
+  completeParams = clampShapeAndRecomputeScale(completeParams.shape, completeParams.scale, failureTimesDays)
+  const completeOnly: WeibullCurveFit = {
+    shape_parameter: completeParams.shape,
+    scale_parameter: completeParams.scale * hoursPerDay,
+    mttf: empiricalMttf,
+    total_failures: nFailures,
+    data_points: nFailures,
+  }
+
+  let withCensored: WeibullCurveFit | undefined
+  if (hasCensored) {
+    let censoredParams = calculateWeibullCensoredMLE(failureTimesDays, censoredTimesDays)
+    censoredParams = clampShapeAndRecomputeScaleCensored(
+      censoredParams.shape,
+      censoredParams.scale,
+      failureTimesDays,
+      censoredTimesDays
+    )
+    withCensored = {
+      shape_parameter: censoredParams.shape,
+      scale_parameter: censoredParams.scale * hoursPerDay,
+      mttf: empiricalMttf,
+      total_failures: nFailures,
+      data_points: events.length,
+    }
+  }
+
+  const primary = withCensored ?? completeOnly
+  return {
+    curve_name: `${assetData[0].asset_name} Analysis`,
+    asset_name: assetData[0].asset_name,
+    shape_parameter: primary.shape_parameter,
+    scale_parameter: primary.scale_parameter,
+    mttf: primary.mttf,
+    total_failures: primary.total_failures,
+    data_points: primary.data_points,
+    complete_only: completeOnly,
+    with_censored: withCensored,
+  }
+}
+
+// Client-side version of fitWeibullParameters (fetches from DB — use fitWeibullFromAssetData for current upload so chart matches)
 export async function fitWeibullParametersClient(tempDataId: string): Promise<{ success: boolean; error?: string; result?: WeibullAnalysisResult }> {
   try {
     console.log("fitWeibullParametersClient called with tempDataId:", tempDataId)
-    
+
     const supabase = createClient()
     const { data: { user }, error: userError } = await supabase.auth.getUser()
-    
-    console.log("User check result:", { user: !!user, error: userError })
-    
+
     if (!user) {
-      console.error("No authenticated user found")
       return { success: false, error: "User not authenticated. Please sign in and try again." }
     }
 
-    // Get the uploaded data
     const { data: assetData, error: fetchError } = await supabase
       .from("temp_asset_data")
       .select("*")
@@ -90,91 +184,11 @@ export async function fitWeibullParametersClient(tempDataId: string): Promise<{ 
       return { success: false, error: "Need at least 3 data points for Weibull analysis" }
     }
 
-    const msPerHour = 1000 * 60 * 60
-    const hoursPerDay = 24
-
-    const failureDates = assetData
-      .map((d) => d.failure_date)
-      .filter((x): x is string => x != null && x !== "")
-    const censorDateMs =
-      failureDates.length > 0
-        ? Math.max(...failureDates.map((d) => new Date(d).getTime()))
-        : Date.now()
-
-    type Event = { time: number; censored: boolean }
-    const events: Event[] = assetData.map((d) => {
-      const isCensored = d.failure_date == null || d.failure_date === ""
-      const time =
-        isCensored
-          ? Math.max(
-              (censorDateMs - new Date(d.installation_date).getTime()) / msPerHour,
-              1e-6
-            )
-          : d.failure_time_hours
-      return { time: Math.max(time, 1e-6), censored: isCensored }
-    })
-    events.sort((a, b) => a.time - b.time)
-
-    const failureTimesHours = events.filter((e) => !e.censored).map((e) => e.time)
-    const censoredTimesHours = events.filter((e) => e.censored).map((e) => e.time)
-    const nFailures = failureTimesHours.length
-    const hasCensored = censoredTimesHours.length > 0
-
-    if (nFailures < 3) {
-      return { success: false, error: "Need at least 3 observed failures for Weibull analysis" }
-    }
-
-    const empiricalMttf =
-      failureTimesHours.reduce((sum, t) => sum + t, 0) / Math.max(nFailures, 1)
-
-    const failureTimesDays = failureTimesHours.map((h) => h / hoursPerDay)
-    const censoredTimesDays = censoredTimesHours.map((h) => h / hoursPerDay)
-
-    let completeParams = calculateWeibullMLE(failureTimesDays)
-    completeParams = clampShapeAndRecomputeScale(completeParams.shape, completeParams.scale, failureTimesDays)
-    const completeOnly: WeibullCurveFit = {
-      shape_parameter: completeParams.shape,
-      scale_parameter: completeParams.scale * hoursPerDay,
-      mttf: empiricalMttf,
-      total_failures: nFailures,
-      data_points: nFailures,
-    }
-
-    let withCensored: WeibullCurveFit | undefined
-    if (hasCensored) {
-      let censoredParams = calculateWeibullCensoredMLE(failureTimesDays, censoredTimesDays)
-      censoredParams = clampShapeAndRecomputeScaleCensored(
-        censoredParams.shape,
-        censoredParams.scale,
-        failureTimesDays,
-        censoredTimesDays
-      )
-      withCensored = {
-        shape_parameter: censoredParams.shape,
-        scale_parameter: censoredParams.scale * hoursPerDay,
-        mttf: empiricalMttf,
-        total_failures: nFailures,
-        data_points: events.length,
-      }
-    }
-
-    const primary = withCensored ?? completeOnly
-    const result: WeibullAnalysisResult = {
-      curve_name: `${assetData[0].asset_name} Analysis`,
-      asset_name: assetData[0].asset_name,
-      shape_parameter: primary.shape_parameter,
-      scale_parameter: primary.scale_parameter,
-      mttf: primary.mttf,
-      total_failures: primary.total_failures,
-      data_points: primary.data_points,
-      complete_only: completeOnly,
-      with_censored: withCensored,
-    }
-
+    const result = computeWeibullResult(assetData)
     return { success: true, result }
   } catch (error: any) {
     console.error("Unexpected error fitting Weibull parameters:", error)
-    return { success: false, error: error.message || "Failed to fit Weibull parameters" }
+    return { success: false, error: error?.message || "Failed to fit Weibull parameters" }
   }
 }
 

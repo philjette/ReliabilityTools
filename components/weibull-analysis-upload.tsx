@@ -10,7 +10,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { CheckCircle2, Upload, Loader2, Save, TrendingUp, Clock, BarChart3, Database, Download } from "lucide-react"
 import { WeibullChart } from "@/components/weibull-chart"
-import { uploadAssetDataClient, fitWeibullParametersClient, saveWeibullCurveClient } from "@/lib/weibull-analysis-client"
+import { uploadAssetDataClient, fitWeibullFromAssetData, saveWeibullCurveClient } from "@/lib/weibull-analysis-client"
 import type { WeibullAnalysisResult } from "@/lib/weibull-analysis-actions"
 import { useToast } from "@/hooks/use-toast"
 
@@ -172,14 +172,14 @@ export function WeibullAnalysisUpload() {
         }
       })
 
-      // Upload data to temporary table
+      // Upload data to temporary table (for persistence / save flow)
       const uploadResult = await uploadAssetDataClient(assetData)
       if (!uploadResult.success) {
         throw new Error(uploadResult.error || "Failed to upload data")
       }
 
-      // Fit Weibull parameters
-      const analysisResult = await fitWeibullParametersClient(uploadResult.tempDataId || "")
+      // Fit on the same in-memory data so the chart reflects this CSV exactly
+      const analysisResult = fitWeibullFromAssetData(assetData)
       if (!analysisResult.success) {
         throw new Error(analysisResult.error || "Failed to fit Weibull parameters")
       }
