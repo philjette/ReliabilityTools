@@ -408,6 +408,12 @@ export function WeibullAnalysisUpload() {
               </div>
             </CardContent>
           </Card>
+
+          {results.with_censored && (
+            <p className="text-sm text-muted-foreground mb-2">
+              Including right-censored data (units that haven’t failed yet) uses the fact that they survived at least until their observation time. That usually increases the estimated scale and <strong>lowers</strong> the cumulative probability of failure at a given time, so the green curve (“With right-censored”) typically sits at or below the blue curve (“Complete (failures only)”). Use the green curve for less biased estimates.
+            </p>
+          )}
           
           <WeibullChart
             type={chartType}

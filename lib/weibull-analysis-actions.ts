@@ -326,7 +326,7 @@ function clampShapeAndRecomputeScale(
   return { shape: s, scale }
 }
 
-/** After clamping shape, recompute scale from censored data: η = (β·S/r)^(1/β) */
+/** After clamping shape, recompute scale from censored data: η^β = S/r => η = (S/r)^(1/β) */
 function clampShapeAndRecomputeScaleCensored(
   shape: number,
   _scale: number,
@@ -337,7 +337,7 @@ function clampShapeAndRecomputeScaleCensored(
   const r = failureTimes.length
   const allTimes = [...failureTimes, ...censoredTimes]
   const S = allTimes.reduce((sum, t) => sum + Math.pow(t, s), 0)
-  const scale = Math.pow((s * S) / r, 1 / s)
+  const scale = Math.pow(S / r, 1 / s)
   return { shape: s, scale }
 }
 
@@ -388,14 +388,14 @@ function calculateWeibullCensoredMLE(
   const allTimes = [...failureTimes, ...censoredTimes]
   const sumLogFailures = failureTimes.reduce((s, t) => s + Math.log(t), 0)
 
-  // Profile-likelihood over shape (beta). Closed-form scale: eta^beta = beta*S/r => eta = (beta*S/r)^(1/beta)
-  // log L = r*log(beta) - r*beta*log(eta) + (beta-1)*sum_fail log(t) - sum_all (t/eta)^beta  (sum_all = r/beta)
+  // Profile-likelihood over shape (beta). From ∂L/∂η = 0: sum_all (t/η)^β = r => η^β = S/r => η = (S/r)^(1/β)
+  // log L = r*log(beta) - r*beta*log(eta) + (beta-1)*sum_fail log(t) - sum_all (t/eta)^beta
   function logLikelihood(beta: number): number {
     if (!Number.isFinite(beta) || beta <= 0) return -Infinity
     const tBeta = allTimes.map((t) => Math.pow(t, beta))
     const S = tBeta.reduce((a, b) => a + b, 0)
     if (!Number.isFinite(S) || S <= 0) return -Infinity
-    const eta = Math.pow((beta * S) / r, 1 / beta)
+    const eta = Math.pow(S / r, 1 / beta)
     const sumOverEtaBeta = S / Math.pow(eta, beta)
     return r * Math.log(beta) - r * beta * Math.log(eta) + (beta - 1) * sumLogFailures - sumOverEtaBeta
   }
@@ -433,6 +433,6 @@ function calculateWeibullCensoredMLE(
 
   const tBeta = allTimes.map((t) => Math.pow(t, bestBeta))
   const S = tBeta.reduce((a, b) => a + b, 0)
-  const scale = Math.pow((bestBeta * S) / r, 1 / bestBeta)
+  const scale = Math.pow(S / r, 1 / bestBeta)
   return { shape: bestBeta, scale }
 }
