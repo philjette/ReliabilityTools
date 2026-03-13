@@ -44,9 +44,11 @@ export function Header({ activePath = "/" }: HeaderProps) {
               <Link href="/analyze" className="text-sm font-medium text-gray-700 hover:text-blue-600 transition-colors">
                 Weibull Analysis
               </Link>
+              {/* About link - commented out for now
               <Link href="/about" className="text-sm font-medium text-gray-700 hover:text-blue-600 transition-colors">
                 About
               </Link>
+              */}
             </nav>
           </div>
 
@@ -112,6 +114,7 @@ export function Header({ activePath = "/" }: HeaderProps) {
               >
                 Weibull Analysis
               </Link>
+              {/* About link - commented out for now
               <Link
                 href="/about"
                 className="text-sm font-medium text-gray-700 hover:text-blue-600 transition-colors"
@@ -119,6 +122,7 @@ export function Header({ activePath = "/" }: HeaderProps) {
               >
                 About
               </Link>
+              */}
               {!loading && (
                 <>
                   {user ? (

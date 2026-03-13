@@ -80,9 +80,11 @@ export function ClientHeader({ activePath = "/" }: HeaderProps) {
             Home
           </Link>
 
+          {/* About link - commented out for now
           <Link href="/about" className={`font-medium ${isActive("/about") ? "" : "text-muted-foreground"}`}>
             About
           </Link>
+          */}
 
           {/* Solutions Dropdown Menu */}
           <DropdownMenu>
@@ -142,6 +144,7 @@ export function ClientHeader({ activePath = "/" }: HeaderProps) {
                   Home
                 </Link>
 
+                {/* About link - commented out for now
                 <Link
                   href="/about"
                   className={`font-medium text-lg ${isActive("/about") ? "" : "text-muted-foreground"}`}
@@ -149,6 +152,7 @@ export function ClientHeader({ activePath = "/" }: HeaderProps) {
                 >
                   About
                 </Link>
+                */}
 
                 <div className="space-y-3">
                   <h3 className="font-medium text-lg">Solutions</h3>
