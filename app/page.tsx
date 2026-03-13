@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { HeroButtons } from "@/components/hero-buttons"
+import { ScreenshotCarousel } from "@/components/screenshot-carousel"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Zap, BarChart3, FileText } from "lucide-react"
 
@@ -54,6 +55,10 @@ export default function HomePage() {
             electrical transmission and distribution assets with AI-powered insights.
           </p>
           <HeroButtons />
+          
+          <div className="mt-12">
+            <ScreenshotCarousel />
+          </div>
         </div>
       </section>
 
