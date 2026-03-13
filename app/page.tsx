@@ -1,8 +1,9 @@
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { HeroButtons } from "@/components/hero-buttons"
+import { ScreenshotCarousel } from "@/components/screenshot-carousel"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Zap, BarChart3, FileText, Shield, Clock, Users } from "lucide-react"
+import { Zap, BarChart3, FileText } from "lucide-react"
 
 export default function HomePage() {
   return (
@@ -18,6 +19,11 @@ export default function HomePage() {
             electrical transmission and distribution assets with AI-powered insights.
           </p>
           <HeroButtons />
+          
+          {/* Screenshot Carousel */}
+          <div className="mt-12">
+            <ScreenshotCarousel />
+          </div>
         </div>
       </section>
 
