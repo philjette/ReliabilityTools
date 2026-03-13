@@ -2,7 +2,7 @@ import type { Metadata } from "next"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { HeroButtons } from "@/components/hero-buttons"
-import { ScreenshotCarousel } from "@/components/screenshot-carousel"
+// import { ScreenshotCarousel } from "@/components/screenshot-carousel"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Zap, BarChart3, FileText } from "lucide-react"
 
@@ -56,9 +56,11 @@ export default function HomePage() {
           </p>
           <HeroButtons />
           
+          {/* Screenshot carousel - commented out for now, keeping for later use
           <div className="mt-12">
             <ScreenshotCarousel />
           </div>
+          */}
         </div>
       </section>
 
