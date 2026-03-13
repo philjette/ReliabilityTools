@@ -72,15 +72,19 @@ export function RiskMatrix({ failureModes = [] }: RiskMatrixProps) {
       {/* Risk Matrix Grid */}
       <div className="overflow-x-auto">
         <div className="min-w-[600px]">
-          <div className="grid grid-cols-11 gap-1 text-xs">
+          <div className="flex">
+            {/* Severity Y-axis label */}
+            <div className="flex items-center justify-center pr-2">
+              <div className="transform -rotate-90 whitespace-nowrap font-medium text-xs">Severity ↓</div>
+            </div>
+            
+            <div className="flex-1 grid grid-cols-11 gap-1 text-xs">
             {/* Header row */}
             <div className="col-span-1"></div>
             <div className="col-span-10 text-center font-medium mb-2">Occurrence →</div>
 
             {/* Column headers */}
-            <div className="flex items-center justify-center font-medium">
-              <div className="transform -rotate-90 whitespace-nowrap">Severity ↓</div>
-            </div>
+            <div className="text-center font-medium p-2"></div>
             {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((num) => (
               <div key={num} className="text-center font-medium p-2">
                 {num}
@@ -127,6 +131,7 @@ export function RiskMatrix({ failureModes = [] }: RiskMatrixProps) {
                 })}
               </>
             ))}
+            </div>
           </div>
         </div>
       </div>
