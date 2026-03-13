@@ -13,7 +13,7 @@ export function Footer() {
                 <span>reliabilitytools.ai</span>
               </Link>
               <p className="text-sm text-muted-foreground">
-                Professional reliability engineering tools for electrical asset management and failure analysis.
+                Professional AI-powered reliability engineering tools for critical infrastructure asset management.
               </p>
             </div>
             <div className="space-y-4">
