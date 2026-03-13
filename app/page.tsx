@@ -80,7 +80,7 @@ export default function HomePage() {
                 <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-4">
                   <Zap className="h-6 w-6 text-blue-600" />
                 </div>
-                <CardTitle>AI-Powered FMEA</CardTitle>
+                <CardTitle>Failure Modes and Effects Analysis</CardTitle>
                 <CardDescription>
                   Generate comprehensive Failure Mode and Effects Analysis reports using advanced AI
                 </CardDescription>
@@ -100,7 +100,7 @@ export default function HomePage() {
                 <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mb-4">
                   <BarChart3 className="h-6 w-6 text-green-600" />
                 </div>
-                <CardTitle>End of life curves</CardTitle>
+                <CardTitle>Lifecycle Modelling</CardTitle>
                 <CardDescription>
                   Fit Weibull paranaters to your failure data and analyze key reliability indicators
                 </CardDescription>
