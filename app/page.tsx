@@ -9,13 +9,13 @@ import { Zap, BarChart3, FileText } from "lucide-react"
 const siteUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://reliabilitytools.ai"
 
 export const metadata: Metadata = {
-  title: "Reliability Engineering Tools | FMEA & Weibull Analysis",
+  title: "Reliability Engineering Tools | FMEA & lifecycle modelling",
   description:
-    "Professional reliability engineering tools for electrical assets: AI-powered FMEA generation, Weibull failure analysis with right-censored data, and maintenance optimization.",
+    "Professional reliability engineering tools for critical infrastructure assets: AI-powered FMEA generation, Weibull failure analysis with right-censored data, and maintenance optimization.",
   openGraph: {
-    title: "reliabilitytools.ai – Reliability Engineering Tools | FMEA & Weibull Analysis",
+    title: "reliabilitytools.ai – Reliability Engineering Tools | FMEA & lifecycle modelling",
     description:
-      "Professional reliability engineering tools for electrical asset management: AI-powered FMEA, Weibull analysis, and maintenance optimization.",
+      "Professional reliability engineering tools for critical asset management: AI-powered FMEA, Weibull analysis, and maintenance optimization.",
     url: siteUrl,
   },
 }
@@ -25,7 +25,7 @@ const jsonLd = {
   "@type": "WebApplication",
   name: "reliabilitytools.ai",
   description:
-    "Professional reliability engineering tools for electrical asset management: AI-powered FMEA generation, Weibull failure analysis, and maintenance optimization.",
+    "Professional reliability engineering tools for critical infrastructure asset management: AI-powered FMEA generation, Weibull failure analysis, and maintenance optimization.",
   url: siteUrl,
   applicationCategory: "EngineeringApplication",
   offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
@@ -52,7 +52,7 @@ export default function HomePage() {
           <h1 className="text-5xl font-bold text-gray-900 mb-6">Professional reliability engineering tools</h1>
           <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
             Generate comprehensive FMEA reports, analyze failure data, and optimize maintenance strategies for
-            electrical transmission and distribution assets with AI-powered insights.
+            critical infrastructure assets with AI-powered insights.
           </p>
           <HeroButtons />
           
@@ -70,7 +70,7 @@ export default function HomePage() {
           <div className="text-center mb-16">
             <h2 className="text-3xl font-bold text-gray-900 mb-4">Comprehensive Reliability Analysis</h2>
             <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              Everything you need to assess, analyze, and improve the reliability of your electrical assets
+              Everything you need to assess, analyze, and improve the reliability of your critical assets
             </p>
           </div>
 
@@ -121,7 +121,7 @@ export default function HomePage() {
                   <FileText className="h-6 w-6 text-purple-600" />
                 </div>
                 <CardTitle>Asset Management</CardTitle>
-                <CardDescription>Comprehensive tools for tracking and managing reliability assets</CardDescription>
+                <CardDescription>Comprehensive tools for tracking and managing critical assets</CardDescription>
               </CardHeader>
               <CardContent>
                 <ul className="text-sm text-gray-600 space-y-2">
