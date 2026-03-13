@@ -1,9 +1,21 @@
+import type { Metadata } from "next"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Zap, BarChart3, FileText } from "lucide-react"
 import Link from "next/link"
+
+export const metadata: Metadata = {
+  title: "About",
+  description:
+    "reliabilitytools.ai provides AI-powered FMEA generation and Weibull analysis for electrical transmission and distribution asset reliability engineering.",
+  openGraph: {
+    title: "About reliabilitytools.ai – Reliability Engineering Tools",
+    description:
+      "Dedicated to revolutionizing reliability engineering for electrical assets with AI and proven methodologies.",
+  },
+}
 
 export default function AboutPage() {
   return (

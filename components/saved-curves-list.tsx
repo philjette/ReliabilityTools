@@ -109,7 +109,7 @@ export function SavedCurvesList({ curves, onDelete }: SavedCurvesListProps) {
                 β: {curve.shape_parameter.toFixed(2)}
               </Badge>
               <Badge variant="outline" className="text-xs">
-                η: {curve.scale_parameter.toFixed(0)}h
+                η: {(curve.scale_parameter / 8760).toFixed(2)} years
               </Badge>
             </div>
 

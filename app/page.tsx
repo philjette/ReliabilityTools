@@ -1,12 +1,48 @@
+import type { Metadata } from "next"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { HeroButtons } from "@/components/hero-buttons"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Zap, BarChart3, FileText, Shield, Clock, Users } from "lucide-react"
+import { Zap, BarChart3, FileText } from "lucide-react"
+
+const siteUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://reliabilitytools.ai"
+
+export const metadata: Metadata = {
+  title: "Reliability Engineering Tools | FMEA & Weibull Analysis",
+  description:
+    "Professional reliability engineering tools for electrical assets: AI-powered FMEA generation, Weibull failure analysis with right-censored data, and maintenance optimization.",
+  openGraph: {
+    title: "reliabilitytools.ai – Reliability Engineering Tools | FMEA & Weibull Analysis",
+    description:
+      "Professional reliability engineering tools for electrical asset management: AI-powered FMEA, Weibull analysis, and maintenance optimization.",
+    url: siteUrl,
+  },
+}
+
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@type": "WebApplication",
+  name: "reliabilitytools.ai",
+  description:
+    "Professional reliability engineering tools for electrical asset management: AI-powered FMEA generation, Weibull failure analysis, and maintenance optimization.",
+  url: siteUrl,
+  applicationCategory: "EngineeringApplication",
+  offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
+  featureList: [
+    "AI-powered FMEA generation",
+    "Weibull distribution analysis with right-censored data",
+    "Failure data import and visualization",
+    "PDF report export",
+  ],
+}
 
 export default function HomePage() {
   return (
     <div className="min-h-screen bg-white">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <Header />
 
       {/* Hero Section */}
