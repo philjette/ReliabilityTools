@@ -120,15 +120,15 @@ export default function HomePage() {
                 <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mb-4">
                   <FileText className="h-6 w-6 text-purple-600" />
                 </div>
-                <CardTitle>Export Reports</CardTitle>
-                <CardDescription>Export detailed analysis results as professional PDF reports</CardDescription>
+                <CardTitle>Asset Management</CardTitle>
+                <CardDescription>Comprehensive tools for tracking and managing reliability assets</CardDescription>
               </CardHeader>
               <CardContent>
                 <ul className="text-sm text-gray-600 space-y-2">
-                  <li>• Formatted PDF exports</li>
-                  <li>• Charts and visualizations</li>
-                  <li>• Executive summaries</li>
-                  <li>• Technical documentation</li>
+                  <li>• Risk matrix visualization</li>
+                  <li>• FMEA comparison tools</li>
+                  <li>• Detailed reporting exports</li>
+                  <li>• Asset lifecycle tracking</li>
                 </ul>
               </CardContent>
             </Card>
