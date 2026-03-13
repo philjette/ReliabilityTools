@@ -29,7 +29,7 @@ const screenshots = [
 
 export function ScreenshotCarousel() {
   return (
-    <div className="w-full max-w-4xl mx-auto px-12">
+    <div className="w-full max-w-3xl mx-auto px-12">
       <Carousel
         opts={{
           align: "center",
@@ -45,8 +45,8 @@ export function ScreenshotCarousel() {
                   <Image
                     src={screenshot.src}
                     alt={screenshot.alt}
-                    width={896}
-                    height={504}
+                    width={672}
+                    height={378}
                     className="w-full h-auto object-cover"
                     priority={index === 0}
                   />
