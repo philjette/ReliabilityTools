@@ -31,6 +31,7 @@ export function Footer() {
                 </li>
               </ul>
             </div>
+            {/* Company section - commented out for now
             <div className="space-y-4">
               <h4 className="text-sm font-semibold">Company</h4>
               <ul className="space-y-2 text-sm">
@@ -41,6 +42,7 @@ export function Footer() {
                 </li>
               </ul>
             </div>
+            */}
           </div>
         </div>
         <div className="mt-8 border-t pt-8 text-center text-sm text-muted-foreground">
