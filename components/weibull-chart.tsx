@@ -124,11 +124,6 @@ export function WeibullChart({
   const maxTimeDisplay = timeUnit === "years" ? convertToYears(maxTimeHours) : maxTimeHours
 
   if (failureModes.length > 0) {
-    // Merge empirical data points into the main data for ComposedChart
-    const chartData = showDataPoints && empiricalDataPoints.length > 0
-      ? [...data, ...empiricalDataPoints.map(p => ({ ...p, isEmpiricalPoint: true }))]
-      : data
-    
     return (
       <div className="w-full h-[500px]">
         <ResponsiveContainer width="100%" height="100%">
