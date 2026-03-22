@@ -10,7 +10,6 @@
   },
   "dependencies": {
     "@ai-sdk/openai": "latest",
-    "embla-carousel-react": "^8.3.0",
     "@hookform/resolvers": "^3.10.0",
     "@radix-ui/react-accordion": "latest",
     "@radix-ui/react-alert-dialog": "latest",
@@ -23,6 +22,7 @@
     "@radix-ui/react-radio-group": "latest",
     "@radix-ui/react-select": "latest",
     "@radix-ui/react-slot": "latest",
+    "@radix-ui/react-switch": "^1.2.6",
     "@radix-ui/react-tabs": "^1.1.2",
     "@radix-ui/react-toast": "latest",
     "@radix-ui/react-tooltip": "latest",
@@ -31,6 +31,7 @@
     "ai": "latest",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "embla-carousel-react": "^8.3.0",
     "jspdf": "latest",
     "jspdf-autotable": "latest",
     "lucide-react": "^0.454.0",
