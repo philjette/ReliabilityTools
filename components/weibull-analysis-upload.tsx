@@ -15,7 +15,11 @@ import { uploadAssetDataClient, fitWeibullFromAssetData, saveWeibullCurveClient 
 import type { WeibullAnalysisResult } from "@/lib/weibull-analysis-actions"
 import { useToast } from "@/hooks/use-toast"
 
-export function WeibullAnalysisUpload() {
+interface WeibullAnalysisUploadProps {
+  onResultsChange?: (hasResults: boolean) => void
+}
+
+export function WeibullAnalysisUpload({ onResultsChange }: WeibullAnalysisUploadProps) {
   const [file, setFile] = useState<File | null>(null)
   const [isProcessing, setIsProcessing] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -62,6 +66,7 @@ export function WeibullAnalysisUpload() {
       setFile(selectedFile)
       setError(null)
       setResults(null)
+      onResultsChange?.(false)
     }
   }
 
@@ -188,6 +193,7 @@ export function WeibullAnalysisUpload() {
 
       setResults(analysisResult.result || null)
       setCurveName(analysisResult.result?.curve_name || "")
+      onResultsChange?.(!!analysisResult.result)
       
       toast({
         title: "Analysis Complete",
