@@ -1,7 +1,7 @@
 "use client"
 
 import { createClient } from "@/lib/supabase-client"
-import type { AssetDataPoint, WeibullAnalysisResult, WeibullCurveFit } from "./weibull-analysis-actions"
+import type { AssetDataPoint, WeibullAnalysisResult, WeibullCurveFit, RawDataPoint } from "./weibull-analysis-actions"
 
 const SHAPE_MIN = 0.05
 const SHAPE_MAX = 20
@@ -146,6 +146,13 @@ function computeWeibullResult(assetData: Array<{ asset_name: string; installatio
   }
 
   const primary = withCensored ?? completeOnly
+  
+  // Generate raw data points for chart display
+  const rawDataPoints: RawDataPoint[] = events.map(e => ({
+    time: e.time,
+    censored: e.censored
+  }))
+  
   return {
     curve_name: `${assetData[0].asset_name} Analysis`,
     asset_name: assetData[0].asset_name,
@@ -156,6 +163,7 @@ function computeWeibullResult(assetData: Array<{ asset_name: string; installatio
     data_points: primary.data_points,
     complete_only: completeOnly,
     with_censored: withCensored,
+    raw_data_points: rawDataPoints,
   }
 }
 
@@ -222,6 +230,9 @@ export async function saveWeibullCurveClient(curveName: string, analysisResult: 
         complete_only: analysisResult.complete_only,
         with_censored: analysisResult.with_censored,
       }
+    }
+    if (analysisResult.raw_data_points && analysisResult.raw_data_points.length > 0) {
+      insertRow.raw_data_points = analysisResult.raw_data_points
     }
 
     const { data, error } = await supabase

@@ -8,7 +8,8 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { CheckCircle2, Upload, Loader2, Save, TrendingUp, Clock, BarChart3, Database, Download } from "lucide-react"
+import { CheckCircle2, Upload, Loader2, Save, TrendingUp, Clock, BarChart3, Database, Download, CircleDot } from "lucide-react"
+import { Switch } from "@/components/ui/switch"
 import { WeibullChart } from "@/components/weibull-chart"
 import { uploadAssetDataClient, fitWeibullFromAssetData, saveWeibullCurveClient } from "@/lib/weibull-analysis-client"
 import type { WeibullAnalysisResult } from "@/lib/weibull-analysis-actions"
@@ -23,6 +24,7 @@ export function WeibullAnalysisUpload() {
   const [chartType, setChartType] = useState<"cdf" | "pdf" | "hazard">("cdf")
   const [curveName, setCurveName] = useState("")
   const [isSaving, setIsSaving] = useState(false)
+  const [showDataPoints, setShowDataPoints] = useState(true)
   const { toast } = useToast()
 
   const formatMTTF = (mttf: number) => {
@@ -341,6 +343,22 @@ export function WeibullAnalysisUpload() {
                     </div>
                   </RadioGroup>
                 </div>
+                
+                {chartType === "cdf" && results.raw_data_points && results.raw_data_points.length > 0 && (
+                  <div className="flex items-center justify-between pt-2 border-t">
+                    <div className="flex items-center gap-2">
+                      <CircleDot className="h-4 w-4 text-orange-500" />
+                      <Label htmlFor="show-data-points" className="cursor-pointer">
+                        Show Data Points
+                      </Label>
+                    </div>
+                    <Switch
+                      id="show-data-points"
+                      checked={showDataPoints}
+                      onCheckedChange={setShowDataPoints}
+                    />
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -495,6 +513,8 @@ export function WeibullAnalysisUpload() {
               { name: "Complete (failures only)", shape: results.complete_only!.shape_parameter, scale: results.complete_only!.scale_parameter, color: "#0ea5e9" },
               { name: "With right-censored", shape: results.with_censored.shape_parameter, scale: results.with_censored.scale_parameter, color: "#22c55e" }
             ] : []}
+            rawDataPoints={results.raw_data_points}
+            showDataPoints={showDataPoints}
           />
 
           <Card>

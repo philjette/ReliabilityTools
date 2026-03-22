@@ -7,7 +7,8 @@ import { Footer } from "@/components/footer"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Loader2, ArrowLeft, TrendingUp, BarChart3, Clock, Database } from "lucide-react"
+import { Loader2, ArrowLeft, TrendingUp, BarChart3, Clock, Database, CircleDot } from "lucide-react"
+import { Switch } from "@/components/ui/switch"
 import Link from "next/link"
 import { useSupabase } from "@/hooks/use-supabase"
 import { useAuth } from "@/contexts/auth-context"
@@ -26,6 +27,7 @@ export function ClientCurveDetail({ curveId }: ClientCurveDetailProps) {
   const [error, setError] = useState<string | null>(null)
   const [timeUnit, setTimeUnit] = useState<"hours" | "years">("years")
   const [chartType, setChartType] = useState<"cdf" | "pdf" | "hazard">("cdf")
+  const [showDataPoints, setShowDataPoints] = useState(true)
   const { supabase, loading: supabaseLoading } = useSupabase()
   const { user: authUser, loading: authLoading } = useAuth()
   const router = useRouter()
@@ -375,6 +377,22 @@ export function ClientCurveDetail({ curveId }: ClientCurveDetailProps) {
                       </div>
                     </RadioGroup>
                   </div>
+                  
+                  {chartType === "cdf" && curve.raw_data_points && curve.raw_data_points.length > 0 && (
+                    <div className="flex items-center justify-between pt-2 border-t">
+                      <div className="flex items-center gap-2">
+                        <CircleDot className="h-4 w-4 text-orange-500" />
+                        <Label htmlFor="show-data-points" className="cursor-pointer">
+                          Show Data Points
+                        </Label>
+                      </div>
+                      <Switch
+                        id="show-data-points"
+                        checked={showDataPoints}
+                        onCheckedChange={setShowDataPoints}
+                      />
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -417,6 +435,8 @@ export function ClientCurveDetail({ curveId }: ClientCurveDetailProps) {
                         },
                       ]
                     : []}
+                  rawDataPoints={curve.raw_data_points}
+                  showDataPoints={showDataPoints}
                 />
               </CardContent>
             </Card>

@@ -24,6 +24,11 @@ export interface WeibullCurveFit {
   data_points: number
 }
 
+export interface RawDataPoint {
+  time: number // time in hours
+  censored: boolean // true if the data point is right-censored (hasn't failed yet)
+}
+
 export interface WeibullAnalysisResult {
   id?: string
   curve_name: string
@@ -40,6 +45,8 @@ export interface WeibullAnalysisResult {
   with_censored?: WeibullCurveFit
   /** Persisted dual fit when saved (complete_only + with_censored); set when loading from DB */
   dual_fit?: { complete_only: WeibullCurveFit; with_censored: WeibullCurveFit }
+  /** Raw data points used to fit the curve (for displaying on charts) */
+  raw_data_points?: RawDataPoint[]
 }
 
 export interface TempAssetData {
@@ -272,6 +279,9 @@ export async function saveWeibullCurve(curveName: string, analysisResult: Weibul
         complete_only: analysisResult.complete_only,
         with_censored: analysisResult.with_censored,
       }
+    }
+    if (analysisResult.raw_data_points && analysisResult.raw_data_points.length > 0) {
+      insertRow.raw_data_points = analysisResult.raw_data_points
     }
 
     const { data, error } = await supabase
