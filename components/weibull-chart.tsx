@@ -3,16 +3,19 @@
 import { useId } from "react"
 import {
   Area,
-  AreaChart,
   CartesianGrid,
   Legend,
   Line,
-  LineChart,
   ResponsiveContainer,
+  Scatter,
+  ComposedChart,
   Tooltip,
   XAxis,
   YAxis,
 } from "recharts"
+import type { RawDataPoint } from "@/lib/weibull-analysis-actions"
+
+export type { RawDataPoint }
 
 interface WeibullChartProps {
   type: "cdf" | "pdf" | "hazard"
@@ -26,6 +29,8 @@ interface WeibullChartProps {
   }>
   showCombined?: boolean
   timeUnit?: "hours" | "years"
+  rawDataPoints?: RawDataPoint[]
+  showDataPoints?: boolean
 }
 
 const HOURS_IN_YEAR = 8760
@@ -93,12 +98,19 @@ export function WeibullChart({
   failureModes = [],
   showCombined = false,
   timeUnit = "years",
+  rawDataPoints = [],
+  showDataPoints = false,
 }: WeibullChartProps) {
   const gradientId = useId().replace(/:/g, "")
   const singleModeData = generateWeibullData(type, shape, scale, timeUnit)
   const multiModeData = generateMultiModeData(type, failureModes, showCombined, timeUnit)
 
   const data = failureModes.length > 0 ? multiModeData : singleModeData
+  
+  // Generate empirical data points for scatter plot (only for CDF)
+  const empiricalDataPoints = showDataPoints && type === "cdf" && rawDataPoints.length > 0
+    ? generateEmpiricalCDF(rawDataPoints, timeUnit)
+    : []
   const xDomain = data.length
     ? ([data[0]?.time ?? 0, data[data.length - 1]?.time ?? 1] as [number, number])
     : ([0, 1] as [number, number])
@@ -112,10 +124,15 @@ export function WeibullChart({
   const maxTimeDisplay = timeUnit === "years" ? convertToYears(maxTimeHours) : maxTimeHours
 
   if (failureModes.length > 0) {
+    // Merge empirical data points into the main data for ComposedChart
+    const chartData = showDataPoints && empiricalDataPoints.length > 0
+      ? [...data, ...empiricalDataPoints.map(p => ({ ...p, isEmpiricalPoint: true }))]
+      : data
+    
     return (
       <div className="w-full h-[500px]">
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 30 }}>
+          <ComposedChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 30 }}>
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis
               dataKey="time"
@@ -163,7 +180,17 @@ export function WeibullChart({
                 activeDot={{ r: 4 }}
               />
             )}
-          </LineChart>
+            
+            {showDataPoints && empiricalDataPoints.length > 0 && (
+              <Scatter
+                name="Data Points"
+                data={empiricalDataPoints}
+                dataKey="empiricalCDF"
+                fill="#f97316"
+                shape="circle"
+              />
+            )}
+          </ComposedChart>
         </ResponsiveContainer>
       </div>
     )
@@ -184,7 +211,7 @@ export function WeibullChart({
   return (
     <div className="w-full h-[400px]">
       <ResponsiveContainer width="100%" height="100%">
-        <AreaChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 30 }}>
+        <ComposedChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 30 }}>
           <defs>
             <linearGradient id={`colorValue-${gradientId}`} x1="0" y1="0" x2="0" y2="1">
               <stop offset="5%" stopColor="#0ea5e9" stopOpacity={0.8} />
@@ -208,18 +235,28 @@ export function WeibullChart({
             tickMargin={10}
           />
           <Tooltip
-            formatter={(value: number) => [value.toFixed(4), yAxisLabel]}
+            formatter={(value: number, name: string) => [value.toFixed(4), name === "empiricalCDF" ? "Data Point" : yAxisLabel]}
             labelFormatter={(label) => `Time: ${Number(label).toFixed(2)} ${timeUnit}`}
           />
           <Area
             type="monotone"
             dataKey="value"
+            name="Fitted Curve"
             stroke="#0ea5e9"
             strokeWidth={2}
             fillOpacity={1}
             fill={`url(#colorValue-${gradientId})`}
           />
-        </AreaChart>
+          {showDataPoints && empiricalDataPoints.length > 0 && (
+            <Scatter
+              name="Data Points"
+              data={empiricalDataPoints}
+              dataKey="empiricalCDF"
+              fill="#f97316"
+              shape="circle"
+            />
+          )}
+        </ComposedChart>
       </ResponsiveContainer>
     </div>
   )
@@ -343,4 +380,34 @@ function generateMultiModeData(
   }
 
   return data
+}
+
+// Generate empirical CDF data points using Median Rank approximation
+// F(i) = (i - 0.3) / (n + 0.4) (Bernard's approximation)
+function generateEmpiricalCDF(
+  rawDataPoints: RawDataPoint[],
+  timeUnit: "hours" | "years"
+): Array<{ time: number; empiricalCDF: number; censored: boolean }> {
+  // Filter only failures for the empirical CDF (censored points don't have a failure rank)
+  const failures = rawDataPoints
+    .filter(p => !p.censored)
+    .map(p => p.time)
+    .sort((a, b) => a - b)
+  
+  if (failures.length === 0) return []
+  
+  const n = failures.length
+  
+  return failures.map((timeInHours, index) => {
+    const rank = index + 1
+    // Bernard's median rank approximation
+    const empiricalCDF = (rank - 0.3) / (n + 0.4)
+    const displayTime = timeUnit === "years" ? timeInHours / HOURS_IN_YEAR : timeInHours
+    
+    return {
+      time: displayTime,
+      empiricalCDF,
+      censored: false
+    }
+  })
 }
